@@ -1,0 +1,20 @@
+{
+  "dashboard": "Panel de Control",
+  "threat_logs": "Registro de Amenazas",
+  "settings": "Ajustes",
+  "all_clear": "Todo limpio",
+  "threats_found": "amenazas",
+  "close_sentinel": "Cerrar Sentinel",
+  "security_suite": "Suite de Seguridad",
+  "loading": "Cargando...",
+  "onboarding_title": "Inicialización de Sentinel",
+  "onboarding_step1": "Detectando Git",
+  "onboarding_step2": "Autenticando con GitHub CLI",
+  "add_repository": "Añadir Repositorio",
+  "recent_scans": "Escaneos Recientes",
+  "memory_management": "Gestión de Memoria",
+  "clear_cache": "Limpiar Caché",
+  "safe": "SEGURO",
+  "infected": "INFECTADO",
+  "cli_reference": "CLI y Agentes"
+}
