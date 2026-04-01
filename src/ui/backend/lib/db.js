@@ -6,8 +6,24 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-const DB_PATH = path.join(process.cwd(), 'sentinel.db');
+// Determine a stable writable directory for the database.
+// In packaged Electron, process.cwd() may be System32 or any random folder.
+function getDataDir() {
+    try {
+        // If running inside Electron, use its userData path
+        const { app } = require('electron');
+        return app.getPath('userData');
+    } catch {
+        // Fallback for standalone Node usage (CLI, dev, tests)
+        const dir = path.join(os.homedir(), '.sentinel');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        return dir;
+    }
+}
+
+const DB_PATH = path.join(getDataDir(), 'sentinel.db');
 
 class SentinelDB {
     constructor() {

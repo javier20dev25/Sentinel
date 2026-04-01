@@ -88,7 +88,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = async (retryCount = 0) => {
     try {
       const { data: auth } = await api.get('/api/auth/status');
       if (auth.authenticated) {
@@ -107,6 +107,12 @@ const App: React.FC = () => {
         setPhase('onboarding');
       }
     } catch (e: any) {
+      // Retry if backend is not ready yet (connection refused)
+      if (retryCount < 10) {
+        console.log(`Backend not ready, retrying... (${retryCount + 1}/10)`);
+        await new Promise(r => setTimeout(r, 1000));
+        return checkAuthStatus(retryCount + 1);
+      }
       console.error(e);
       setServerError(e.message || 'Failed to connect to local backend');
       setPhase('error');

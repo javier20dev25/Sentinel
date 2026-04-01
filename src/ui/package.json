@@ -45,17 +45,17 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "asarUnpack": [
+      "backend/**/*",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/bindings/**/*",
+      "node_modules/file-uri-to-path/**/*",
+      "node_modules/prebuild-install/**/*"
+    ],
     "extraFiles": [
       {
         "from": "build/sentinel.cmd",
         "to": "sentinel.cmd"
-      }
-    ],
-    "extraResources": [
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": ["**/*"]
       }
     ]
   },

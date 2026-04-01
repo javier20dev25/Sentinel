@@ -99,10 +99,8 @@ if (!isCliAction) {
       const indexPath = path.join(__dirname, '../dist/index.html');
       console.log(`🛡️ Loading UI from: ${indexPath}`);
       mainWindow.loadFile(indexPath).catch(err => {
-        console.error("❌ Failed to load index.html:", err);
+        console.error("Failed to load index.html:", err);
       });
-      // TEMPORARY: Open DevTools in production to debug black screen
-      mainWindow.webContents.openDevTools();
     }
 
     // Debugging support
@@ -113,14 +111,41 @@ if (!isCliAction) {
 
   app.whenReady().then(async () => {
     // Initialize backend services AFTER app is ready (avoids SQLite ABI issues)
-    console.log("🛡️ Initializing Sentinel Backend...");
+    console.log("Initializing Sentinel Backend...");
     try {
-      require('../backend/server/index.js');
-      require('../backend/services/polling.js');
-      console.log("✅ Sentinel backend running.");
+      // In packaged mode, native modules (better-sqlite3) live in asar.unpacked
+      let backendBase;
+      if (app.isPackaged) {
+        backendBase = app.getAppPath().replace('app.asar', 'app.asar.unpacked');
+      } else {
+        backendBase = path.join(__dirname, '..');
+      }
+      const serverPath = path.join(backendBase, 'backend', 'server', 'index.js');
+      const pollingPath = path.join(backendBase, 'backend', 'services', 'polling.js');
+      console.log("Loading backend from:", serverPath);
+      require(serverPath);
+      require(pollingPath);
+      console.log("Sentinel backend running on port 3001.");
     } catch (e) {
-      console.error("❌ Backend failed to start:", e.message);
+      console.error("Backend failed to start:", e.message, e.stack);
     }
+
+    // Wait for the backend server to be ready before showing the window
+    await new Promise((resolve) => {
+      let attempts = 0;
+      const check = () => {
+        const req = require('http').get('http://127.0.0.1:3001/api/system/stats', (res) => {
+          resolve();
+        });
+        req.on('error', () => {
+          attempts++;
+          if (attempts < 20) setTimeout(check, 250);
+          else resolve(); // Give up waiting, show window anyway
+        });
+        req.end();
+      };
+      check();
+    });
 
     createWindow();
 
