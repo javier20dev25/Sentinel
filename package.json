@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Local security guardian for GitHub repositories",
   "main": "index.js",
+  "bin": {
+    "sentinel": "src/ui/cli/index.js"
+  },
   "scripts": {
     "scan": "node src/scanner/index.js",
     "dashboard": "node src/server/index.js",

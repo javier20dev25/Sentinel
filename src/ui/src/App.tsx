@@ -103,6 +103,7 @@ const App: React.FC = () => {
           setPhase('repo-select');
         }
       } else {
+        console.log("Session lost or not authenticated. Gracefully redirecting to onboarding.");
         setPhase('onboarding');
       }
     } catch (e: any) {

@@ -1,22 +1,19 @@
+#!/usr/bin/env node
 // CLI Function for Electron Integration
-function run(args = process.argv) {
-    program.parse(args);
-}
+const { program } = require('commander');
+const notifier = require('node-notifier');
+const http = require('http');
+const { spawn } = require('child_process');
+const path = require('path');
 
-module.exports = { run };
-
-// If run directly via node
-if (require.main === module) {
-    run();
-}
 const isPackaged = process.execPath.toLowerCase().endsWith('sentinel.exe') || 
                    !process.execPath.toLowerCase().includes('node.exe');
 
 // Manual scan logic
 function performManualScan(repoId, githubName) {
-    const db = require('../ui/backend/lib/db');
-    const gh = require('../ui/backend/lib/gh_bridge');
-    const { scanFile } = require('../ui/backend/scanner/index');
+    const db = require('../backend/lib/db');
+    const gh = require('../backend/lib/gh_bridge');
+    const { scanFile } = require('../backend/scanner/index');
 
     console.log(`Scanning open PRs for ${githubName}...`);
     const prs = gh.listPRs(githubName);
@@ -59,10 +56,9 @@ program
     .command('link <path> <github_full_name>')
     .description('Link a local project to Sentinel')
     .action((localPath, githubName) => {
-        const db = require('../ui/backend/lib/db');
-        const gh = require('../ui/backend/lib/gh_bridge');
-        const { resolve } = require('path');
-        const fullPath = resolve(localPath);
+        const db = require('../backend/lib/db');
+        const gh = require('../backend/lib/gh_bridge');
+        const fullPath = path.resolve(localPath);
         console.log(`Linking repo at ${fullPath}...`);
         
         const info = gh.getRepoInfoLocal(fullPath);
@@ -82,7 +78,7 @@ program
     .command('list')
     .description('List all linked repositories')
     .action(() => {
-        const db = require('../ui/backend/lib/db');
+        const db = require('../backend/lib/db');
         const repos = db.getRepositories();
         console.table(repos.map(r => ({
             ID: r.id,
@@ -96,7 +92,7 @@ program
     .command('scan')
     .description('Scan all linked repositories now')
     .action(() => {
-        const db = require('../ui/backend/lib/db');
+        const db = require('../backend/lib/db');
         const repos = db.getRepositories();
         repos.forEach(repo => {
             performManualScan(repo.id, repo.github_full_name);
@@ -144,8 +140,6 @@ program
                 let cmd, args, spawnCwd;
                 
                 if (isPackaged) {
-                    // En una instalación real de Windows via electron-builder,
-                    // el ejecutable principal suele estar en la misma carpeta o adyacente al CLI en el PATH.
                     cmd = process.execPath;
                     args = [];
                     spawnCwd = path.dirname(process.execPath);
@@ -167,18 +161,19 @@ program
                 
                 console.log("⏳ Starting background server & UI, please wait...");
                 
-                // Retry intent continuously for up to 15 seconds
                 let retries = 0;
                 const retryInterval = setInterval(async () => {
                     try {
                         await postIntent();
                         console.log("✅ Application launched and navigated.");
                         clearInterval(retryInterval);
+                        process.exit(0);
                     } catch (err) {
                         retries++;
                         if (retries > 15) {
                             console.error("❌ Failed to reach UI within 15 seconds.");
                             clearInterval(retryInterval);
+                            process.exit(1);
                         }
                     }
                 }, 1000);
@@ -188,4 +183,13 @@ program
         }
     });
 
-program.parse(process.argv);
+function run(args = process.argv) {
+    program.parse(args);
+}
+
+module.exports = { run };
+
+// If run directly via node
+if (require.main === module) {
+    run();
+}

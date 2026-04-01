@@ -30,7 +30,7 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": false,
+      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "include": "build/installer.nsh",
       "shortcutName": "Sentinel Security",
@@ -44,6 +44,12 @@
       "cli/**/*",
       "node_modules/**/*",
       "package.json"
+    ],
+    "extraFiles": [
+      {
+        "from": "build/sentinel.cmd",
+        "to": "sentinel.cmd"
+      }
     ],
     "extraResources": [
       {

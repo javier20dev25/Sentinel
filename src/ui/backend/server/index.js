@@ -283,7 +283,7 @@ app.get('/api/repositories', (req, res) => {
     try {
         const repos = db.getRepositories();
         const reposWithLogs = repos.map(repo => {
-            const logs = db.getLogsByRepo(repo.id);
+            const logs = db.getLogsByRepoFilter(repo.id);
             
             // Calculate Security Posture Score (0-100)
             let score = 0;
