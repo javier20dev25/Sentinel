@@ -53,7 +53,12 @@ export const SentinelTerminal: React.FC<SentinelTerminalProps> = ({ isOpen, onCl
           ]);
 
           if (data.threats_found > 0) {
-            setLogs(prev => [...prev, { id: counter++, text: 'Check the Threat Log for detailed breakdown.', type: 'warning' as const, time: getTime() }]);
+            if (data.details && data.details.length > 0) {
+              data.details.forEach((desc: string) => {
+                setLogs(prev => [...prev, { id: counter++, text: `Threat Detail: ${desc}`, type: 'warning' as const, time: getTime() }]);
+              });
+            }
+            setLogs(prev => [...prev, { id: counter++, text: 'Check the Threat Log for detailed breakdown and history.', type: 'info' as const, time: getTime() }]);
           }
         } catch (err: any) {
           setLogs(prev => [...prev, { id: counter++, text: `Scan failed: ${err.response?.data?.error || err.message}`, type: 'error' as const, time: getTime() }]);

@@ -66,6 +66,17 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                       <button onClick={(e) => launchTerm('sentinel block --deps', e)} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
                         <BugOff className="w-3.5 h-3.5 text-red-500" /> Detect Typosquatting
                       </button>
+                      <button onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to forget this repository? Local logs will be erased.`)) {
+                          try {
+                            await axios.delete(`http://localhost:3001/api/repositories/${repo.id}`);
+                            window.location.reload();
+                          } catch (err) {}
+                        }
+                      }} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-300 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t border-white/5 mt-1">
+                        <ShieldAlert className="w-3.5 h-3.5" /> Forget Repository
+                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
