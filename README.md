@@ -1,5 +1,7 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
 
+**[🌐 Visita la Web Oficial y Descarga Sentinel](https://javier20dev25.github.io/Sentinel/)**
+
 Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
 
 ---
