@@ -75,8 +75,8 @@ function loadRules() {
     }
 }
 
-// Initial load
-loadRules();
+// Initial load (safe — missing rules dir is non-fatal)
+try { loadRules(); } catch (e) { console.warn('[SCANNER] Rule loading failed (non-fatal):', e.message); }
 
 // Helper to prevent ReDoS hanging the Node event loop
 function safeRegexTest(regex, string, timeoutMs = 50) {

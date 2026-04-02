@@ -596,11 +596,21 @@ app.put('/api/logs/:id/pin', (req, res) => {
 });
 
 // ─── Security Controls (Process Manager) State ───
-let processStates = {
-    'poller': { active: true, freq: 'Every 15 mins', lastRun: Date.now() - 1000 * 60 * 12 }, // mocked 12 mins ago
-    'pre-push': { active: gitHooks.isInstalled(), freq: 'On Push', lastRun: Date.now() - 1000 * 60 * 60 * 2 }, // 2 hours ago
-    'hardener': { active: true, freq: 'Always Active', lastRun: Date.now() - 1000 * 60 * 5 } // 5 mins ago
-};
+let processStates;
+try {
+  processStates = {
+    'poller': { active: true, freq: 'Every 15 mins', lastRun: Date.now() - 1000 * 60 * 12 },
+    'pre-push': { active: gitHooks.isInstalled(), freq: 'On Push', lastRun: Date.now() - 1000 * 60 * 60 * 2 },
+    'hardener': { active: true, freq: 'Always Active', lastRun: Date.now() - 1000 * 60 * 5 }
+  };
+} catch (e) {
+  console.warn('[SERVER] processStates init fallback:', e.message);
+  processStates = {
+    'poller': { active: true, freq: 'Every 15 mins', lastRun: Date.now() },
+    'pre-push': { active: false, freq: 'On Push', lastRun: 0 },
+    'hardener': { active: true, freq: 'Always Active', lastRun: Date.now() }
+  };
+}
 
 // Mock background heartbeat for Poller
 setInterval(() => {

@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // CLI Function for Electron Integration
 const { program } = require('commander');
-const notifier = require('node-notifier');
 const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+
+// Lazy-load node-notifier (may not be available in packaged mode)
+let notifier = null;
+try { notifier = require('node-notifier'); } catch (_) {}
+function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
 
 // Detection logic for packaged vs development environment
 // If the command is called through a shim that uses node directly or the app's own executable
@@ -60,7 +64,7 @@ function performManualScan(repoId, githubName) {
                 db.addScanLog(repoId, 'PR_THREAT', 10, `Threats in PR #${pr.number}`, results.alerts);
                 db.updateRepoStatus(repoId, 'INFECTED');
                 
-                notifier.notify({
+                safeNotify({
                     title: '🚨 Sentinel: Threat Detected!',
                     message: `PR #${pr.number} in ${githubName} looks dangerous.`,
                     sound: true
