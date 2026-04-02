@@ -29,17 +29,19 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
 
 ---
 
-## Quick Start (Recommended)
+## 🚀 Tutorial: Running Sentinel Locally (Recommended)
 
-The recommended way to run Sentinel is directly from source. No installer, no SmartScreen warnings, no compatibility issues.
+The best way for developers to experience Sentinel—and contribute to its core—is to run it directly from the source. No installers, no Windows SmartScreen warnings, and 100% control over the environment.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [GitHub CLI (gh)](https://cli.github.com/) installed and authenticated (`gh auth login`)
-- [Git](https://git-scm.com/) installed
+1. [Node.js](https://nodejs.org/) (v18 or higher)
+2. [Git](https://git-scm.com/) installed
+3. [GitHub CLI (gh)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 
-### Run in 4 commands
+### 4 Steps to Overwatch
+
+Open your favorite terminal (PowerShell, Bash, Command Prompt) and type:
 
 ```bash
 git clone https://github.com/javier20dev25/Sentinel.git
@@ -48,37 +50,46 @@ npm install
 npm run electron:dev
 ```
 
-That's it. Electron opens with the full Sentinel dashboard connected to your local backend. Everything runs on your machine.
-
-> **Note**: The first `npm install` may take a minute since it compiles the native SQLite module for your system. This only happens once.
+And BOOM 💥! Electron will open with the full Sentinel dashboard connected to your local backend. Everything runs directly on your machine.
+*(Note: The first `npm install` may take a minute since it compiles the native SQLite module for your system).*
 
 ---
 
-## Alternative: Pre-built Downloads
+## 📦 Alternative: Pre-built Downloads
 
-Pre-built Windows binaries are available on the [Releases](https://github.com/javier20dev25/Sentinel/releases/latest) page:
+Pre-built Windows binaries are available on the [Releases](https://github.com/javier20dev25/Sentinel/releases/latest) page if you prefer a standard setup:
 
 | File | Description |
 |---|---|
 | `Sentinel Setup.exe` | Windows installer |
 | `Sentinel-win32-x64.zip` | Portable -- extract and run directly |
 
-> **Important**: Since Sentinel is not code-signed, Windows SmartScreen may show a warning.
-> Click **"More info"** then **"Run anyway"** to proceed.
-> If Smart App Control blocks the installer, use the portable `.zip` version or run from source (recommended above).
+> **Important**: Since Sentinel is independently developed and not currently enterprise code-signed, Windows SmartScreen or Smart App Control may show a warning.
+> - Click **"More info"** then **"Run anyway"** to proceed.
+> - If you are blocked by Smart App Control, it is highly recommended to use the **Run from Source** tutorial above.
 
 ---
 
-## Security Principles
+## 🛡️ Security Principles
 
 Sentinel was built with a "Security-First" approach:
 - **Zero Shell Interaction**: All system commands are executed via `execFileSync` with static argument arrays, remediating Common Weakness Enumeration issues like [CWE-78](https://cwe.mitre.org/data/definitions/78.html).
 - **In-Memory Sanitization**: All logs and outputs are sanitized before being displayed or stored.
-- **Local Sovereignty**: No scanning data ever leaves your machine; it stays in your local SQLite database.
+- **Local Sovereignty**: No scanning data ever leaves your machine; it stays securely in your local SQLite database.
 
-## Contribution
+---
 
-Managed and maintained by [javier20dev25](https://github.com/javier20dev25).
+## 🤝 Calling All Developers & White Hats!
+
+Sentinel is a community-driven project built to secure the open-source ecosystem. **We need YOUR help to make it better!**
+
+Whether you are a React wizard, a Node.js backend architect, or an active security researcher writing better threat signatures, **this tool is yours to improve**. 
+
+### How to contribute:
+1. Clone the project using the tutorial above.
+2. Look through our issues or create one for a feature you'd like to see.
+3. Hack away! Break things, build new panels, add better regex security scanners!
+4. Submit a **Pull Request**. Every contributor is honored.
 
 ---
 
