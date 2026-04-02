@@ -304,4 +304,103 @@ body {
     .content {
         padding: 2rem;
     }
+    .cta-group {
+        flex-direction: column;
+    }
+}
+
+/* Quick Start Section */
+.quickstart-section {
+    margin-top: 0.5rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    margin-bottom: 0.25rem;
+}
+
+.section-title-sm {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.75rem;
+}
+
+.section-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* Terminal */
+.terminal {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.terminal-dot.red { background: #ff5f57; }
+.terminal-dot.yellow { background: #ffbd2e; }
+.terminal-dot.green { background: #28ca41; }
+
+.terminal-title {
+    margin-left: 8px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.terminal-body {
+    padding: 1rem 1.25rem;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: #e2e8f0;
+    background: rgba(0, 0, 0, 0.3);
+    margin: 0;
+    overflow-x: auto;
+}
+
+.cmd-prompt {
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 8px;
+    user-select: none;
+}
+
+/* Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--glass-border), transparent);
+    margin: 0.5rem 0;
+}
+
+/* Downloads Section */
+.downloads-section {
+    opacity: 0.85;
+}
+
+.downloads-section:hover {
+    opacity: 1;
 }
