@@ -1,6 +1,6 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
 
-**[🌐 Visita la Web Oficial y Descarga Sentinel](https://javier20dev25.github.io/Sentinel/)**
+**[Visit the Official Website](https://javier20dev25.github.io/Sentinel/)**
 
 Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
 
@@ -27,7 +27,11 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
 - **Hardened Command Execution**: Sentinel uses strict whitelisting and direct argument arrays to prevent shell injection and path traversal attacks.
 - **GitHub Auth Integration**: Uses official OAuth via the GitHub CLI for secure access.
 
-## Installation & Setup
+---
+
+## Quick Start (Recommended)
+
+The recommended way to run Sentinel is directly from source. No installer, no SmartScreen warnings, no compatibility issues.
 
 ### Prerequisites
 
@@ -35,19 +39,35 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
 - [GitHub CLI (gh)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 - [Git](https://git-scm.com/) installed
 
-### Local Development
+### Run in 4 commands
 
-1. **Clone the project** (this repo).
-2. **Install dependencies**:
-   ```bash
-   npm install
-   cd src/ui && npm install
-   ```
-3. **Launch the Developer Suite** (Vite + Electron):
-   ```bash
-   cd src/ui
-   npm run electron:dev
-   ```
+```bash
+git clone https://github.com/javier20dev25/Sentinel.git
+cd Sentinel/src/ui
+npm install
+npm run electron:dev
+```
+
+That's it. Electron opens with the full Sentinel dashboard connected to your local backend. Everything runs on your machine.
+
+> **Note**: The first `npm install` may take a minute since it compiles the native SQLite module for your system. This only happens once.
+
+---
+
+## Alternative: Pre-built Downloads
+
+Pre-built Windows binaries are available on the [Releases](https://github.com/javier20dev25/Sentinel/releases/latest) page:
+
+| File | Description |
+|---|---|
+| `Sentinel Setup.exe` | Windows installer |
+| `Sentinel-win32-x64.zip` | Portable -- extract and run directly |
+
+> **Important**: Since Sentinel is not code-signed, Windows SmartScreen may show a warning.
+> Click **"More info"** then **"Run anyway"** to proceed.
+> If Smart App Control blocks the installer, use the portable `.zip` version or run from source (recommended above).
+
+---
 
 ## Security Principles
 
