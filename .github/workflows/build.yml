@@ -37,4 +37,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sentinel-exe
-          path: src/ui/dist_electron/*.exe
+          path: src/ui/dist-electron/*.exe
+
+      - name: Create Auto Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: "latest-build"
+          name: "Sentinel Latest Build"
+          files: src/ui/dist-electron/*.exe
+          draft: false
+          prerelease: false
