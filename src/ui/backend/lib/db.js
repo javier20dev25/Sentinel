@@ -196,6 +196,16 @@ class SentinelDB {
         const stmt = this.db.prepare('SELECT 1 FROM trusted_contributors WHERE username = ?');
         return stmt.get(username) !== undefined;
     }
+
+    deleteRepository(repoId) {
+        // First delete dependent records
+        this.db.prepare('DELETE FROM security_config WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM scan_logs WHERE repo_id = ?').run(repoId);
+        
+        const stmt = this.db.prepare('DELETE FROM repositories WHERE id = ?');
+        const info = stmt.run(repoId);
+        return info.changes > 0;
+    }
 }
 
 module.exports = new SentinelDB();

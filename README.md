@@ -39,19 +39,16 @@ The best way for developers to experience Sentinel—and contribute to its core�
 2. [Git](https://git-scm.com/) installed
 3. [GitHub CLI (gh)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 
-### 4 Steps to Overwatch
+### A Single Command to Overwatch
 
-Open your favorite terminal (PowerShell, Bash, Command Prompt) and type:
+Open your favorite terminal (PowerShell, Bash, Command Prompt) and paste this single line:
 
 ```bash
-git clone https://github.com/javier20dev25/Sentinel.git
-cd Sentinel/src/ui
-npm install
-npm run electron:dev
+git clone https://github.com/javier20dev25/Sentinel.git && cd Sentinel/src/ui && npm install && npm run electron:dev
 ```
 
-And BOOM 💥! Electron will open with the full Sentinel dashboard connected to your local backend. Everything runs directly on your machine.
-*(Note: The first `npm install` may take a minute since it compiles the native SQLite module for your system).*
+And BOOM 💥! Electron will download, compile, and open with the full Sentinel dashboard connected to your local backend. Everything runs directly on your machine.
+*(Note: The first time running this may take a minute since it compiles the native SQLite module for your system).*
 
 ---
 

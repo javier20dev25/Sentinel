@@ -295,34 +295,26 @@ app.get('/api/repositories', (req, res) => {
         const reposWithLogs = repos.map(repo => {
             const logs = db.getLogsByRepoFilter(repo.id);
             
-            // Calculate Security Posture Score (0-100)
-            let score = 0;
+            // Calculate Security Posture Score (0-100) starts from 100 and applies penalties
+            let score = 100;
             const hardenerStatus = hardener.getSwitchesStatus();
             const isHardenerActive = hardenerStatus ? hardenerStatus.npmIgnoreScripts : false;
             const gHooksActive = gitHooks.isInstalled();
             
-            // Rewards
-            if (isHardenerActive && gHooksActive) score += 40;
-            
             const criticalThreats = logs.filter(l => l.risk_level > 7 && !l.pinned);
             const mediumThreats = logs.filter(l => l.risk_level > 4 && l.risk_level <= 7 && !l.pinned);
             
-            if (criticalThreats.length === 0) score += 25;
+            // Penalties
+            if (!isHardenerActive) score -= 15;
+            if (!gHooksActive) score -= 15;
             
-            // "Secrets scanned recently" -> assuming true if recent scan exists
             const lastScan = new Date(repo.last_scan_at || 0);
             const hoursSinceScan = (Date.now() - lastScan.getTime()) / (1000 * 60 * 60);
             
-            if (hoursSinceScan < 24) {
-               score += 20; // Secrets scanned
-               score += 15; // Scan < 24h
-            }
-            
-            // Penalties
-            if (!isHardenerActive) score -= 40;
-            score -= (criticalThreats.length * 30);
-            score -= (mediumThreats.length * 15);
             if (hoursSinceScan > 48) score -= 10;
+            
+            score -= (criticalThreats.length * 30);
+            score -= (mediumThreats.length * 10);
             
             // Clamp
             score = Math.max(0, Math.min(100, score));
@@ -379,6 +371,27 @@ app.post('/api/repositories/bulk', (req, res) => {
             return { fullName, id, linked: !!id };
         });
         res.status(201).json(results);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Forget a linked repository
+ * SECURITY: Checks if id is a valid integer.
+ */
+app.delete('/api/repositories/:id', (req, res) => {
+    const { id } = req.params;
+    if (!id || isNaN(Number(id))) {
+        return res.status(400).json({ error: 'Invalid repository ID.' });
+    }
+
+    try {
+        const success = db.deleteRepository(Number(id));
+        if (success) {
+            res.status(200).json({ success: true, message: 'Repository forgotten.' });
+        } else {
+            res.status(404).json({ error: 'Repository not found.' });
+        }
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
@@ -448,11 +461,14 @@ app.post('/api/repositories/scan-by-name', (req, res) => {
         let threats = 0;
         let prsScanned = 0;
         let filesScanned = 0;
+        let threatDetails = [];
 
         if (repo.local_path && isValidLocalPath(repo.local_path) && fs.existsSync(repo.local_path)) {
             const localResults = scanDirectory(repo.local_path, repo.id);
             threats += localResults.threats;
             filesScanned = localResults.filesScanned;
+            // Since scanDirectory doesn't return details easily without changing it deeply,
+            // we will query the DB for the newly added logs if threats > 0.
         }
 
         if (isValidOwnerRepo(repo.github_full_name)) {
@@ -472,10 +488,16 @@ app.post('/api/repositories/scan-by-name', (req, res) => {
             } catch (err) {}
         }
 
-        if (threats > 0) db.updateRepoStatus(repo.id, 'INFECTED');
-        else db.updateRepoStatus(repo.id, 'SAFE');
+        if (threats > 0) {
+            db.updateRepoStatus(repo.id, 'INFECTED');
+            // Fetch latest logs to create details array
+            const latestLogs = db.getLogsByRepoFilter(repo.id).slice(0, 3);
+            threatDetails = latestLogs.map(l => l.description);
+        } else {
+            db.updateRepoStatus(repo.id, 'SAFE');
+        }
 
-        res.json({ prs_scanned: prsScanned, files_scanned: filesScanned, threats_found: threats });
+        res.json({ prs_scanned: prsScanned, files_scanned: filesScanned, threats_found: threats, details: threatDetails });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

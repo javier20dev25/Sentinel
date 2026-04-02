@@ -68,14 +68,6 @@ export const StatusBar: React.FC = () => {
           <HardDrive className="w-3 h-3 text-blue-400" />
           <span>V8 HEAP: {formatBytes(stats.process.heapUsed)}</span>
         </div>
-        <div className="w-[1px] h-3 bg-white/10" />
-        <div className="flex items-center gap-1.5" title="Total OS RAM Usage">
-          <span>SYS RAM:</span>
-          <span>{formatBytes(stats.os.usedMem)} / {formatBytes(stats.os.totalMem)}</span>
-          <span className={`px-1 rounded-sm ${stats.os.memPercentage > 85 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-            {stats.os.memPercentage}%
-          </span>
-        </div>
       </div>
     </div>
   );
