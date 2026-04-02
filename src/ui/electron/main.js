@@ -1,9 +1,13 @@
 /**
- * Sentinel: Electron Main Process (HARDENED)
+ * Sentinel: Electron Main Process (HARDENED + RESILIENT)
  * 
  * SECURITY: contextIsolation enabled, nodeIntegration disabled.
  * Renderer process cannot access Node.js APIs directly.
  * All IPC communication goes through the preload.js bridge.
+ * 
+ * RESILIENCE: Each backend service is loaded independently with
+ * individual try/catch blocks. Native module loading is handled
+ * with explicit ASAR unpacked path resolution.
  * 
  * Audit: VULN-002 remediated — Electron security best practices applied.
  */
@@ -13,6 +17,31 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// ─── GLOBAL CRASH HANDLERS ───
+// Prevent the app from silently dying on unhandled errors
+process.on('uncaughtException', (err) => {
+  try {
+    const crashLog = path.join(
+      app.getPath('userData'),
+      'sentinel-crash.log'
+    );
+    const entry = `[${new Date().toISOString()}] UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}\n\n`;
+    fs.appendFileSync(crashLog, entry);
+  } catch (_) { /* can't even log, just survive */ }
+  // Don't exit — let the app continue if possible
+});
+
+process.on('unhandledRejection', (reason) => {
+  try {
+    const crashLog = path.join(
+      app.getPath('userData'),
+      'sentinel-crash.log'
+    );
+    const entry = `[${new Date().toISOString()}] UNHANDLED REJECTION: ${reason}\n\n`;
+    fs.appendFileSync(crashLog, entry);
+  } catch (_) { /* survive */ }
+});
 
 // Reliable dev detection
 const isDev = !app.isPackaged;
@@ -143,34 +172,65 @@ if (!isCliAction) {
     log(`Is Packaged: ${app.isPackaged}`);
 
     // Initialize backend services AFTER app is ready
+    // RESILIENCE: Each service is loaded individually so one failure
+    // doesn't prevent the others from working.
+    
+    // Logic for path resolution in packaged mode:
+    const appRoot = app.isPackaged ? app.getAppPath() : path.join(__dirname, '..');
+    
+    // For native modules in packaged mode, use the unpacked path
+    if (app.isPackaged) {
+      const unpackedPath = appRoot.replace('app.asar', 'app.asar.unpacked');
+      log(`ASAR Unpacked path: ${unpackedPath}`);
+      
+      // Add the unpacked node_modules to the module search path
+      // This ensures native addons like better-sqlite3 are found outside ASAR
+      const unpackedNodeModules = path.join(unpackedPath, 'node_modules');
+      if (fs.existsSync(unpackedNodeModules)) {
+        require('module').globalPaths.unshift(unpackedNodeModules);
+        log(`Added unpacked node_modules to search path: ${unpackedNodeModules}`);
+      }
+    }
+    
+    // Override console for backend logging
+    console.log = (...args) => {
+        log(`[BACKEND] ${args.join(' ')}`);
+    };
+    console.error = (...args) => {
+        log(`[ERR] ${args.join(' ')}`);
+        originalConsoleError(...args);
+    };
+
+    // ─── Load Backend Server (Express API) ───
+    let serverLoaded = false;
     try {
-      // Logic for path resolution in packaged mode:
-      const appRoot = app.isPackaged ? app.getAppPath() : path.join(__dirname, '..');
       const serverPath = path.join(appRoot, 'backend', 'server', 'index.js');
-      const pollingPath = path.join(appRoot, 'backend', 'services', 'polling.js');
-
       log(`Loading server from: ${serverPath}`);
-      
-      // Override console.log in the main process to capture backend requirements logs
-      console.log = (...args) => {
-          log(`[BACKEND] ${args.join(' ')}`);
-      };
-      console.error = (...args) => {
-          log(`[ERR] ${args.join(' ')}`);
-          originalConsoleError(...args);
-      };
-
       require(serverPath);
-      require(pollingPath);
-      
-      log("Sentinel backend loaded successfully.");
+      serverLoaded = true;
+      log('Backend API server loaded successfully.');
     } catch (e) {
-      log(`CRITICAL FAIL: ${e.message}`);
+      log(`BACKEND SERVER FAIL: ${e.message}`);
       log(`Stack: ${e.stack}`);
+    }
+
+    // ─── Load Polling Service (Background Scans) ───
+    try {
+      const pollingPath = path.join(appRoot, 'backend', 'services', 'polling.js');
+      log(`Loading polling service from: ${pollingPath}`);
+      require(pollingPath);
+      log('Polling service loaded successfully.');
+    } catch (e) {
+      log(`POLLING SERVICE FAIL (non-fatal): ${e.message}`);
+      // Polling is optional — the app can work without background scans
+    }
+
+    if (!serverLoaded) {
+      log('WARNING: Backend server failed to load. UI will show error state.');
       const { dialog } = require('electron');
       dialog.showErrorBox(
         'Sentinel Backend Error',
-        `Critical failure starting backend node.\n\nError: ${e.message}\n\nLog saved to: ${logPath}`
+        `The backend server could not start.\n\nCheck: ${logPath}\n\nThe app will still open but features may be limited.`
       );
     }
 

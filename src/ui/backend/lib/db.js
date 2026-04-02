@@ -1,9 +1,33 @@
 /**
- * Sentinel: Database Helper
+ * Sentinel: Database Helper (RESILIENT)
  * Handles persistence for repositories, scan logs, and configurations.
+ * 
+ * RESILIENCE: Handles ASAR unpacked path resolution for native modules.
+ * better-sqlite3 contains native .node addons that cannot load from
+ * inside an ASAR archive.
  */
 
-const Database = require('better-sqlite3');
+let Database;
+try {
+    Database = require('better-sqlite3');
+} catch (e) {
+    // In packaged mode, try loading from the unpacked directory explicitly
+    try {
+        const electron = require('electron');
+        const app = electron.app || (electron.remote && electron.remote.app);
+        if (app && app.isPackaged) {
+            const unpackedPath = app.getAppPath().replace('app.asar', 'app.asar.unpacked');
+            const nativePath = require('path').join(unpackedPath, 'node_modules', 'better-sqlite3');
+            Database = require(nativePath);
+            console.log('[DB] Loaded better-sqlite3 from unpacked path:', nativePath);
+        } else {
+            throw e; // Re-throw in dev mode
+        }
+    } catch (e2) {
+        console.error('[DB] CRITICAL: Could not load better-sqlite3:', e2.message);
+        throw e2;
+    }
+}
 const path = require('path');
 const fs = require('fs');
 const os = require('os');

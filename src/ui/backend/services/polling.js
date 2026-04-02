@@ -1,11 +1,30 @@
 /**
- * Sentinel: Background Polling Service
+ * Sentinel: Background Polling Service (RESILIENT)
+ * 
+ * RESILIENCE: node-notifier is loaded lazily and wrapped in try/catch
+ * because its vendored binaries (snoreToast.exe) may not be accessible
+ * when running from inside an ASAR package.
  */
 
 const db = require('../lib/db');
 const gh = require('../lib/gh_bridge');
 const { scanFile } = require('../scanner/index');
-const notifier = require('node-notifier');
+
+// Lazy-load node-notifier to prevent crash if binaries are inaccessible
+let notifier = null;
+try {
+    notifier = require('node-notifier');
+} catch (e) {
+    console.warn('[POLLING] node-notifier unavailable (packaged mode), desktop notifications disabled:', e.message);
+}
+
+function safeNotify(options) {
+    try {
+        if (notifier) notifier.notify(options);
+    } catch (e) {
+        console.warn('[POLLING] Notification failed:', e.message);
+    }
+}
 
 const POLLING_INTERVAL = 60 * 60 * 1000; // 1 hour
 
@@ -29,7 +48,7 @@ function checkAllRepos() {
                             db.addScanLog(repo.id, 'BACKGROUND_SCAN', 10, `Background alert for PR #${pr.number}`, results.alerts);
                             db.updateRepoStatus(repo.id, 'INFECTED');
 
-                            notifier.notify({
+                            safeNotify({
                                 title: '🕵️ Sentinel: Background Alert',
                                 message: `Suspicious activity detected in ${repo.github_full_name} (PR #${pr.number})`,
                                 sound: true

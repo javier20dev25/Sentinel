@@ -51,10 +51,12 @@
     ],
     "asarUnpack": [
       "backend/**/*",
+      "cli/**/*",
       "node_modules/better-sqlite3/**/*",
       "node_modules/bindings/**/*",
       "node_modules/file-uri-to-path/**/*",
-      "node_modules/prebuild-install/**/*"
+      "node_modules/prebuild-install/**/*",
+      "node_modules/node-notifier/**/*"
     ],
     "extraFiles": [
       {
