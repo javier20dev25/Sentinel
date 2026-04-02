@@ -127,8 +127,16 @@ class SentinelDB {
     }
 
     addRepository(localPath, githubName) {
+        if (githubName) {
+            const existing = this.db.prepare('SELECT id FROM repositories WHERE github_full_name = ?').get(githubName);
+            if (existing) return existing.id;
+        }
+        if (localPath) {
+            const existing = this.db.prepare('SELECT id FROM repositories WHERE local_path = ?').get(localPath);
+            if (existing) return existing.id;
+        }
         const pathVal = localPath || null;
-        const stmt = this.db.prepare('INSERT OR IGNORE INTO repositories (local_path, github_full_name) VALUES (?, ?)');
+        const stmt = this.db.prepare('INSERT INTO repositories (local_path, github_full_name) VALUES (?, ?)');
         const info = stmt.run(pathVal, githubName);
         return info.lastInsertRowid;
     }
@@ -151,14 +159,14 @@ class SentinelDB {
         if (!repoId || repoId === 'all') {
             return this.db.prepare('SELECT * FROM scan_logs ORDER BY created_at DESC').all();
         }
-        return this.db.prepare('SELECT * FROM scan_logs WHERE repo_id = ? ORDER BY created_at DESC').all();
+        return this.db.prepare('SELECT * FROM scan_logs WHERE repo_id = ? ORDER BY created_at DESC').all(repoId);
     }
 
     getPinnedLogs(repoId) {
         if (!repoId || repoId === 'all') {
             return this.db.prepare('SELECT * FROM scan_logs WHERE pinned = 1 ORDER BY created_at DESC').all();
         }
-        return this.db.prepare('SELECT * FROM scan_logs WHERE repo_id = ? AND pinned = 1 ORDER BY created_at DESC').all();
+        return this.db.prepare('SELECT * FROM scan_logs WHERE repo_id = ? AND pinned = 1 ORDER BY created_at DESC').all(repoId);
     }
 
     togglePin(logId, isPinned) {
