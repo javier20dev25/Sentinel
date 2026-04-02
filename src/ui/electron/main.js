@@ -12,6 +12,7 @@
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // Reliable dev detection
 const isDev = !app.isPackaged;
@@ -96,7 +97,10 @@ if (!isCliAction) {
       };
       loadDevURL();
     } else {
-      const indexPath = path.join(__dirname, '../dist/index.html');
+      const indexPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html')
+        : path.join(__dirname, '../../dist/index.html');
+        
       console.log(`🛡️ Loading UI from: ${indexPath}`);
       mainWindow.loadFile(indexPath).catch(err => {
         console.error("Failed to load index.html:", err);
@@ -110,24 +114,64 @@ if (!isCliAction) {
   }
 
   app.whenReady().then(async () => {
-    // Initialize backend services AFTER app is ready (avoids SQLite ABI issues)
-    console.log("Initializing Sentinel Backend...");
-    try {
-      // In packaged mode, native modules (better-sqlite3) live in asar.unpacked
-      let backendBase;
-      if (app.isPackaged) {
-        backendBase = app.getAppPath().replace('app.asar', 'app.asar.unpacked');
-      } else {
-        backendBase = path.join(__dirname, '..');
+    // ─── Backend Logging System (SAFE) ───
+    const logPath = path.join(app.getPath('userData'), 'sentinel-backend.log');
+    
+    // Log Rotation: Truncate if > 5MB
+    if (fs.existsSync(logPath)) {
+      const stats = fs.statSync(logPath);
+      if (stats.size > 5 * 1024 * 1024) {
+        fs.writeFileSync(logPath, `[${new Date().toISOString()}] Log truncated at startup (was ${Math.round(stats.size/1024/1024)}MB)\n`);
       }
-      const serverPath = path.join(backendBase, 'backend', 'server', 'index.js');
-      const pollingPath = path.join(backendBase, 'backend', 'services', 'polling.js');
-      console.log("Loading backend from:", serverPath);
+    }
+
+    const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    
+    // Store original console methods before any override
+    const originalConsoleLog = console.log.bind(console);
+    const originalConsoleError = console.error.bind(console);
+
+    function log(msg) {
+        const entry = `[${new Date().toISOString()}] ${msg}\n`;
+        logStream.write(entry);
+        originalConsoleLog(msg); // SAFE: Use original method to avoid recursion
+    }
+    
+    log('--- SENTINEL BACKEND STARTUP ---');
+    log(`App Path: ${app.getAppPath()}`);
+    log(`UserData Path: ${app.getPath('userData')}`);
+    log(`Is Packaged: ${app.isPackaged}`);
+
+    // Initialize backend services AFTER app is ready
+    try {
+      // Logic for path resolution in packaged mode:
+      const appRoot = app.isPackaged ? app.getAppPath() : path.join(__dirname, '..');
+      const serverPath = path.join(appRoot, 'backend', 'server', 'index.js');
+      const pollingPath = path.join(appRoot, 'backend', 'services', 'polling.js');
+
+      log(`Loading server from: ${serverPath}`);
+      
+      // Override console.log in the main process to capture backend requirements logs
+      console.log = (...args) => {
+          log(`[BACKEND] ${args.join(' ')}`);
+      };
+      console.error = (...args) => {
+          log(`[ERR] ${args.join(' ')}`);
+          originalConsoleError(...args);
+      };
+
       require(serverPath);
       require(pollingPath);
-      console.log("Sentinel backend running on port 3001.");
+      
+      log("Sentinel backend loaded successfully.");
     } catch (e) {
-      console.error("Backend failed to start:", e.message, e.stack);
+      log(`CRITICAL FAIL: ${e.message}`);
+      log(`Stack: ${e.stack}`);
+      const { dialog } = require('electron');
+      dialog.showErrorBox(
+        'Sentinel Backend Error',
+        `Critical failure starting backend node.\n\nError: ${e.message}\n\nLog saved to: ${logPath}`
+      );
     }
 
     // Wait for the backend server to be ready before showing the window
@@ -135,12 +179,17 @@ if (!isCliAction) {
       let attempts = 0;
       const check = () => {
         const req = require('http').get('http://127.0.0.1:3001/api/system/stats', (res) => {
+          log("Health check: Backend responded (OK)");
           resolve();
         });
-        req.on('error', () => {
+        req.on('error', (err) => {
           attempts++;
+          if (attempts % 5 === 0) log(`Health check attempt ${attempts} failed: ${err.message}`);
           if (attempts < 20) setTimeout(check, 250);
-          else resolve(); // Give up waiting, show window anyway
+          else {
+            log("Health check: Giving up after 20 attempts.");
+            resolve();
+          }
         });
         req.end();
       };

@@ -1,14 +1,14 @@
-# 🛡️ Sentinel: Local Security Guardian for GitHub Repositories
+# Sentinel: Local Security Guardian for GitHub Repositories
 
 Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
 
 ---
 
-## 🚀 Vision
+## Vision
 
 Sentinel acts as a persistent "Overwatch" for your development environment, scanning PRs, commits, and local configurations in real-time, all while keeping your security data entirely under your control.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: [React.js](https://reactjs.org/) + [Vite](https://vitejs.dev/) + [TailwindCSS](https://tailwindcss.com/)
 - **Desktop Wrapper**: [Electron](https://www.electronjs.org/)
@@ -17,7 +17,7 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
 - **CLI**: [Commander.js](https://github.com/tj/commander.js)
 - **GitHub Integration**: Official [GitHub CLI (gh)](https://cli.github.com/) bridge
 
-## ✨ Key Features
+## Key Features
 
 - **Real-time Scanning**: Monitors for secrets, vulnerabilities, and misconfigurations in local paths and remote repositories.
 - **Interactive Security Dashboard**: Manage all your linked repositories and security status from a sleek, glassmorphic UI.
@@ -25,7 +25,7 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
 - **Hardened Command Execution**: Sentinel uses strict whitelisting and direct argument arrays to prevent shell injection and path traversal attacks.
 - **GitHub Auth Integration**: Uses official OAuth via the GitHub CLI for secure access.
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
@@ -47,14 +47,14 @@ Sentinel acts as a persistent "Overwatch" for your development environment, scan
    npm run electron:dev
    ```
 
-## 🔐 Security Principles
+## Security Principles
 
 Sentinel was built with a "Security-First" approach:
 - **Zero Shell Interaction**: All system commands are executed via `execFileSync` with static argument arrays, remediating Common Weakness Enumeration issues like [CWE-78](https://cwe.mitre.org/data/definitions/78.html).
 - **In-Memory Sanitization**: All logs and outputs are sanitized before being displayed or stored.
 - **Local Sovereignty**: No scanning data ever leaves your machine; it stays in your local SQLite database.
 
-## 🤝 Contribution
+## Contribution
 
 Managed and maintained by [javier20dev25](https://github.com/javier20dev25).
 

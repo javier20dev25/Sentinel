@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Security Guardian</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb top-left"></div>
+        <div class="glow-orb bottom-right"></div>
+    </div>
+
+    <nav class="navbar glass">
+        <div class="logo">
+            <span class="logo-mark">S</span>
+            <span class="logo-text">Sentinel</span>
+        </div>
+        <div class="nav-links">
+            <a href="https://github.com/javier20dev25/Sentinel" target="_blank" rel="noopener noreferrer">Source Code</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="content glass">
+            <h1 class="gradient-text">Uncompromising Security for Local Repositories.</h1>
+            <p class="subtitle">Real-time vulnerability scanning, strict command whitelisting, and secret leakage prevention. Driven by a native Electron app and raw performance.</p>
+            <div class="cta-group">
+                <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn btn-primary" id="download-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download Sentinel
+                </a>
+            </div>
+            <div class="os-info">Available for Windows</div>
+        </div>
+
+        <div class="animation-container glass">
+            <canvas id="frog-canvas" width="400" height="400"></canvas>
+            <div class="caption">System Radar Active</div>
+        </div>
+    </main>
+
+    <script src="animation.js"></script>
+</body>
+</html>

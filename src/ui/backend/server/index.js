@@ -45,12 +45,21 @@ app.use((req, res, next) => {
 
 /** Check if all required tools are installed */
 app.get('/api/system/check', (req, res) => {
-    const git = gh.isGitInstalled();
-    const ghCli = gh.isGHInstalled();
-    res.json({
-        git: { installed: git.installed, version: git.version || null },
-        gh: { installed: ghCli.installed, version: ghCli.version || null },
-    });
+    try {
+        const git = gh.isGitInstalled();
+        const ghCli = gh.isGHInstalled();
+        res.json({
+            git: { installed: git.installed, version: git.version || null },
+            gh: { installed: ghCli.installed, version: ghCli.version || null },
+        });
+    } catch (e) {
+        console.error("❌ System check failed:", e.message);
+        res.status(500).json({ 
+            error: 'system_check_failed',
+            message: e.message,
+            stack: e.stack 
+        });
+    }
 });
 
 /** Get current system telemetry (RAM/CPU) */
@@ -190,7 +199,8 @@ app.get('/api/auth/status', (req, res) => {
         res.status(500).json({ 
             authenticated: false, 
             error: 'auth_check_internal_error',
-            details: sanitizeForLog(e.message)
+            message: e.message,
+            stack: e.stack
         });
     }
 });
@@ -287,7 +297,8 @@ app.get('/api/repositories', (req, res) => {
             
             // Calculate Security Posture Score (0-100)
             let score = 0;
-            const isHardenerActive = hardener.getSwitchesStatus().npmIgnoreScripts;
+            const hardenerStatus = hardener.getSwitchesStatus();
+            const isHardenerActive = hardenerStatus ? hardenerStatus.npmIgnoreScripts : false;
             const gHooksActive = gitHooks.isInstalled();
             
             // Rewards
@@ -299,7 +310,7 @@ app.get('/api/repositories', (req, res) => {
             if (criticalThreats.length === 0) score += 25;
             
             // "Secrets scanned recently" -> assuming true if recent scan exists
-            const lastScan = new Date(repo.last_scan_at);
+            const lastScan = new Date(repo.last_scan_at || 0);
             const hoursSinceScan = (Date.now() - lastScan.getTime()) / (1000 * 60 * 60);
             
             if (hoursSinceScan < 24) {
@@ -320,7 +331,12 @@ app.get('/api/repositories', (req, res) => {
         });
         res.json(reposWithLogs);
     } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
+        console.error("❌ Failed to list repositories:", e.message);
+        res.status(500).json({ 
+            error: 'list_repositories_failed', 
+            message: e.message,
+            stack: e.stack 
+        });
     }
 });
 

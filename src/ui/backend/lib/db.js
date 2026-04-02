@@ -8,27 +8,48 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// Determine a stable writable directory for the database.
-// In packaged Electron, process.cwd() may be System32 or any random folder.
 function getDataDir() {
+    let userDataPath;
     try {
-        // If running inside Electron, use its userData path
-        const { app } = require('electron');
-        return app.getPath('userData');
-    } catch {
-        // Fallback for standalone Node usage (CLI, dev, tests)
-        const dir = path.join(os.homedir(), '.sentinel');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        return dir;
+        // If running inside Electron main/renderer with app available
+        const electron = require('electron');
+        const app = electron.app || (electron.remote && electron.remote.app);
+        
+        if (app && typeof app.getPath === 'function') {
+            userDataPath = app.getPath('userData');
+            console.log(`[DB] Electron app.getPath('userData') found: ${userDataPath}`);
+        }
+    } catch (e) {
+        console.warn(`[DB] Electron context check failed: ${e.message}`);
     }
+
+    // Fallback logic
+    if (!userDataPath) {
+        // Standalone Node / CLI / Dev
+        userDataPath = path.join(os.homedir(), '.sentinel');
+        console.log(`[DB] Using standalone fallback path: ${userDataPath}`);
+    }
+
+    if (!fs.existsSync(userDataPath)) {
+        fs.mkdirSync(userDataPath, { recursive: true });
+    }
+    return userDataPath;
 }
 
-const DB_PATH = path.join(getDataDir(), 'sentinel.db');
+const dataDir = getDataDir();
+const DB_PATH = path.resolve(dataDir, 'sentinel.db');
+console.log(`[DB] Initializing database at: ${DB_PATH}`);
 
 class SentinelDB {
     constructor() {
-        this.db = new Database(DB_PATH);
-        this.init();
+        try {
+            this.db = new Database(DB_PATH);
+            console.log(`[DB] Database connection established.`);
+            this.init();
+        } catch (err) {
+            console.error(`[DB] FAILED TO OPEN DATABASE: ${err.message}`);
+            throw err;
+        }
     }
 
     init() {

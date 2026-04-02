@@ -225,10 +225,11 @@ class GitHubBridge {
                 'pr', 'list',
                 '--repo', repoFullName,
                 '--state', 'open',
+                '--limit', '20',
                 '--json', 'number,title,author,updatedAt'
             ], {
                 encoding: 'utf-8',
-                timeout: 30000
+                timeout: 10000
             });
             return JSON.parse(output);
         } catch (e) {
@@ -257,7 +258,8 @@ class GitHubBridge {
                 '--repo', repoFullName
             ], {
                 encoding: 'utf-8',
-                timeout: 30000
+                timeout: 15000,
+                maxBuffer: 5 * 1024 * 1024 // 5MB limit to prevent OOM
             });
         } catch (e) {
             console.error(`Error getting diff for PR #${prNumber}:`, sanitizeForLog(e.message));

@@ -5,22 +5,53 @@ const notifier = require('node-notifier');
 const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
-const isPackaged = process.execPath.toLowerCase().endsWith('sentinel.exe') || 
-                   !process.execPath.toLowerCase().includes('node.exe');
+// Detection logic for packaged vs development environment
+// If the command is called through a shim that uses node directly or the app's own executable
+const isPackaged = (process.argv0 && process.argv0.toLowerCase().endsWith('sentinel.exe')) || 
+                   process.execPath.toLowerCase().endsWith('sentinel.exe');
 
-// Manual scan logic
+// Fallback search for the executable relative to the CLI script (for unpacked/portable installs)
+const appExePath = isPackaged ? process.execPath : path.resolve(__dirname, '..', '..', '..', 'Sentinel.exe');
+const isPackagedFinal = isPackaged || fs.existsSync(appExePath);
+
+/**
+ * Helper to send navigation intents to the running UI via the backend.
+ */
+async function postIntent(payload = { action: 'scan-all' }) {
+    return new Promise((resolve, reject) => {
+        const req = http.request({
+            hostname: '127.0.0.1',
+            port: 3001,
+            path: '/api/ui/intent',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }, (res) => {
+            if (res.statusCode === 200) resolve();
+            else reject(new Error(`Server responded with status: ${res.statusCode}`));
+        });
+        
+        req.on('error', (e) => reject(e));
+        req.write(JSON.stringify(payload));
+        req.end();
+    });
+}
+
+/**
+ * Manual scan logic - fetches PR data and scans it using backend libs.
+ */
 function performManualScan(repoId, githubName) {
     const db = require('../backend/lib/db');
     const gh = require('../backend/lib/gh_bridge');
     const { scanFile } = require('../backend/scanner/index');
 
-    console.log(`Scanning open PRs for ${githubName}...`);
+    console.log(`🔍 Scanning open PRs for ${githubName}...`);
     const prs = gh.listPRs(githubName);
     let totalAlerts = 0;
 
     prs.forEach(pr => {
-        console.log(`Checking PR #${pr.number}: ${pr.title}`);
+        console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
         const diff = gh.getPRDiff(githubName, pr.number);
         if (diff) {
             const results = scanFile(`PR #${pr.number}.diff`, diff);
@@ -31,9 +62,8 @@ function performManualScan(repoId, githubName) {
                 
                 notifier.notify({
                     title: '🚨 Sentinel: Threat Detected!',
-                    message: `PR #${pr.number} in ${githubName} looks dangerous. Check the logs.`,
-                    sound: true,
-                    wait: true
+                    message: `PR #${pr.number} in ${githubName} looks dangerous.`,
+                    sound: true
                 });
             }
         }
@@ -41,13 +71,14 @@ function performManualScan(repoId, githubName) {
 
     if (totalAlerts === 0) {
         db.updateRepoStatus(repoId, 'SAFE');
-        console.log("  ✅ No threats found.");
+        console.log("   ✅ No threats found.");
     } else {
-        console.log(`  🚨 Found ${totalAlerts} potential threats!`);
+        console.log(`   🚨 Found ${totalAlerts} potential threats!`);
     }
 }
 
-// CLI Commands
+// ─── CLI COMMAND DEFINITIONS ───
+
 program
     .version('1.0.0')
     .description('Sentinel Security CLI');
@@ -59,7 +90,7 @@ program
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
         const fullPath = path.resolve(localPath);
-        console.log(`Linking repo at ${fullPath}...`);
+        console.log(`Linking repository at ${fullPath}...`);
         
         const info = gh.getRepoInfoLocal(fullPath);
         if (!info) {
@@ -99,7 +130,6 @@ program
         });
     });
 
-// CLI open UI command -> Send Intent
 program
     .command('open')
     .description('Open Sentinel UI and navigate to specific view')
@@ -112,75 +142,68 @@ program
             target: options.pr || options.repo || null
         };
 
-        const postIntent = () => {
-            return new Promise((resolve, reject) => {
-                const req = http.request({
-                    hostname: '127.0.0.1',
-                    port: 3001,
-                    path: '/api/ui/intent',
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                }, (res) => {
-                    resolve(res.statusCode);
-                });
-                req.on('error', reject);
-                req.write(JSON.stringify(intentPayload));
-                req.end();
+    try {
+        if (isPackagedFinal) {
+            console.log("📡 Sentinel Production detected. Launching app directly...");
+            const exeToSpawn = isPackaged ? process.execPath : appExePath;
+            
+            spawn(exeToSpawn, ['.'], { 
+                detached: true, 
+                stdio: 'ignore' 
             });
-        };
-
-        try {
-            await postIntent();
-            console.log("✅ Sentinel UI navigated successfully via SSE intent.");
-        } catch (e) {
-            if (e.code === 'ECONNREFUSED') {
-                console.log("📡 Sentinel UI not running. Launching app...");
-                
-                // Spawn UI detached
-                let cmd, args, spawnCwd;
-                
-                if (isPackaged) {
-                    cmd = process.execPath;
-                    args = [];
-                    spawnCwd = path.dirname(process.execPath);
-                } else {
-                    const isWindows = process.platform === 'win32';
-                    cmd = isWindows ? 'npm.cmd' : 'npm';
-                    args = ['run', 'electron:dev'];
-                    spawnCwd = path.resolve(__dirname, '..'); // Carpeta 'ui'
-                }
-                
-                console.log(`📡 Sentinel UI not running. Launching via: ${cmd}`);
-                
-                spawn(cmd, args, { 
-                    cwd: spawnCwd,
-                    detached: true, 
-                    stdio: 'ignore',
-                    windowsHide: true
-                }).unref();
-                
-                console.log("⏳ Starting background server & UI, please wait...");
-                
-                let retries = 0;
-                const retryInterval = setInterval(async () => {
-                    try {
-                        await postIntent();
-                        console.log("✅ Application launched and navigated.");
-                        clearInterval(retryInterval);
-                        process.exit(0);
-                    } catch (err) {
-                        retries++;
-                        if (retries > 15) {
-                            console.error("❌ Failed to reach UI within 15 seconds.");
-                            clearInterval(retryInterval);
-                            process.exit(1);
-                        }
-                    }
-                }, 1000);
-            } else {
-                console.error("❌ Error sending intent:", e.message);
-            }
+            
+            console.log("✅ Sentinel launched. Closing CLI.");
+            process.exit(0); // Direct exit for production
         }
+
+        // Development mode or backend intent logic
+        await postIntent(intentPayload);
+        console.log("✅ Sentinel UI navigated successfully via running backend.");
+    } catch (e) {
+        if (e.code === 'ECONNREFUSED' || e.message.includes('ECONNREFUSED')) {
+            console.log("📡 Sentinel UI not running. Launching dev environment...");
+            
+            // In development, launch via npm run electron:dev
+            const isWindows = process.platform === 'win32';
+            const cmd = isWindows ? 'npm.cmd' : 'npm';
+            const args = ['run', 'electron:dev'];
+            const spawnCwd = path.resolve(__dirname, '..'); // 'ui' directory
+            
+            console.log(`📡 Launching via: ${cmd}`);
+            
+            const uiProcess = spawn(cmd, args, { 
+                cwd: spawnCwd,
+                detached: true, 
+                stdio: 'ignore',
+                windowsHide: true,
+                shell: true 
+            });
+
+            uiProcess.unref();
+            
+            console.log("⏳ Waiting for UI to initialize (this may take a few seconds)...");
+            
+            let retries = 0;
+            const retryInterval = setInterval(async () => {
+                try {
+                    await postIntent(intentPayload);
+                    console.log("✅ Sentinel launched and navigated.");
+                    clearInterval(retryInterval);
+                    process.exit(0);
+                } catch (err) {
+                    retries++;
+                    if (retries > 20) {
+                        console.error("❌ Error: Sentinel UI did not become ready in time.");
+                        clearInterval(retryInterval);
+                        process.exit(1);
+                    }
+                }
+            }, 1000);
+        } else {
+            console.error("❌ Communication error:", e.message);
+            process.exit(1);
+        }
+    }
     });
 
 function run(args = process.argv) {
@@ -189,7 +212,6 @@ function run(args = process.argv) {
 
 module.exports = { run };
 
-// If run directly via node
 if (require.main === module) {
     run();
 }
