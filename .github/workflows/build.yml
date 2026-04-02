@@ -35,11 +35,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sentinel-exe
-          path: src/ui/dist-electron/*.exe
+          name: sentinel-builds
+          path: |
+            src/ui/dist-electron/*.exe
+            src/ui/dist-electron/*.zip
 
       - name: Create Auto Release
         uses: softprops/action-gh-release@v2
@@ -47,6 +49,21 @@ jobs:
         with:
           tag_name: "latest-build"
           name: "Sentinel Latest Build"
-          files: src/ui/dist-electron/*.exe
+          body: |
+            ## Download Options
+
+            | File | Description |
+            |---|---|
+            | **Sentinel Setup.exe** | Windows installer (may trigger SmartScreen - click "More info" then "Run anyway") |
+            | **Sentinel-win32-x64.zip** | Portable version - extract and run directly (recommended if installer is blocked) |
+
+            ### SmartScreen Warning
+            This app is not yet code-signed. Windows may show a security warning.
+            Click **"More info"** then **"Run anyway"** to proceed.
+
+            If **Smart App Control** blocks the installer, use the **portable .zip** version instead.
+          files: |
+            src/ui/dist-electron/*.exe
+            src/ui/dist-electron/*.zip
           draft: false
           prerelease: false

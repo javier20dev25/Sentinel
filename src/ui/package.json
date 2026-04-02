@@ -29,7 +29,13 @@
       "output": "dist-electron"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "public/sentinel-icon.png"
     },
     "nsis": {
