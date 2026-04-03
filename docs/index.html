@@ -77,10 +77,8 @@
             text-transform: uppercase; margin-bottom: 2rem;
         }
 
-        /* --- VERSION CARDS REDESIGN --- */
-        .comparison-wrapper { padding: 10rem 0; background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); }
+        .comparison-wrapper { padding: 10rem 0; background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); border-top: 1px solid var(--border); }
         .section-header { text-align: center; margin-bottom: 5rem; }
-        .section-header h2 { margin-bottom: 1rem; }
         
         .version-grid {
             display: grid;
@@ -124,17 +122,13 @@
         .v-footer .btn { width: 100%; justify-content: center; background: rgba(255,255,255,0.03); }
         .v-footer .btn.premium { background: var(--accent); color: #000; font-weight: 900; }
 
-        /* Animation */
         .reveal-on-scroll {
             opacity: 0; transform: translateY(30px);
             transition: opacity 1s cubic-bezier(0.23, 1, 0.32, 1), transform 1s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
 
-        /* --- VISUALS --- */
-        .canvas-wrapper {
-            height: 400px; position: relative; display: flex; justify-content: center; align-items: center;
-        }
+        .canvas-wrapper { height: 400px; position: relative; display: flex; justify-content: center; align-items: center; }
         #scene-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; }
         .pixel-fly { position: absolute; width: 12px; height: 12px; z-index: 100; pointer-events: none; }
         .fly-body { width: 8px; height: 8px; background: #fff; position: absolute; top: 2px; left: 2px; border-radius: 1px; }
@@ -147,6 +141,15 @@
         .radar-ring { stroke: var(--accent); stroke-width: 0.2px; fill: none; opacity: 0; transform-origin: center; animation: radar-ping 5s infinite cubic-bezier(0.1, 0.6, 0.4, 1); }
         .radar-ring.d2 { animation-delay: 2.5s; }
         @keyframes radar-ping { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(14); opacity: 0; } }
+
+        .features-wrapper { padding: 10rem 0; }
+        .feature-row { display: flex; flex-direction: column; gap: 4rem; margin-bottom: 12rem; align-items: center; }
+        @media (min-width: 1024px) {
+            .feature-row { flex-direction: row; justify-content: space-between; gap: 6rem; }
+            .feature-row:nth-child(even) { flex-direction: row-reverse; }
+            .feature-content { width: 50%; }
+            .feature-visual { width: 45%; }
+        }
 
         .terminal-block {
             background-color: #0c0c0e; border: 1px solid var(--border); border-radius: 1rem;
@@ -162,6 +165,12 @@
         .terminal-body { padding: 2rem; font-size: 0.85rem; line-height: 1.8; color: #fff; }
         .terminal-body p { margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: flex-start; gap: 0.75rem; }
 
+        .capabilities { margin: 10rem 0; border-top: 1px solid var(--border); padding-top: 8rem; }
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        table { width: 100%; border-collapse: collapse; background-color: var(--bg-card); text-align: left; }
+        th, td { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
+        th { background-color: var(--bg-surface); font-weight: 800; color: #fff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+        
         footer { text-align: center; padding: 10rem 0 5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
     </style>
 </head>
@@ -207,11 +216,9 @@
                         <div class="fly-body"></div>
                     </div>
                 </div>
-
                 <svg id="frog-svg" viewBox="0 0 16 16">
                     <circle cx="8" cy="9" r="1.5" class="radar-ring" />
                     <circle cx="8" cy="9" r="1.5" class="radar-ring d2" />
-                    <rect x="3" y="2" width="10" height="12" fill="transparent" />
                     <rect x="3" y="3" width="4" height="4" fill="var(--accent)" />
                     <rect x="9" y="3" width="4" height="4" fill="var(--accent)" />
                     <rect x="4" y="4" width="2" height="2" fill="#fff" />
@@ -231,88 +238,50 @@
             </div>
         </section>
 
-        <section id="versiones" class="comparison-wrapper reveal-on-scroll">
-            <div class="section-header">
-                <p class="tag" style="color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 1rem;">Opciones de Despliegue</p>
-                <h2>ELIGUE TU NIVEL DE PROTECCIÓN</h2>
-            </div>
-            
-            <div class="version-grid">
-                <!-- Installer -->
-                <div class="v-card">
-                    <div class="v-header">
-                        <i data-lucide="package" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
-                        <h3>Instalador</h3>
-                        <span class="tag" style="color: var(--text-muted);">Estándar Windows</span>
-                    </div>
-                    <p style="font-size: 0.9rem;">Experiencia nativa rápida. Ideal para monitoreo de repositorios vinculados.</p>
-                    <ul class="v-features">
-                        <li><i data-lucide="check"></i> Interfaz de usuario React</li>
-                        <li><i data-lucide="check"></i> Auditoría bajo demanda</li>
-                        <li><i data-lucide="check"></i> Historial de amenazas</li>
-                    </ul>
-                    <div class="v-footer">
-                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">Obtener .EXE</a>
-                    </div>
-                </div>
-
-                <!-- Web Local - PREMIUM -->
-                <div class="v-card premium">
-                    <div class="v-header">
-                        <i data-lucide="terminal" style="width: 40px; height: 40px; color: var(--accent); margin-bottom: 2rem;"></i>
-                        <h3>Local Web Edition</h3>
-                        <span class="tag">MÁXIMA POTENCIA</span>
-                    </div>
-                    <p style="font-size: 0.9rem; color: #fff;">Ejecución directa desde el origen. Acceso total a los sistemas de endurecimiento activo.</p>
-                    <ul class="v-features">
-                        <li><i data-lucide="shield-check" style="color: var(--accent);"></i> Project Shield (SPS)</li>
-                        <li><i data-lucide="history" style="color: var(--accent);"></i> Auditoría Global (SGA)</li>
-                        <li><i data-lucide="lock" style="color: var(--accent);"></i> Asset Guard (SAG)</li>
-                        <li><i data-lucide="radio" style="color: var(--accent);"></i> Servidor de Streaming</li>
-                        <li><i data-lucide="key" style="color: var(--accent);"></i> Token de Sesión Maestro</li>
-                    </ul>
-                    <div class="v-footer">
-                        <a href="https://github.com/javier20dev25/Sentinel" class="btn premium">VER GUÍA DE ORIGEN</a>
-                    </div>
-                </div>
-
-                <!-- Portable -->
-                <div class="v-card">
-                    <div class="v-header">
-                        <i data-lucide="hard-drive" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
-                        <h3>Portable</h3>
-                        <span class="tag" style="color: var(--text-muted);">Sin Instalación</span>
-                    </div>
-                    <p style="font-size: 0.9rem;">Ejecutable independiente. Sin registros en el sistema, total soberania de datos.</p>
-                    <ul class="v-features">
-                        <li><i data-lucide="check"></i> Cero huellas en SO</li>
-                        <li><i data-lucide="check"></i> Base de datos aislada</li>
-                        <li><i data-lucide="check"></i> CLI integrada</li>
-                    </ul>
-                    <div class="v-footer">
-                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">DESCARGAR .ZIP</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="capacidades" class="features-wrapper">
+        <!-- SECCIÓN DE CARACTERÍSTICAS RESTAURADA -->
+        <section class="features-wrapper">
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
-                    <i data-lucide="git-branch" style="color: var(--accent); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
-                    <h2>Auditoría de Pull Requests</h2>
-                    <p>Sentinel examina las propuestas externas antes de que el código malicioso se infiltre en componentes críticos. Un análisis estático profundo en el borde local.</p>
+                    <i data-lucide="git-pull-request" style="color: var(--accent); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
+                    <h2>Auditoría de Repositorios y Pull Requests</h2>
+                    <p>Sentinel se especializa en asegurar tus repositorios conectándose directamente a tu flujo de trabajo. Al conectar un repositorio, Sentinel examina las propuestas (Pull Requests) enviadas por otros desarrolladores.</p>
+                    <p>Este escaneo ocurre ANTES de que el dueño las visualice o descargue, previniendo que código malicioso se infiltre en componentes críticos.</p>
                 </div>
                 <div class="feature-visual">
                     <div class="terminal-block">
                         <div class="terminal-header">
                             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">sentinel-scan</span>
+                            <span class="title">sentinel-pr-monitor</span>
                         </div>
                         <div class="terminal-body mono">
-                            <p style="color: #94a3b8;">> Monitoreando: @main-repo</p>
-                            <p style="color: #ef4444;">AMENAZA DETECTADA: Off-path exfiltration in lib/auth.js</p>
-                            <p style="color: #34d399;">Acción: Bloqueo de subida preventiva.</p>
+                            <p style="color: #94a3b8;"><i data-lucide="radio" class="icon-inline"></i> Monitroreando: @main-core</p>
+                            <p><i data-lucide="search" class="icon-inline"></i> Nueva PR detectada (#112)...</p>
+                            <p style="color: #ef4444;"><i data-lucide="alert-octagon" class="icon-inline"></i> AMENAZA: Hook malicioso detectado.</p>
+                            <p style="color: #94a3b8;">Acción: Bloqueo preventivo de merge.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-row reveal-on-scroll">
+                <div class="feature-content">
+                    <i data-lucide="settings-2" style="color: var(--accent); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
+                    <h2>Análisis Inicial y Escaneos Configurables</h2>
+                    <p>Al enlazar un repositorio, Sentinel realiza un análisis profundo para verificar vulnerabilidades preexistentes o amenazas inyectadas, reportando de inmediato.</p>
+                    <p>Los intervalos de escaneo son configurables y pueden ejecutarse de forma on-demand en cualquier momento.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="terminal-block">
+                        <div class="terminal-header">
+                            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                            <span class="title">audit-config.json</span>
+                        </div>
+                        <div class="terminal-body mono">
+                            <p style="color: var(--accent);">{</p>
+                            <p style="padding-left: 1rem;">"initial_scan": true,</p>
+                            <p style="padding-left: 1rem;">"scan_interval_hours": 24,</p>
+                            <p style="padding-left: 1rem;">"deep_audit": true</p>
+                            <p style="color: var(--accent);">}</p>
                         </div>
                     </div>
                 </div>
@@ -321,21 +290,141 @@
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
                     <i data-lucide="shield-alert" style="color: var(--danger); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
-                    <h2>Interceptor de Paquetes</h2>
-                    <p>Detención proactiva de instalaciones peligrosas. Si un script de post-instalación intenta exfiltrar datos, Sentinel mata el proceso instantáneamente.</p>
+                    <h2>Bloqueo de Instalaciones Peligrosas</h2>
+                    <p>Sentinel detiene de forma proactiva instalaciones de paquetes (como npm) si detecta scripts maliciosos de post-instalación.</p>
+                    <p>Funciona como una barrera impenetrable que mata el proceso instantáneamente para proteger tu entorno local.</p>
                 </div>
                 <div class="feature-visual">
-                    <div class="terminal-block" style="border-color: rgba(239, 68, 68, 0.5);">
+                    <div class="terminal-block" style="border-color: rgba(239, 68, 68, 0.4);">
                         <div class="terminal-header">
                             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
                             <span class="title">npm install</span>
                         </div>
                         <div class="terminal-body mono">
-                            <p style="color: #ef4444;">[SENTINEL_INTERCEPT]</p>
-                            <p style="padding: 0.2rem 0.5rem; background: #ef4444; color: #fff; display: inline-block;">PROCESO TERMINADO (SIGKILL)</p>
+                            <p style="color: #ef4444; font-weight: 800;">[SENTINEL_INTERCEPT]</p>
+                            <p><i data-lucide="x-circle" class="icon-inline"></i> Firma maliciosa en react-dom-parser</p>
+                            <p style="background: #ef4444; color: #fff; padding: 0.2rem 0.5rem; display: inline-block;">PROCESO MATADO (SIGKILL)</p>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="feature-row reveal-on-scroll">
+                <div class="feature-content">
+                    <i data-lucide="lock" style="color: var(--accent); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
+                    <h2>Protección de Subida y Cuarentena</h2>
+                    <p>Durante el push hacia remotos, Sentinel inspecciona los paquetes. Si detecta secretos expuestos (AWS keys, .env) o archivos infectados, bloquea el push de inmediato.</p>
+                    <p>Los archivos sospechosos se mueven a una zona de cuarentena segura. El código inseguro nunca abandona tu máquina.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="terminal-block">
+                        <div class="terminal-header">
+                            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                            <span class="title">git push origin main</span>
+                        </div>
+                        <div class="terminal-body mono">
+                            <p style="color: #94a3b8;">> Enumerating objects...</p>
+                            <p style="color: var(--accent);">> Activando Pre-Push Hook...</p>
+                            <p style="color: #ef4444;"><i data-lucide="key" class="icon-inline"></i> SECRETO: AWS_KEY en config.js</p>
+                            <p style="background: #ef4444; color: #fff; padding: 0.2rem 0.5rem; display: inline-block;">PUSH RECHAZADO</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN DE VERSIONES RESTAURADA Y POTENCIADA -->
+        <section id="versiones" class="comparison-wrapper reveal-on-scroll">
+            <div class="section-header">
+                <p class="tag" style="color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 1rem;">Opciones de Despliegue</p>
+                <h2>ELIGIE TU NIVEL DE PROTECCIÓN</h2>
+            </div>
+            
+            <div class="version-grid">
+                <div class="v-card">
+                    <div class="v-header">
+                        <i data-lucide="package" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
+                        <h3>Instalador</h3>
+                        <span class="tag" style="color: var(--text-muted);">Estándar Windows</span>
+                    </div>
+                    <p style="font-size: 0.9rem;">Instalación nativa rápida para monitoreo básico.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="check"></i> Interfaz React Native-feeling</li>
+                        <li><i data-lucide="check"></i> Auditoría bajo demanda</li>
+                        <li><i data-lucide="check"></i> Historial de amenazas</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">Obtener .EXE</a>
+                    </div>
+                </div>
+
+                <div class="v-card premium">
+                    <div class="v-header">
+                        <i data-lucide="terminal" style="width: 40px; height: 40px; color: var(--accent); margin-bottom: 2rem;"></i>
+                        <h3>Local Web Edition</h3>
+                        <span class="tag">VERSIÓN MÁS POTENTE</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #fff;">Ejecución desde el servidor local. Acceso total a los sistemas de endurecimiento activo.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="shield-check" style="color: var(--accent);"></i> Project Shield (SPS)</li>
+                        <li><i data-lucide="history" style="color: var(--accent);"></i> Auditoría Global (SGA)</li>
+                        <li><i data-lucide="lock" style="color: var(--accent);"></i> Asset Guard (SAG)</li>
+                        <li><i data-lucide="check" style="color: var(--accent);"></i> Sin avisos de firma de SO</li>
+                        <li><i data-lucide="server" style="color: var(--accent);"></i> Control de proceso Backend</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel" class="btn premium">VER GUÍA DE ORIGEN</a>
+                    </div>
+                </div>
+
+                <div class="v-card">
+                    <div class="v-header">
+                        <i data-lucide="hard-drive" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
+                        <h3>Portable</h3>
+                        <span class="tag" style="color: var(--text-muted);">Sin Instalación</span>
+                    </div>
+                    <p style="font-size: 0.9rem;">Ejecutable independiente. Soberanía total de datos.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="check"></i> Cero registros en el SO</li>
+                        <li><i data-lucide="check"></i> Base de datos aislada</li>
+                        <li><i data-lucide="check"></i> CLI integrada portátil</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">DESCARGAR .ZIP</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="capacidades" class="capabilities reveal-on-scroll">
+            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">RESUMEN TÉCNICO</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sistema Core</th>
+                            <th>Descripción</th>
+                            <th>Local Web</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Auditoría SGA</td>
+                            <td class="text-muted">Registro inmutable de seguridad con trazabilidad de Git.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Project Shield (SPS)</td>
+                            <td class="text-muted">Hardening de entorno y análisis estático AST profundo.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Asset Guard (SAG)</td>
+                            <td class="text-muted">Bloqueo de push preventivo para llaves API y secretos.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
