@@ -14,6 +14,7 @@
     "sntl": "./cli/index.js"
   },
   "scripts": {
+    "sentinel": "node launcher.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
