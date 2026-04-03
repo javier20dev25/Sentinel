@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centinela - Seguridad Local</title>
+    <title>Sentinel | Security First Local Environment</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -219,9 +220,24 @@
             color: var(--emerald-dark);
             font-size: 0.65rem;
             font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
             text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Revelación por Scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -237,24 +253,24 @@
             
             <!-- TEXTO IZQUIERDA -->
             <div class="space-y-10 order-2 lg:order-1">
-                <h1 class="text-7xl md:text-8xl font-black leading-[0.85] tracking-tighter uppercase">
-                    PULSO <br>
-                    <span class="outline-text">ESMERALDA.</span>
+                <h1 class="text-7xl md:text-8xl font-black leading-[0.85] tracking-tighter uppercase reveal">
+                    SENTI<br>
+                    <span class="outline-text">NEL.</span>
                 </h1>
                 
-                <p class="text-2xl font-semibold leading-snug max-w-md">
-                    Tu sistema bajo vigilancia constante. Seguridad local, rápida y <span class="bg-emerald-400 px-2">transparente</span>.
+                <p class="text-2xl font-semibold leading-snug max-w-md reveal">
+                    Protección local impulsada por IA para desarrolladores que no se la juegan. Cero fugas.
                 </p>
 
-                <div class="terminal-code p-8 mono text-lg shadow-xl">
+                <div class="terminal-code p-8 mono text-lg shadow-xl reveal">
                     <p class="opacity-40 mb-2">// Iniciar escaneo</p>
                     <p class="typing"><span class="text-white">❯</span> sentinel --monitor</p>
                     <p class="text-emerald-300 animate-pulse mt-4">_ STATUS: PROTECTED</p>
                 </div>
 
-                <div class="flex flex-wrap gap-6">
-                    <button class="btn-action btn-glow px-10 py-5 font-black text-xl rounded-2xl">
-                        DESCARGAR CENTINELA
+                <div class="flex flex-wrap gap-6 reveal">
+                    <button class="btn-action btn-glow px-10 py-5 font-black text-xl rounded-2xl flex items-center gap-3">
+                        <i data-lucide="download"></i> DESCARGAR SENTINEL
                     </button>
                 </div>
             </div>
@@ -312,44 +328,45 @@
 
                 </div>
             </div>
-        </div>
-
-        <!-- Cards Inferiores -->
+         <!-- Cards Inferiores -->
         <div class="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="hero-card p-10 text-center space-y-2">
+            <div class="hero-card p-10 text-center space-y-4 reveal">
+                <div class="flex justify-center"><i data-lucide="zap" class="w-12 h-12 text-emerald-600"></i></div>
                 <span class="text-5xl font-black block">FAST</span>
-                <p class="font-bold opacity-70">Escaneo ultra-rápido</p>
+                <p class="font-bold opacity-70">Escaneo ultra-rápido en ms</p>
             </div>
-            <div class="hero-card p-10 text-center space-y-2 bg-emerald-400">
+            <div class="hero-card p-10 text-center space-y-4 bg-emerald-400 reveal">
+                <div class="flex justify-center"><i data-lucide="database" class="w-12 h-12 text-emerald-800"></i></div>
                 <span class="text-5xl font-black block">LOCAL</span>
-                <p class="font-bold opacity-70">Privacidad total</p>
+                <p class="font-bold opacity-70">Tus datos nunca salen del PC</p>
             </div>
-            <div class="hero-card p-10 text-center space-y-2">
+            <div class="hero-card p-10 text-center space-y-4 reveal">
+                <div class="flex justify-center"><i data-lucide="shield-check" class="w-12 h-12 text-emerald-600"></i></div>
                 <span class="text-5xl font-black block">SAFE</span>
-                <p class="font-bold opacity-70">Zero vulnerabilidades</p>
+                <p class="font-bold opacity-70">Auditoría continua de PRs</p>
             </div>
         </div>
 
         <!-- Secciones de Información Detallada -->
-        <section class="mt-40 space-y-32 mb-40">
+        <section class="mt-40 space-y-40 mb-40">
             
             <!-- Característica 1 -->
-            <div id="funcionalidades" class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div id="funcionalidades" class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
                 <div class="space-y-6">
-                    <span class="badge">Protección Activa</span>
-                    <h2 class="text-5xl font-black uppercase italic leading-none">Búsqueda de <br> Secretos.</h2>
+                    <span class="badge"><i data-lucide="key"></i> Protección Activa</span>
+                    <h2 class="text-6xl font-black uppercase italic leading-none">Búsqueda de <br> Secretos.</h2>
                     <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Sentinel escanea en tiempo real cada archivo que guardas. Detecta automáticamente <strong>API Keys, JWTs, contraseñas y tokens</strong> de AWS, Stripe, GitHub y más de 100 servicios antes de que lleguen a tu repositorio.
+                        Sentinel escanea en tiempo real cada cambio en tu código. Detecta automáticamente <strong>API Keys, JWTs y tokens</strong> antes de que lleguen a GitHub. Si intentas subir algo infectado, Sentinel bloquea el paquete.
                     </p>
-                    <ul class="space-y-3 font-bold text-emerald-900/60">
+                    <ul class="space-y-4 font-bold text-emerald-900/60">
                         <li class="flex items-center gap-3">
-                            <div class="w-2 h-2 bg-emerald-500"></div> Escaneo de patrones heurísticos
+                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Bloqueo de Git Commit (Bouncer)
                         </li>
                         <li class="flex items-center gap-3">
-                            <div class="w-2 h-2 bg-emerald-500"></div> Validación de entropía alta
+                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Cuarentena automática de código sospechoso
                         </li>
                         <li class="flex items-center gap-3">
-                            <div class="w-2 h-2 bg-emerald-500"></div> Alertas sonoras y visuales
+                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Escaneo de entropía en variables
                         </li>
                     </ul>
                 </div>
@@ -358,7 +375,7 @@
                         <p class="text-emerald-700 font-bold">SENTINEL SCAN REPORT</p>
                         <hr class="border-emerald-900/20">
                         <p>> Checking config.json...</p>
-                        <p class="bg-red-500 text-white px-2 inline-block font-bold">‼ CRITICAL THREAT DETECTED</p>
+                        <p class="bg-red-500 text-white px-2 inline-block font-bold">!! CRITICAL THREAT DETECTED</p>
                         <p class="text-red-600">Rule: AWS_ACCESS_KEY_ID_FOUND</p>
                         <p class="text-red-600">Line: 12, Column: 24</p>
                         <p>> Action: Local Block Successful.</p>
@@ -366,23 +383,54 @@
                 </div>
             </div>
 
-            <!-- Característica 2 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                <div class="order-2 lg:order-1 info-card bg-emerald-900 flex items-center justify-center min-h-[300px]">
-                     <!-- Visualización de Bóveda Local -->
-                     <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--frog-green)" stroke-width="1.5">
-                        <rect x="3" y="11" width="18" height="11" rx="2" stroke-dasharray="2 2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        <circle cx="12" cy="16" r="1.5" fill="var(--frog-green)" />
-                        <path d="M12 17.5v1.5" />
-                     </svg>
-                     <p class="absolute mt-32 text-emerald-300 mono text-xs uppercase tracking-widest opacity-50">Local Encrypted SQLite</p>
+            <!-- Característica 2: CONTRIBUCIONES -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
+                <div class="order-2 lg:order-1 info-card bg-emerald-900 flex flex-col items-center justify-center min-h-[350px] p-12 text-center text-white relative">
+                     <i data-lucide="git-pull-request" class="w-20 h-20 text-emerald-300 mb-6"></i>
+                      <div class="space-y-2 mono text-[10px] opacity-60">
+                        <p class="text-emerald-400 font-bold uppercase">Sentinel PR Monitor</p>
+                        <hr class="border-emerald-600 w-full mb-4">
+                        <p>> Fetching PR #42 from @dev_external</p>
+                        <p>> Analyzing 4 changed files...</p>
+                        <p class="bg-red-500 text-white px-2 inline-block">!! ALERT: Malicious postinstall Hook</p>
+                      </div>
                 </div>
                 <div class="order-1 lg:order-2 space-y-6">
-                    <span class="badge">Arquitectura Local</span>
+                    <span class="badge"><i data-lucide="github"></i> Auditoría de PRs</span>
+                    <h2 class="text-6xl font-black uppercase italic leading-none">Scout antes <br> del Merge.</h2>
+                    <p class="text-lg font-medium opacity-80 leading-relaxed">
+                        Sentinel vigila tu repositorio y conecta con la <strong>GitHub CLI</strong> para escanear propuestas (Pull Requests) de terceros **antes** de que las descargues o las fusiones. Evita troyanos y scripts maliciosos.
+                    </p>
+                    <div class="flex gap-4">
+                        <div class="flex-1 p-4 border-2 border-emerald-900 rounded-xl">
+                            <p class="text-xs font-black uppercase mb-1">Escaneo Inicial</p>
+                            <p class="text-sm opacity-60">Auditamos todo tu repo al conectarlo por primera vez.</p>
+                        </div>
+                        <div class="flex-1 p-4 border-2 border-emerald-900 rounded-xl">
+                            <p class="text-xs font-black uppercase mb-1">Configurable</p>
+                            <p class="text-sm opacity-60">Tú decides los periodos y la intensidad del escaneo.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Característica 3 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
+                <div class="order-2 lg:order-1 info-card bg-white flex items-center justify-center min-h-[300px]">
+                     <!-- Visualización de Bóveda Local -->
+                     <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-dark)" stroke-width="1.5">
+                        <rect x="3" y="11" width="18" height="11" rx="2" stroke-dasharray="2 2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <circle cx="12" cy="16" r="1.5" fill="var(--emerald-dark)" />
+                        <path d="M12 17.5v1.5" />
+                     </svg>
+                     <p class="absolute mt-32 text-emerald-900 mono text-xs uppercase tracking-widest opacity-50">Local Encrypted Engine</p>
+                </div>
+                <div class="order-1 lg:order-2 space-y-6">
+                    <span class="badge"><i data-lucide="eye-off"></i> Arquitectura Local</span>
                     <h2 class="text-5xl font-black uppercase italic leading-none">Cero Nube, <br> Cero Fugas.</h2>
                     <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Tus archivos nunca abandonan tu máquina. Sentinel procesa todo usando un motor <strong>SQLite local</strong> y un puente cifrado con la <strong>GitHub CLI</strong>. Tus credenciales están seguras en el llavero de tu sistema operativo, no en nuestros servidores.
+                        Incluso si no ves las alertas, Sentinel puede detener instalaciones peligrosas de npm. Funciona como un <strong>bouncer</strong> para tus repositorios, aislando el malware antes de que ejecute scripts de ataque.
                     </p>
                     <div class="p-6 bg-emerald-900 text-emerald-300 rounded-xl font-bold italic">
                         "Privacidad no es una característica, es el cimiento de Sentinel."
@@ -391,7 +439,7 @@
             </div>
 
             <!-- EXPLICACIÓN SENCILLA: Bouncer -->
-            <div class="hero-card p-12 bg-emerald-50">
+            <div class="hero-card p-12 bg-emerald-50 reveal">
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div class="space-y-6">
                         <h3 class="text-4xl font-black uppercase">¿Cómo me protege?</h3>
@@ -399,32 +447,32 @@
                             Imagina que Sentinel es un <strong>portero de seguridad</strong> en la puerta de tu PC. 
                         </p>
                         <p class="text-lg leading-relaxed">
-                            Antes de que cualquier cambio salga hacia GitHub, el portero revisa tu "maleta" (tu código). Si encuentra una llave olvidada o una puerta abierta (un secreto), detiene la salida en seco y te avisa para que lo arregles. Así, nunca nada peligroso llega a internet.
+                            Antes de que cualquier cambio salga hacia GitHub o antes de que algo entre a tu máquina, el portero revisa tu código. Si encuentra algo sospechoso, detiene la operación y manda el archivo a <strong>cuarentena</strong> hasta que tú decidas.
                         </p>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <span class="text-3xl">🛡️</span>
-                            <p class="font-black text-xs mt-2 uppercase">Bloqueo Preventivo</p>
+                            <i data-lucide="shield-off" class="mx-auto w-8 h-8 text-emerald-700"></i>
+                            <p class="font-black text-[10px] mt-2 uppercase">Bloqueo Preventivo</p>
                         </div>
                         <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <span class="text-3xl">🔍</span>
-                            <p class="font-black text-xs mt-2 uppercase">Escaneo de Diffs</p>
+                            <i data-lucide="file-search" class="mx-auto w-8 h-8 text-emerald-700"></i>
+                            <p class="font-black text-[10px] mt-2 uppercase">Escaneo de Diffs</p>
                         </div>
                         <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <span class="text-3xl">⚓</span>
-                            <p class="font-black text-xs mt-2 uppercase">Git Hooks Nativos</p>
+                            <i data-lucide="anchor" class="mx-auto w-8 h-8 text-emerald-700"></i>
+                            <p class="font-black text-[10px] mt-2 uppercase">Git Hooks Nativos</p>
                         </div>
                         <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <span class="text-3xl">🤖</span>
-                            <p class="font-black text-xs mt-2 uppercase">IA Vigilante</p>
+                             <i data-lucide="brain" class="mx-auto w-8 h-8 text-emerald-700"></i>
+                            <p class="font-black text-[10px] mt-2 uppercase">IA Vigilante</p>
                         </div>
                     </div>
                  </div>
             </div>
 
             <!-- TABLA DE FUNCIONALIDADES -->
-            <div class="space-y-12">
+            <div class="space-y-12 reveal">
                 <h3 class="text-4xl font-black uppercase text-center">Capacidades del Sistema</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full border-4 border-emerald-900 text-left font-bold">
@@ -437,27 +485,37 @@
                         </thead>
                         <tbody class="text-sm">
                             <tr class="border-t-4 border-emerald-900">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Scan de Secretos</td>
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
+                                     <i data-lucide="eye" class="w-4 h-4"></i> Scan de Secretos
+                                </td>
                                 <td class="p-4">Detección de AWS keys, tokens y credenciales en tiempo real.</td>
                                 <td class="p-4 text-center text-emerald-600">ACTIVO</td>
                             </tr>
                             <tr class="border-t-4 border-emerald-900 bg-white">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Auditoría de PRs</td>
-                                <td class="p-4">Revisión de cambios en Pull Requests antes de ser integrados.</td>
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
+                                    <i data-lucide="user-check" class="w-4 h-4"></i> Auditoría PR
+                                </td>
+                                <td class="p-4">Revisión profunda de Pull Requests antes de ser integrados.</td>
                                 <td class="p-4 text-center text-emerald-600">ACTIVO</td>
                             </tr>
                             <tr class="border-t-4 border-emerald-900">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Prevención de Malware</td>
-                                <td class="p-4">Bloqueo de scripts post-install peligrosos en paquetes npm.</td>
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
+                                    <i data-lucide="bug" class="w-4 h-4"></i> Anti-Malware
+                                </td>
+                                <td class="p-4">Bloqueo de scripts post-install y troyanos en dependencias.</td>
                                 <td class="p-4 text-center text-emerald-600">ACTIVO</td>
                             </tr>
                             <tr class="border-t-4 border-emerald-900 bg-white">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Consola Interactiva</td>
-                                <td class="p-4">Dashboard en tiempo real para visualizar amenazas y logs.</td>
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
+                                    <i data-lucide="terminal" class="w-4 h-4"></i> CLI Bridge
+                                </td>
+                                <td class="p-4">Conexión cifrada local-first con la GitHub CLI oficial.</td>
                                 <td class="p-4 text-center text-emerald-600">ACTIVO</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
                 </div>
             </div>
 
@@ -477,120 +535,68 @@
         </section>
     </main>
 
-    <script>
-        const fly = document.getElementById('fly');
-        const container = document.getElementById('scene-container');
-        const tongue = document.getElementById('frog-tongue');
-        const mouth = document.getElementById('frog-mouth');
-        
-        let angle = 0;
-        let isCaptured = false;
-        let flyX, flyY;
-
-        // Movimiento de la mosca (Errático)
-        function updateFly() {
-            if (isCaptured) return;
-
-            angle += 0.08;
-            // Trayectoria dinámica más amplia y errática
-            flyX = (container.clientWidth / 2) + Math.cos(angle * 1.5) * 180 + Math.sin(angle * 4) * 40;
-            flyY = (container.clientHeight / 2) + Math.sin(angle * 0.9) * 120 - 40;
-
-            fly.style.left = flyX + 'px';
-            fly.style.top = flyY + 'px';
-
-            requestAnimationFrame(updateFly);
-        }
-
-        // Lógica de ataque mejorada
-        async function huntCycle() {
-            // Esperar entre capturas
-            await new Promise(r => setTimeout(r, 4000 + Math.random() * 3000));
-            
-            isCaptured = false;
-            fly.style.opacity = '1';
-
-            // Tiempo de acecho antes del disparo
-            await new Promise(r => setTimeout(r, 1500));
-
-            const rect = container.getBoundingClientRect();
-            const flyRect = fly.getBoundingClientRect();
-            
-            // Calculamos posición de la boca relativa al contenedor
-            const mouthRect = mouth.getBoundingClientRect();
-            const startX = mouthRect.left - rect.left + (mouthRect.width / 2);
-            const startY = mouthRect.top - rect.top + (mouthRect.height / 2);
-
-            // Destino de la mosca
-            const targetX = flyRect.left - rect.left + (flyRect.width / 2);
-            const targetY = flyRect.top - rect.top + (flyRect.height / 2);
-
-            const dx = targetX - startX;
-            const dy = targetY - startY;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            const rot = Math.atan2(dy, dx) * (180/Math.PI);
-
-            // ACTIVAR LENGUA
-            tongue.style.display = 'block';
-            tongue.style.left = startX + 'px';
-            tongue.style.top = startY + 'px';
-            tongue.style.transform = `rotate(${rot}deg)`;
-            
-            // Disparo instantáneo
-            requestAnimationFrame(() => {
-                tongue.style.width = `${dist}px`;
-                tongue.style.transition = 'width 0.1s cubic-bezier(0, 0, 0.2, 1)';
-            });
-
-            setTimeout(() => {
-                isCaptured = true;
-                fly.style.opacity = '0';
-                
-                // Retraer
-                tongue.style.width = '0';
-                tongue.style.transition = 'width 0.15s ease-in';
-                
-                setTimeout(() => {
-                    tongue.style.display = 'none';
-                    huntCycle(); // Repetir
-                }, 200);
-            }, 110);
-        }
-
         window.onload = () => {
+            lucide.createIcons();
             updateFly();
             huntCycle();
             startBubbles();
+            initReveal();
         };
+
+        // --- SISTEMA DE SONIDOS ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playCatchSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // --- REVELACIÓN POR SCROLL ---
+        function initReveal() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        }
 
         // --- SISTEMA DE BURBUJAS PIXELADAS ---
         function startBubbles() {
             setInterval(() => {
                 if (Math.random() > 0.7) createBubble();
-            }, 600);
+            }, 500);
         }
 
         function createBubble() {
             const bubble = document.createElement('div');
             bubble.className = 'pixel-bubble';
             
-            // Posición inicial aleatoria
             const x = Math.random() * window.innerWidth;
-            const y = window.innerHeight + 20;
             bubble.style.left = x + 'px';
-            bubble.style.bottom = '-20px';
+            bubble.style.bottom = '-30px';
             
-            // Tamaño aleatorio
-            const size = 10 + Math.random() * 15;
+            // TAMAÑOS VARIABLES
+            const size = 6 + Math.random() * 24; 
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
 
             document.body.appendChild(bubble);
 
-            // Animación de flotar
-            let currentY = -20;
-            const speed = 1 + Math.random() * 2;
-            const drift = (Math.random() - 0.5) * 2;
+            let currentY = -30;
+            const speed = 0.8 + Math.random() * 2;
+            const drift = (Math.random() - 0.5) * 1.5;
             let currentX = x;
 
             const floatInterval = setInterval(() => {
@@ -599,13 +605,70 @@
                 bubble.style.bottom = currentY + 'px';
                 bubble.style.left = currentX + 'px';
 
-                // Reventar en algún momento o si sale de la pantalla
-                if (currentY > window.innerHeight * 0.8 || Math.random() > 0.99) {
+                if (currentY > window.innerHeight * 0.85 || Math.random() > 0.995) {
                     clearInterval(floatInterval);
                     bubble.classList.add('bubble-pop');
                     setTimeout(() => bubble.remove(), 200);
                 }
             }, 16);
+        }
+
+        // Movimiento de la mosca (Errático Continuo)
+        function updateFly() {
+            if (isCaptured) {
+                // Sincronizar con la punta de la lengua
+                const tongueRect = tongue.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                flyX = (tongueRect.left + (tongueRect.width * 0.8)) - containerRect.left;
+                flyY = tongueRect.top - containerRect.top;
+            } else {
+                angle += 0.08;
+                flyX = (container.clientWidth / 2) + Math.cos(angle * 1.5) * 180 + Math.sin(angle * 4) * 40;
+                flyY = (container.clientHeight / 2) + Math.sin(angle * 0.9) * 120 - 40;
+            }
+
+            fly.style.left = flyX + 'px';
+            fly.style.top = flyY + 'px';
+            requestAnimationFrame(updateFly);
+        }
+
+        async function huntCycle() {
+            while(true) {
+                await new Promise(r => setTimeout(r, 3000 + Math.random() * 4000));
+                
+                // Disparo
+                const rect = container.getBoundingClientRect();
+                const mouthRect = mouth.getBoundingClientRect();
+                const startX = mouthRect.left - rect.left + (mouthRect.width / 2);
+                const startY = mouthRect.top - rect.top + (mouthRect.height / 2);
+
+                const dx = flyX - startX;
+                const dy = flyY - startY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const rot = Math.atan2(dy, dx) * (180/Math.PI);
+
+                tongue.style.display = 'block';
+                tongue.style.left = startX + 'px';
+                tongue.style.top = startY + 'px';
+                tongue.style.transform = `rotate(${rot}deg)`;
+                
+                tongue.style.transition = 'width 0.1s cubic-bezier(0, 0, 0.2, 1.2)';
+                tongue.style.width = `${dist}px`;
+
+                // Captura
+                setTimeout(() => {
+                    isCaptured = true;
+                    playCatchSound();
+                    tongue.style.transition = 'width 0.35s ease-in';
+                    tongue.style.width = '0px';
+                    
+                    setTimeout(() => {
+                        isCaptured = false;
+                        tongue.style.display = 'none';
+                        angle = Math.random() * 10; // Reset position
+                    }, 400);
+                }, 120);
+            }
         }
     </script>
 </body>
