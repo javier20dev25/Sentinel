@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentinel | Security Engine</title>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #f0fdf4;
-            --bg-card: #ffffff;
-            --bg-surface: #dcfce7;
-            --text-main: #064e3b;
-            --text-muted: #047857;
+            --bg-main: #0a0a0c;
+            --bg-card: #141417;
+            --bg-surface: #1a1a1f;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
             --accent: #10b981;
             --accent-dark: #059669;
-            --accent-glow: rgba(16, 185, 129, 0.2);
+            --accent-glow: rgba(16, 185, 129, 0.15);
             --danger: #ef4444;
-            --border: #bbf7d0;
+            --border: #27272a;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,147 +38,131 @@
             width: 100%;
         }
 
-        h1, h2, h3 { font-weight: 900; letter-spacing: -0.02em; }
-        h1 { font-size: clamp(3rem, 8vw, 5.5rem); line-height: 1.1; margin-bottom: 1.5rem; color: var(--text-main); }
-        h2 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 2rem; color: var(--text-main); }
+        h1, h2, h3 { font-weight: 900; letter-spacing: -0.03em; }
+        h1 { font-size: clamp(3rem, 8vw, 5.5rem); line-height: 1; margin-bottom: 1.5rem; }
+        h2 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 2rem; }
         p { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-
-        .text-accent { color: var(--accent-dark); font-weight:bold; }
-        .text-danger { color: #b91c1c; font-weight:bold; }
-        .text-muted { color: var(--text-muted); }
 
         nav {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 2rem 0; border-bottom: 2px solid var(--border); margin-bottom: 4rem;
+            padding: 2.5rem 0; border-bottom: 1px solid var(--border); margin-bottom: 4rem;
         }
-        .logo { font-weight: 900; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-links { display: flex; gap: 2rem; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; }
-        .nav-links a { color: var(--text-main); text-decoration: none; transition: color 0.2s; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-links a:hover { color: var(--accent-dark); }
+        .logo { font-weight: 900; font-size: 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: #fff; }
+        .nav-links { display: flex; gap: 2.5rem; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; transition: all 0.2s; }
+        .nav-links a:hover { color: var(--accent); }
 
-        .btn-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn-group { display: flex; gap: 1.25rem; flex-wrap: wrap; }
         .btn {
-            background-color: transparent; color: var(--text-main);
-            border: 2px solid var(--text-main); padding: 1rem 2rem; border-radius: 0.75rem;
-            font-weight: 800; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+            background-color: transparent; color: #fff;
+            border: 1px solid var(--border); padding: 0.85rem 1.75rem; border-radius: 0.5rem;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex; align-items: center; gap: 0.75rem; text-decoration: none;
-            box-shadow: 4px 4px 0px var(--text-main);
         }
-        .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--text-main); }
-        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--text-main); }
-        .btn-primary { background-color: var(--accent); color: #fff; border-color: var(--text-main); }
+        .btn:hover { background: rgba(255,255,255,0.05); border-color: var(--text-muted); transform: translateY(-2px); }
+        .btn-primary { background-color: var(--accent); border-color: var(--accent); color: #000; }
+        .btn-primary:hover { background-color: #34d399; border-color: #34d399; box-shadow: 0 0 20px var(--accent-glow); }
 
         .hero {
-            display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center;
-            min-height: 70vh; padding-bottom: 4rem;
+            display: grid; grid-template-columns: 1fr; gap: 6rem; align-items: center;
+            min-height: 80vh; padding-bottom: 6rem;
         }
         @media (min-width: 1024px) { .hero { grid-template-columns: 1.1fr 0.9fr; } }
-        .hero-content p { font-size: 1.25rem; max-width: 500px; margin-bottom: 3rem; }
+        .hero-content p { font-size: 1.25rem; max-width: 550px; margin-bottom: 3.5rem; }
 
-        .warning-banner {
-            background-color: #fef3c7;
-            border: 2px solid #f59e0b;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            margin-bottom: 3rem;
-            font-size: 0.95rem;
-            color: #92400e;
-            box-shadow: 4px 4px 0px #f59e0b;
+        .badge-dev {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;
+            background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 2rem; font-size: 0.75rem; font-weight: 800; color: #f59e0b;
+            text-transform: uppercase; margin-bottom: 2rem;
         }
 
-        .comparison-section {
-            padding: 6rem 0;
-            background: #fff;
-            margin: 4rem 0;
-            border-radius: 1.5rem;
-            border: 4px solid var(--text-main);
-            box-shadow: 12px 12px 0px var(--bg-surface);
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .version-card {
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 2px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .version-card.featured {
-            background-color: var(--bg-surface);
-            border-color: var(--accent);
-            box-shadow: 6px 6px 0px var(--accent);
-        }
-
-        .version-card h3 { margin-bottom: 1rem; }
-        .version-card ul { list-style: none; margin: 1.5rem 0; }
-        .version-card ul li { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-
-        .canvas-wrapper {
-            background: transparent;
-            height: 350px;
-            position: relative;
-            overflow: visible;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #scene-container {
-            width: 100%; height: 100%; position: absolute;
-            top: 0; left: 0; pointer-events: none;
-        }
-
-        .pixel-fly { position: absolute; width: 12px; height: 12px; z-index: 100; pointer-events: none; }
-        .fly-body { width: 8px; height: 8px; background: #1e293b; position: absolute; top: 2px; left: 2px; border-radius: 2px; }
-        .wing { width: 6px; height: 6px; background: rgba(148, 163, 184, 0.8); position: absolute; animation: flap 0.03s infinite alternate; }
-        .wing-left { left: -2px; top: -2px; transform-origin: right bottom; }
-        .wing-right { right: -2px; top: -2px; transform-origin: left bottom; }
-
-        @keyframes flap { from { transform: rotate(10deg) scaleY(1); } to { transform: rotate(-45deg) scaleY(0.4); } }
-        #frog-tongue { position: absolute; height: 4px; background-color: var(--danger); transform-origin: left center; z-index: 10; display: none; transition: width 0.15s ease-out; }
-        #frog-svg { z-index: 5; width: 15rem; height: 15rem; filter: drop-shadow(0 15px 15px rgba(16, 185, 129, 0.2)); shape-rendering: crispEdges; overflow: visible; }
-        .radar-ring { stroke: var(--accent); stroke-width: 0.3px; fill: none; opacity: 0; transform-origin: center; animation: radar-ping 4s infinite cubic-bezier(0.1, 0.6, 0.4, 1); }
-        .radar-ring.d2 { animation-delay: 2s; }
-        @keyframes radar-ping { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(12); opacity: 0; } }
-
-        .features-wrapper { padding: 8rem 0; border-top: 2px solid var(--border); }
-        .feature-row { display: flex; flex-direction: column; gap: 4rem; margin-bottom: 10rem; align-items: center; }
-        @media (min-width: 1024px) {
-            .feature-row { flex-direction: row; justify-content: space-between; }
-            .feature-row:nth-child(even) { flex-direction: row-reverse; }
-            .feature-content { width: 50%; padding-right: 2rem; }
-            .feature-row:nth-child(even) .feature-content { padding-right: 0; padding-left: 2rem; }
-            .feature-visual { width: 45%; }
-        }
-
-        .terminal-block { background-color: #0f172a; border: 4px solid var(--text-main); border-radius: 0.75rem; overflow: hidden; box-shadow: 12px 12px 0px rgba(6, 78, 59, 0.2); }
-        .terminal-header { background-color: #1e293b; padding: 0.75rem 1rem; border-bottom: 2px solid var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
-        .terminal-header .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; }
-        .dot.red { background-color: #ef4444; } .dot.yellow { background-color: #f59e0b; } .dot.green { background-color: #10b981; }
-        .terminal-header .title { margin-left: auto; margin-right: auto; color: #94a3b8; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
-        .terminal-body { padding: 1.5rem; font-size: 0.9rem; line-height: 1.8; color: #f8fafc; }
-        .terminal-body p { margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: flex-start; gap: 0.5rem; }
-        .icon-inline { width: 16px; height: 16px; flex-shrink: 0; margin-top: 4px; }
-
-        .capabilities { margin: 8rem 0; }
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 0.75rem; border: 4px solid var(--text-main); box-shadow: 8px 8px 0 rgba(6, 78, 59, 0.1); }
-        table { width: 100%; border-collapse: collapse; background-color: var(--bg-card); text-align: left; }
-        th, td { padding: 1.25rem 1.5rem; border-bottom: 2px solid var(--border); }
-        th { background-color: var(--bg-surface); font-weight: 900; color: var(--text-main); text-transform: uppercase; }
+        /* --- VERSION CARDS REDESIGN --- */
+        .comparison-wrapper { padding: 10rem 0; background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); }
+        .section-header { text-align: center; margin-bottom: 5rem; }
+        .section-header h2 { margin-bottom: 1rem; }
         
+        .version-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+            margin-top: 4rem;
+        }
+
+        .v-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .v-card:hover { border-color: var(--text-muted); transform: translateY(-10px); }
+
+        .v-card.premium {
+            background: linear-gradient(135deg, #141417 0%, #0d2a20 100%);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .v-card.premium:hover { border-color: var(--accent); }
+
+        .v-header { margin-bottom: 2rem; }
+        .v-header h3 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+        .v-header .tag { font-size: 0.75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; }
+
+        .v-features { list-style: none; margin: 2rem 0; flex-grow: 1; }
+        .v-features li { 
+            margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-muted); 
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .v-features li i { color: var(--accent); width: 18px; height: 18px; opacity: 0.6; }
+
+        .v-footer { margin-top: 2rem; }
+        .v-footer .btn { width: 100%; justify-content: center; background: rgba(255,255,255,0.03); }
+        .v-footer .btn.premium { background: var(--accent); color: #000; font-weight: 900; }
+
+        /* Animation */
         .reveal-on-scroll {
-            opacity: 0; transform: translateY(40px);
-            transition: opacity 0.8s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 1s cubic-bezier(0.23, 1, 0.32, 1), transform 1s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
 
-        footer { text-align: center; padding: 8rem 0 4rem; border-top: 2px solid var(--border); }
+        /* --- VISUALS --- */
+        .canvas-wrapper {
+            height: 400px; position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        #scene-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; }
+        .pixel-fly { position: absolute; width: 12px; height: 12px; z-index: 100; pointer-events: none; }
+        .fly-body { width: 8px; height: 8px; background: #fff; position: absolute; top: 2px; left: 2px; border-radius: 1px; }
+        .wing { width: 6px; height: 6px; background: rgba(255,255,255, 0.4); position: absolute; animation: flap 0.03s infinite alternate; }
+        .wing-left { left: -2px; top: -2px; transform-origin: right bottom; }
+        .wing-right { right: -2px; top: -2px; transform-origin: left bottom; }
+        @keyframes flap { from { transform: rotate(10deg) scaleY(1); } to { transform: rotate(-45deg) scaleY(0.4); } }
+        #frog-tongue { position: absolute; height: 4px; background-color: var(--danger); transform-origin: left center; z-index: 10; display: none; transition: width 0.15s ease-out; }
+        #frog-svg { z-index: 5; width: 18rem; height: 18rem; filter: drop-shadow(0 0 30px var(--accent-glow)); shape-rendering: crispEdges; overflow: visible; }
+        .radar-ring { stroke: var(--accent); stroke-width: 0.2px; fill: none; opacity: 0; transform-origin: center; animation: radar-ping 5s infinite cubic-bezier(0.1, 0.6, 0.4, 1); }
+        .radar-ring.d2 { animation-delay: 2.5s; }
+        @keyframes radar-ping { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(14); opacity: 0; } }
+
+        .terminal-block {
+            background-color: #0c0c0e; border: 1px solid var(--border); border-radius: 1rem;
+            overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+        }
+        .terminal-header {
+            background-color: #141417; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 0.65rem;
+        }
+        .terminal-header .dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0.5; }
+        .dot.red { background-color: #ef4444; } .dot.yellow { background-color: #f59e0b; } .dot.green { background-color: #10b981; }
+        .terminal-header .title { margin-left: auto; margin-right: auto; color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
+        .terminal-body { padding: 2rem; font-size: 0.85rem; line-height: 1.8; color: #fff; }
+        .terminal-body p { margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: flex-start; gap: 0.75rem; }
+
+        footer { text-align: center; padding: 10rem 0 5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -186,31 +170,30 @@
     <div class="container">
         <nav>
             <div class="logo">
-                <i data-lucide="shield-check" style="color: var(--accent-dark); width: 28px; height: 28px;"></i>
+                <i data-lucide="shield" style="color: var(--accent); width: 32px; height: 32px;"></i>
                 SENTINEL
             </div>
             <div class="nav-links">
-                <a href="#capacidades">Capacidades</a>
-                <a href="#comparativa">Versiones</a>
-                <a href="https://github.com/javier20dev25/Sentinel" target="_blank">
-                    <i data-lucide="github" class="w-5 h-5"></i> Repositorio
-                </a>
+                <a href="#capacidades">Características</a>
+                <a href="#versiones">Distribución</a>
+                <a href="https://github.com/javier20dev25/Sentinel" target="_blank">Repo</a>
             </div>
         </nav>
 
         <section class="hero">
             <div class="hero-content">
-                <div class="warning-banner reveal-on-scroll">
-                    <strong>Nota de Desarrollo:</strong> Sentinel es un proyecto en fase activa por un único desarrollador. Estamos trabajando para corregir errores y añadir funciones en la CLI, la App y la versión Web.
+                <div class="badge-dev reveal-on-scroll">
+                    <i data-lucide="wrench" class="w-3 h-3"></i>
+                    Fase de Desarrollo Activo | Proyecto Individual
                 </div>
-                <h1 class="reveal-on-scroll">MÁXIMA SEGURIDAD LOCAL</h1>
-                <p class="reveal-on-scroll">Motor de seguridad profundo e inspección de repositorios. Identifica amenazas antes de que comprometan tu entorno.</p>
+                <h1 class="reveal-on-scroll">GUARDAS LOCAL DE INTEGRIDAD</h1>
+                <p class="reveal-on-scroll">Sentinel opera de forma autónoma en tu entorno local. Un guardián persistente de baja huella y máxima potencia de escaneo estático.</p>
                 <div class="reveal-on-scroll btn-group">
-                    <a href="#comparativa" class="btn btn-primary">
-                        <i data-lucide="zap"></i> Ver Versión Web Local (Recomendado)
+                    <a href="#versiones" class="btn btn-primary">
+                        <i data-lucide="zap"></i> Obtener Local Web Edition
                     </a>
-                    <a href="https://github.com/javier20dev25/Sentinel/releases/latest" target="_blank" class="btn">
-                        <i data-lucide="download"></i> Descargar Aplicación
+                    <a href="https://github.com/javier20dev25/Sentinel/releases" target="_blank" class="btn">
+                        Descargas Estándar
                     </a>
                 </div>
             </div>
@@ -224,9 +207,11 @@
                         <div class="fly-body"></div>
                     </div>
                 </div>
-                <svg id="frog-svg" viewBox="0 0 16 16" style="overflow: visible;">
+
+                <svg id="frog-svg" viewBox="0 0 16 16">
                     <circle cx="8" cy="9" r="1.5" class="radar-ring" />
                     <circle cx="8" cy="9" r="1.5" class="radar-ring d2" />
+                    <rect x="3" y="2" width="10" height="12" fill="transparent" />
                     <rect x="3" y="3" width="4" height="4" fill="var(--accent)" />
                     <rect x="9" y="3" width="4" height="4" fill="var(--accent)" />
                     <rect x="4" y="4" width="2" height="2" fill="#fff" />
@@ -246,57 +231,88 @@
             </div>
         </section>
 
-        <section id="comparativa" class="comparison-section reveal-on-scroll">
-            <div class="container">
-                <h2 style="text-align: center;">ELEGIR VERSIÓN DE SENTINEL</h2>
-                <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem;">Sentinel está evolucionando hacia una "Local Web Edition" más potente que permite el control total del servidor y funciones avanzadas de seguridad.</p>
-                
-                <div class="grid-3">
-                    <div class="version-card">
-                        <h3>Instalador / Portable</h3>
-                        <p>Ideal para usuarios que buscan rapidez y simplicidad en Windows.</p>
-                        <ul>
-                            <li><i data-lucide="check-circle" class="w-4 h-4 text-accent"></i> Monitoreo básico</li>
-                            <li><i data-lucide="check-circle" class="w-4 h-4 text-accent"></i> Interfaz de usuario estándar</li>
-                            <li><i data-lucide="x-circle" class="w-4 h-4 text-danger"></i> Sin Auditoría Global SGA</li>
-                            <li><i data-lucide="x-circle" class="w-4 h-4 text-danger"></i> Sin Project Shield (SPS)</li>
-                        </ul>
-                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn" style="width: 100%; justify-content: center;">Bajar .exe / .zip</a>
+        <section id="versiones" class="comparison-wrapper reveal-on-scroll">
+            <div class="section-header">
+                <p class="tag" style="color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 1rem;">Opciones de Despliegue</p>
+                <h2>ELIGUE TU NIVEL DE PROTECCIÓN</h2>
+            </div>
+            
+            <div class="version-grid">
+                <!-- Installer -->
+                <div class="v-card">
+                    <div class="v-header">
+                        <i data-lucide="package" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
+                        <h3>Instalador</h3>
+                        <span class="tag" style="color: var(--text-muted);">Estándar Windows</span>
                     </div>
+                    <p style="font-size: 0.9rem;">Experiencia nativa rápida. Ideal para monitoreo de repositorios vinculados.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="check"></i> Interfaz de usuario React</li>
+                        <li><i data-lucide="check"></i> Auditoría bajo demanda</li>
+                        <li><i data-lucide="check"></i> Historial de amenazas</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">Obtener .EXE</a>
+                    </div>
+                </div>
 
-                    <div class="version-card featured">
-                        <h3>Versión Web Local</h3>
-                        <div class="badge" style="margin-bottom: 1rem;">La más potente</div>
-                        <p>Ejecución desde el servidor local. Incluye todas las herramientas proactivas de Sentinel.</p>
-                        <ul>
-                            <li><i data-lucide="shield-plus" class="w-4 h-4 text-accent"></i> Auditoría Global (SGA)</li>
-                            <li><i data-lucide="shield-check" class="w-4 h-4 text-accent"></i> Project Shield (SPS)</li>
-                            <li><i data-lucide="lock" class="w-4 h-4 text-accent"></i> Asset Guard (SAG)</li>
-                            <li><i data-lucide="server" class="w-4 h-4 text-accent"></i> Control de Servidor en Vivo</li>
-                            <li><i data-lucide="check" class="w-4 h-4 text-accent"></i> Sin avisos de firma de SO</li>
-                        </ul>
-                        <a href="https://github.com/javier20dev25/Sentinel" class="btn btn-primary" style="width: 100%; justify-content: center;">Ver Guía en GitHub</a>
+                <!-- Web Local - PREMIUM -->
+                <div class="v-card premium">
+                    <div class="v-header">
+                        <i data-lucide="terminal" style="width: 40px; height: 40px; color: var(--accent); margin-bottom: 2rem;"></i>
+                        <h3>Local Web Edition</h3>
+                        <span class="tag">MÁXIMA POTENCIA</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #fff;">Ejecución directa desde el origen. Acceso total a los sistemas de endurecimiento activo.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="shield-check" style="color: var(--accent);"></i> Project Shield (SPS)</li>
+                        <li><i data-lucide="history" style="color: var(--accent);"></i> Auditoría Global (SGA)</li>
+                        <li><i data-lucide="lock" style="color: var(--accent);"></i> Asset Guard (SAG)</li>
+                        <li><i data-lucide="radio" style="color: var(--accent);"></i> Servidor de Streaming</li>
+                        <li><i data-lucide="key" style="color: var(--accent);"></i> Token de Sesión Maestro</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel" class="btn premium">VER GUÍA DE ORIGEN</a>
+                    </div>
+                </div>
+
+                <!-- Portable -->
+                <div class="v-card">
+                    <div class="v-header">
+                        <i data-lucide="hard-drive" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 2rem;"></i>
+                        <h3>Portable</h3>
+                        <span class="tag" style="color: var(--text-muted);">Sin Instalación</span>
+                    </div>
+                    <p style="font-size: 0.9rem;">Ejecutable independiente. Sin registros en el sistema, total soberania de datos.</p>
+                    <ul class="v-features">
+                        <li><i data-lucide="check"></i> Cero huellas en SO</li>
+                        <li><i data-lucide="check"></i> Base de datos aislada</li>
+                        <li><i data-lucide="check"></i> CLI integrada</li>
+                    </ul>
+                    <div class="v-footer">
+                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn">DESCARGAR .ZIP</a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="features-wrapper">
+        <section id="capacidades" class="features-wrapper">
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
-                    <i data-lucide="git-pull-request" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
-                    <h2>Auditoría de Repositorios y Pull Requests</h2>
-                    <p>Sentinel se especializa en asegurar tus repositorios conectándose directamente a tu flujo de trabajo. Examina las propuestas (PRs) antes de que el código malicioso se infiltre en componentes críticos.</p>
+                    <i data-lucide="git-branch" style="color: var(--accent); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
+                    <h2>Auditoría de Pull Requests</h2>
+                    <p>Sentinel examina las propuestas externas antes de que el código malicioso se infiltre en componentes críticos. Un análisis estático profundo en el borde local.</p>
                 </div>
                 <div class="feature-visual">
                     <div class="terminal-block">
                         <div class="terminal-header">
                             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">sentinel-pr-monitor</span>
+                            <span class="title">sentinel-scan</span>
                         </div>
                         <div class="terminal-body mono">
-                            <p style="color: #94a3b8;"><i data-lucide="radio" class="icon-inline"></i> Monitoreando repositorio: @usuario/core-app</p>
-                            <p style="color: #ef4444;"><i data-lucide="alert-octagon" class="icon-inline"></i> PELIGRO: Hook malicioso detectado en dependencias.</p>
+                            <p style="color: #94a3b8;">> Monitoreando: @main-repo</p>
+                            <p style="color: #ef4444;">AMENAZA DETECTADA: Off-path exfiltration in lib/auth.js</p>
+                            <p style="color: #34d399;">Acción: Bloqueo de subida preventiva.</p>
                         </div>
                     </div>
                 </div>
@@ -304,59 +320,30 @@
 
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
-                    <i data-lucide="shield-alert" style="color: var(--danger); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
-                    <h2>Bloqueo de Instalaciones Peligrosas</h2>
-                    <p>Sentinel detiene de forma proactiva cualquier instalación de paquetes (como npm) si detecta scripts maliciosos, cancelando el proceso para proteger tu máquina local.</p>
+                    <i data-lucide="shield-alert" style="color: var(--danger); width: 48px; height: 48px; margin-bottom: 2rem;"></i>
+                    <h2>Interceptor de Paquetes</h2>
+                    <p>Detención proactiva de instalaciones peligrosas. Si un script de post-instalación intenta exfiltrar datos, Sentinel mata el proceso instantáneamente.</p>
                 </div>
                 <div class="feature-visual">
-                    <div class="terminal-block" style="border-color: #ef4444;">
+                    <div class="terminal-block" style="border-color: rgba(239, 68, 68, 0.5);">
                         <div class="terminal-header">
                             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">npm install --force</span>
+                            <span class="title">npm install</span>
                         </div>
                         <div class="terminal-body mono">
-                            <p style="color: #ef4444; font-weight: 800;">[SENTINEL INTERCEPT]</p>
-                            <p style="color: white; background: #ef4444; padding: 0.2rem 0.5rem; display: inline-block;">PROCESO MATADO (SIGKILL)</p>
+                            <p style="color: #ef4444;">[SENTINEL_INTERCEPT]</p>
+                            <p style="padding: 0.2rem 0.5rem; background: #ef4444; color: #fff; display: inline-block;">PROCESO TERMINADO (SIGKILL)</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="capacidades" class="capabilities reveal-on-scroll">
-            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 3rem;">RESUMEN DE CAPACIDADES</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sistema Central</th>
-                            <th>Descripción Técnica</th>
-                            <th>Local Web</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Auditoría SGA</td>
-                            <td class="text-muted">Registro inmutable de eventos de seguridad con trazabilidad de Git.</td>
-                            <td><i data-lucide="check" class="text-accent"></i></td>
-                        </tr>
-                        <tr>
-                            <td>Project Shield (SPS)</td>
-                            <td class="text-muted">Hardening de entorno (.npmrc) y análisis estático AST profundo.</td>
-                            <td><i data-lucide="check" class="text-accent"></i></td>
-                        </tr>
-                        <tr>
-                            <td>Asset Guard (SAG)</td>
-                            <td class="text-muted">Bloqueo de push para prevenir fuga de activos prohibidos como llaves API.</td>
-                            <td><i data-lucide="check" class="text-accent"></i></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
         <footer>
-            <p>&copy; 2026 Sentinel Security Engine. Desarrollado por javier20dev25.</p>
+            <div class="reveal-on-scroll">
+                <p>Sentinel Security Engine 2026 | Desarrollado por javier20dev25</p>
+                <p style="margin-top: 1rem; opacity: 0.5;">Nota: Todas las interfaces y comandos están sujetos a mejoras continuas.</p>
+            </div>
         </footer>
     </div>
 
@@ -367,7 +354,7 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) entry.target.classList.add('is-visible');
                 });
-            }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+            }, { threshold: 0.1 });
             document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
         }
 
@@ -395,30 +382,30 @@
                 const dx = (flyX + containerRect.left) - (svgRect.left + svgRect.width/2);
                 const dy = (flyY + containerRect.top) - (svgRect.top + svgRect.height/2);
                 const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-                frogPupilTracking.style.transform = `translate(${(dx/dist)*0.8}px, ${(dy/dist)*0.8}px)`;
+                frogPupilTracking.style.transform = `translate(${(dx/dist)*1.2}px, ${(dy/dist)*1.2}px)`;
             }
             requestAnimationFrame(updateFlyPosition);
         }
 
         async function frogHuntCycle() {
             while(true) {
-                await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
+                await new Promise(r => setTimeout(r, 4000 + Math.random() * 2000));
                 if (flyElement.style.display === 'none') continue;
                 isCaptured = true;
                 const fRect = flyElement.getBoundingClientRect(), svgRect = frogSvg.getBoundingClientRect(), cRect = containerElem.getBoundingClientRect();
-                const startX = (svgRect.left + svgRect.width / 2) - cRect.left, startY = (svgRect.top + svgRect.height * 0.6) - cRect.top;
+                const startX = (svgRect.left + svgRect.width / 2) - cRect.left, startY = (svgRect.top + svgRect.height * 0.5) - cRect.top;
                 const tx = fRect.left - cRect.left + 6, ty = fRect.top - cRect.top + 6;
                 const dx = tx - startX, dy = ty - startY, dist = Math.sqrt(dx*dx + dy*dy), rot = Math.atan2(dy, dx) * (180/Math.PI);
                 mouthClosed.style.display = 'none'; mouthOpen.style.display = 'block';
                 tongue.style.display = 'block'; tongue.style.left = startX + 'px'; tongue.style.top = startY + 'px';
                 tongue.style.transform = `rotate(${rot}deg)`;
                 tongue.style.width = '0px'; setTimeout(() => tongue.style.width = `${dist}px`, 10);
-                await new Promise(r => setTimeout(r, 160)); 
+                await new Promise(r => setTimeout(r, 120)); 
                 flyElement.style.display = 'none'; 
-                tongue.style.width = '0px'; await new Promise(r => setTimeout(r, 160)); 
+                tongue.style.width = '0px'; await new Promise(r => setTimeout(r, 120)); 
                 tongue.style.display = 'none'; mouthOpen.style.display = 'none'; mouthClosed.style.display = 'block';
                 frogPupilTracking.style.transform = `translate(0px, 0px)`;
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 4000));
                 flyElement.style.display = 'block'; isCaptured = false;
             }
         }
