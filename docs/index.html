@@ -259,32 +259,37 @@
 
                 <!-- Frog SVG with 16x16 pixel coordinate system -->
                 <svg id="frog-svg" viewBox="0 0 16 16" style="overflow: visible;">
-                    <!-- Efecto Escaneo de la rana (origen exacto al medio del cuerpo de la rana = cx 8.5 cy 9.5) -->
-                    <circle cx="8.5" cy="9.5" r="1.5" class="radar-ring" />
-                    <circle cx="8.5" cy="9.5" r="1.5" class="radar-ring d2" />
+                    <!-- Efecto Escaneo de la rana (origen exacto al medio del cuerpo de la rana = cx 8 cy 9) -->
+                    <circle cx="8" cy="9" r="1.5" class="radar-ring" />
+                    <circle cx="8" cy="9" r="1.5" class="radar-ring d2" />
 
-                    <!-- Ojos / Protuberancias arriba -->
-                    <rect x="4" y="5" width="2" height="2" fill="var(--accent)" />
-                    <rect x="11" y="5" width="2" height="2" fill="var(--accent)" />
+                    <!-- Ojos grandes (bloques de 4x4) -->
+                    <rect x="3" y="3" width="4" height="4" fill="var(--accent)" />
+                    <rect x="9" y="3" width="4" height="4" fill="var(--accent)" />
                     
+                    <!-- Esclerótica (blanco de los ojos, bloque de 2x2 para dar espacio a la pupila) -->
+                    <rect x="4" y="4" width="2" height="2" fill="#fff" />
+                    <rect x="10" y="4" width="2" height="2" fill="#fff" />
+                    
+                    <!-- Grupo móvil para las pupilas -->
                     <g id="frog-pupil-tracking">
                         <g id="frog-pupils">
-                            <rect x="4.5" y="5.5" width="1" height="1" fill="#000" />
-                            <rect x="11.5" y="5.5" width="1" height="1" fill="#000" />
+                            <!-- Pupilas (1x1) acomodadas por defecto al centro del blanco -->
+                            <rect x="4.5" y="4.5" width="1" height="1" fill="#000" />
+                            <rect x="10.5" y="4.5" width="1" height="1" fill="#000" />
                         </g>
                     </g>
 
                     <!-- Cuerpo Base achatado -->
-                    <rect x="3" y="7" width="11" height="5" fill="var(--accent)" />
+                    <rect x="2" y="7" width="12" height="6" fill="var(--accent)" />
+
+                    <!-- Patas traseras (para dar forma a la pose típica) -->
+                    <rect x="0" y="11" width="3" height="2" fill="var(--accent-dark)" />
+                    <rect x="13" y="11" width="3" height="2" fill="var(--accent-dark)" />
 
                     <!-- Boca de la rana -->
-                    <!-- Se muestra en estado de reposo -->
-                    <rect id="mouth-closed" x="5" y="10" width="7" height="1" fill="#064e3b" />
-                    
-                    <!-- Se muestra al tirar la lengua -->
-                    <rect id="mouth-open" x="5" y="9" width="7" height="3" fill="#064e3b" style="display:none;" />
-
-                    <!-- OTRAS PATAS ELIMINADAS (No más patas verdes oscuras) -->
+                    <rect id="mouth-closed" x="5" y="10" width="6" height="1" fill="#064e3b" />
+                    <rect id="mouth-open" x="5" y="9" width="6" height="3" fill="#064e3b" style="display:none;" />
                 </svg>
             </div>
         </section>
