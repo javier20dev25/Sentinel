@@ -397,30 +397,65 @@
         </section>
 
         <section id="capacidades" class="capabilities reveal-on-scroll">
-            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">RESUMEN TÉCNICO</h3>
+            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">CAPACIDADES TÉCNICAS COMPLETAS</h3>
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
                             <th>Sistema Core</th>
                             <th>Descripción</th>
-                            <th>Local Web</th>
+                            <th>Web Local</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Auditoría SGA</td>
-                            <td class="text-muted">Registro inmutable de seguridad con trazabilidad de Git.</td>
+                            <td>Auditoría Global (SGA)</td>
+                            <td class="text-muted">Registro inmutable de eventos de seguridad con trazabilidad directa a GitHub commits.</td>
                             <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                         <tr>
                             <td>Project Shield (SPS)</td>
-                            <td class="text-muted">Hardening de entorno y análisis estático AST profundo.</td>
+                            <td class="text-muted">Hardening automático del entorno local (.npmrc) e inspección estática AST profunda.</td>
                             <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                         <tr>
                             <td>Asset Guard (SAG)</td>
-                            <td class="text-muted">Bloqueo de push preventivo para llaves API y secretos.</td>
+                            <td class="text-muted">Interceptor de Git Push para bloqueo preventivo de llaves API, secretos y activos prohibidos.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Análisis Inicial Profundo</td>
+                            <td class="text-muted">Escaneo exhaustivo del historial de repositorios al vincularlos por primera vez.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Monitoreo de PRs Externas</td>
+                            <td class="text-muted">Supervisión en tiempo real de Pull Requests entrantes antes de interacción local.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Bloqueo de Ejecución (NPM)</td>
+                            <td class="text-muted">Terminación de procesos si se detecta malware en scripts de post-instalación de paquetes.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Zona de Cuarentena Segura</td>
+                            <td class="text-muted">Aislamiento automático de archivos sospechosos detectados durante el pre-push.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Intervalos Configurables</td>
+                            <td class="text-muted">Personalización completa de la frecuencia de escaneo y auditoría persistente.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Identidad Maestro (JWT)</td>
+                            <td class="text-muted">Gestión de sesiones endurecidas con Bcrypt y tokens JWT para acceso al backend.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
+                        </tr>
+                        <tr>
+                            <td>Control Remoto Backend</td>
+                            <td class="text-muted">Capacidad de apagado remoto (Shutdown) del proceso servidor desde el dashboard.</td>
                             <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                     </tbody>
@@ -482,7 +517,7 @@
                 if (flyElement.style.display === 'none') continue;
                 isCaptured = true;
                 const fRect = flyElement.getBoundingClientRect(), svgRect = frogSvg.getBoundingClientRect(), cRect = containerElem.getBoundingClientRect();
-                const startX = (svgRect.left + svgRect.width / 2) - cRect.left, startY = (svgRect.top + svgRect.height * 0.5) - cRect.top;
+                const startX = (svgRect.left + svgRect.width / 2) - cRect.left, startY = (svgRect.top + svgRect.height * 0.7) - cRect.top;
                 const tx = fRect.left - cRect.left + 6, ty = fRect.top - cRect.top + 6;
                 const dx = tx - startX, dy = ty - startY, dist = Math.sqrt(dx*dx + dy*dy), rot = Math.atan2(dy, dx) * (180/Math.PI);
                 mouthClosed.style.display = 'none'; mouthOpen.style.display = 'block';
