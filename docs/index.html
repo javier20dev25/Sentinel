@@ -3,38 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel | Security First Local Environment</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sentinel | Local Security IA</title>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* El verde exacto de la rana */
             --frog-green: #4ade80;
             --emerald-dark: #065f46;
-            --emerald-bg: #f0fdf4; /* Un tono muy claro del verde para el fondo */
+            --emerald-bg: #f0fdf4;
+            --white: #ffffff;
+            --red-alert: #f43f5e;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background-color: var(--emerald-bg);
             color: var(--emerald-dark);
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow-x: hidden;
+            line-height: 1.5;
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) { body { padding: 4rem; } }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
         }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* --- ESCENA RANA Y MOSCA --- */
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 2rem;
+            margin-bottom: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+        nav a { text-decoration: none; color: inherit; transition: color 0.2s; }
+        nav a:hover { color: var(--frog-green); }
+
+        /* --- HERO SECTION --- */
+        #hero {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        @media (min-width: 1024px) {
+            #hero { grid-template-columns: 1.2fr 0.8fr; }
+        }
+
+        .hero-text h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 0.85;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) { .hero-text h1 { font-size: 7rem; } }
+
+        .outline-text {
+            -webkit-text-stroke: 2px var(--emerald-dark);
+            color: white;
+        }
+
+        .hero-text p {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2.5rem;
+            max-width: 450px;
+        }
+
+        /* --- TERMINAL --- */
+        .terminal {
+            background: var(--emerald-dark);
+            color: var(--frog-green);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            border: 2px solid #000;
+        }
+
+        .terminal p { margin-bottom: 0.5rem; }
+        .typing {
+            overflow: hidden;
+            border-right: .15em solid var(--frog-green);
+            white-space: nowrap;
+            letter-spacing: .1em;
+            animation: typing 3.5s steps(30, end), blink-caret .5s step-end infinite;
+            width: 100%;
+        }
+
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { 50% { border-color: transparent } }
+
+        /* --- BUTTONS --- */
+        .btn {
+            background: var(--frog-green);
+            color: var(--emerald-dark);
+            border: 3px solid var(--emerald-dark);
+            box-shadow: 6px 6px 0px var(--emerald-dark);
+            padding: 1.2rem 2.5rem;
+            font-weight: 900;
+            font-size: 1.2rem;
+            text-decoration: none;
+            border-radius: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.1s;
+            cursor: pointer;
+        }
+
+        .btn:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px var(--emerald-dark); }
+        .btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px var(--emerald-dark); }
+
+        .btn-glow {
+            animation: glow-pulse 2s infinite alternate;
+        }
+
+        @keyframes glow-pulse {
+            from { box-shadow: 6px 6px 0px var(--emerald-dark), 0 0 10px var(--frog-green); }
+            to { box-shadow: 8px 8px 0px var(--emerald-dark), 0 0 30px var(--frog-green); }
+        }
+
+        /* --- FROG SCENE --- */
+        .frog-scene {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
         #scene-container {
             position: relative;
             width: 100%;
             height: 400px;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
         }
 
-        /* Mosca Pixelada con Alas */
+        #frog-svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.1));
+        }
+
         .pixel-fly {
             position: absolute;
             width: 24px;
@@ -68,7 +198,6 @@
             to { transform: rotate(-45deg) scaleY(0.5); }
         }
 
-        /* Ondas de Radar (Señal) */
         .signal {
             stroke: var(--frog-green);
             stroke-width: 4;
@@ -87,454 +216,333 @@
             100% { transform: scale(1.4); opacity: 0; }
         }
 
-        /* Lengua de la Rana Mejorada */
         #frog-tongue {
             position: absolute;
             height: 8px;
-            background: #f43f5e;
+            background: var(--red-alert);
             border-radius: 4px;
             transform-origin: left center;
             z-index: 80;
-            pointer-events: none;
             width: 0;
             box-shadow: 0 0 12px rgba(244, 63, 94, 0.6);
-            display: none; /* Se activa por JS */
+            display: none;
         }
 
-        /* Ojos parpadeantes */
-        .eye-pupil {
-            animation: blink 4s infinite;
-            transform-origin: center;
+        .eye-pupil { animation: blink 4s infinite; transform-origin: center; }
+        @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+
+        /* --- STATS GRID --- */
+        #stats {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 6rem;
         }
 
-        @keyframes blink {
-            0%, 94%, 100% { transform: scaleY(1); }
-            97% { transform: scaleY(0.1); }
-        }
+        @media (min-width: 768px) { #stats { grid-template-columns: repeat(3, 1fr); } }
 
-        /* UI Neo-Brutalista con Verde Rana */
-        .hero-card {
+        .stat-card {
             background: white;
             border: 4px solid var(--emerald-dark);
             box-shadow: 12px 12px 0px var(--emerald-dark);
-            border-radius: 24px;
-        }
-
-        .btn-action {
-            background: var(--frog-green);
-            color: var(--emerald-dark);
-            border: 3px solid var(--emerald-dark);
-            box-shadow: 6px 6px 0px var(--emerald-dark);
-            transition: all 0.1s;
-        }
-
-        .btn-action:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 8px 8px 0px var(--emerald-dark);
-        }
-
-        .btn-action:active {
-            transform: translate(4px, 4px);
-            box-shadow: 2px 2px 0px var(--emerald-dark);
-        }
-
-        /* Efecto resplandor (Glow) */
-        .btn-glow {
-            animation: glow-pulse 2s infinite alternate;
-        }
-
-        @keyframes glow-pulse {
-            from { box-shadow: 6px 6px 0px var(--emerald-dark), 0 0 10px var(--frog-green); }
-            to { box-shadow: 8px 8px 0px var(--emerald-dark), 0 0 30px var(--frog-green); }
-        }
-
-        /* Burbujas Pixeladas */
-        .pixel-bubble {
-            position: fixed;
-            width: 12px;
-            height: 12px;
-            background: rgba(74, 222, 128, 0.2);
-            border: 2px solid var(--emerald-dark);
-            border-radius: 2px;
-            z-index: -1;
-            pointer-events: none;
-            opacity: 0.8;
-            box-shadow: 4px 4px 0px rgba(6, 95, 70, 0.1);
-        }
-
-        .bubble-pop {
-            animation: pop-pixel 0.2s forwards;
-        }
-
-        @keyframes pop-pixel {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.5); opacity: 0.4; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
-        .terminal-code {
-            background: var(--emerald-dark);
-            color: var(--frog-green);
-            border-radius: 16px;
-            border: 2px solid #000;
-        }
-
-        .outline-text {
-            -webkit-text-stroke: 2px var(--emerald-dark);
-            color: white;
-        }
-
-        /* Animación de escritura Terminal */
-        .typing {
-            overflow: hidden;
-            border-right: .15em solid var(--frog-green);
-            white-space: nowrap;
-            margin: 0 auto;
-            letter-spacing: .15em;
-            animation: 
-                typing 3.5s steps(30, end),
-                blink-caret .5s step-end infinite;
-        }
-
-        @keyframes typing {
-            from { width: 0 }
-            to { width: 100% }
-        }
-
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: var(--frog-green) }
-        }
-
-        /* Secciones de Información */
-        .info-card {
-            background: white;
-            border: 3px solid var(--emerald-dark);
-            box-shadow: 8px 8px 0px var(--emerald-dark);
+            border-radius: 1.5rem;
             padding: 2.5rem;
-            border-radius: 20px;
+            text-align: center;
+        }
+
+        .stat-card.featured { background: var(--frog-green); }
+        .stat-card h3 { font-size: 3rem; font-weight: 900; margin: 1rem 0; }
+        .stat-card p { font-weight: 700; opacity: 0.7; }
+
+        /* --- FEATURES SECTION --- */
+        #features { margin-top: 10rem; }
+        
+        .feature-block {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5rem;
+            align-items: center;
+            margin-bottom: 12rem;
+        }
+
+        @media (min-width: 1024px) {
+            .feature-block { grid-template-columns: 1fr 1fr; }
+            .feature-block.reverse { direction: rtl; }
+            .feature-block.reverse > * { direction: ltr; }
         }
 
         .badge {
             background: var(--frog-green);
             color: var(--emerald-dark);
-            font-size: 0.65rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
             font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 6px;
+            font-size: 0.7rem;
             text-transform: uppercase;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
-        /* Revelación por Scroll */
+        .feature-text h2 { font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 1.5rem; font-style: italic; }
+        .feature-text p { font-size: 1.1rem; opacity: 0.8; margin-bottom: 2rem; }
+
+        .feature-list { list-style: none; font-weight: 700; color: var(--emerald-dark); }
+        .feature-list li { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+
+        .image-placeholder {
+            background: var(--white);
+            border: 3px solid var(--emerald-dark);
+            box-shadow: 8px 8px 0px var(--emerald-dark);
+            border-radius: 1.5rem;
+            min-height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 3rem;
+        }
+
+        .bg-terminal { background: var(--emerald-dark); color: var(--white); }
+
+        /* --- TABLE --- */
+        .table-container { overflow-x: auto; margin-top: 4rem; }
+        table {
+            width: 100%;
+            border: 4px solid var(--emerald-dark);
+            border-collapse: collapse;
+            font-weight: 700;
+        }
+        th { background: var(--emerald-dark); color: white; padding: 1rem; text-align: left; }
+        td { border-top: 4px solid var(--emerald-dark); padding: 1rem; }
+        tr:nth-child(even) { background: white; }
+        .status-badge { color: var(--frog-green); }
+
+        /* --- REVEAL ANIMATION --- */
         .reveal {
             opacity: 0;
             transform: translateY(30px);
             transition: all 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
+        .reveal.active { opacity: 1; transform: translateY(0); }
 
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
+        /* --- PIXEL BUBBLES --- */
+        .pixel-bubble {
+            position: fixed;
+            width: 12px; height: 12px;
+            background: rgba(74, 222, 128, 0.2);
+            border: 2px solid var(--emerald-dark);
+            border-radius: 2px;
+            z-index: -1;
+            pointer-events: none;
+            box-shadow: 4px 4px 0px rgba(6, 95, 70, 0.1);
         }
+
+        .bubble-pop { animation: pop-pixel 0.2s forwards; }
+        @keyframes pop-pixel { 100% { transform: scale(0); opacity: 0; } }
     </style>
 </head>
-<body class="p-6 md:p-12">
+<body>
 
-    <nav class="max-w-6xl mx-auto flex justify-end space-x-8 mb-12 font-extrabold uppercase text-sm tracking-widest">
-        <a href="#funcionalidades" class="hover:text-emerald-500 transition-colors">Vulnerabilidades</a>
-        <a href="https://github.com/javier20dev25/Sentinel" target="_blank" class="hover:text-emerald-500 transition-colors">GitHub</a>
-    </nav>
+    <div class="container">
+        
+        <nav>
+            <a href="#features">Vulnerabilidades</a>
+            <a href="https://github.com/javier20dev25/Sentinel" target="_blank">GitHub</a>
+        </nav>
 
-    <main class="max-w-6xl mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            
-            <!-- TEXTO IZQUIERDA -->
-            <div class="space-y-10 order-2 lg:order-1">
-                <h1 class="text-7xl md:text-8xl font-black leading-[0.85] tracking-tighter uppercase reveal">
-                    SENTI<br>
-                    <span class="outline-text">NEL.</span>
-                </h1>
+        <section id="hero">
+            <div class="hero-text">
+                <h1 class="reveal active">SENTI<br><span class="outline-text">NEL.</span></h1>
+                <p class="reveal active">Protección local impulsada por IA para desarrolladores que no se la juegan. Cero fugas.</p>
                 
-                <p class="text-2xl font-semibold leading-snug max-w-md reveal">
-                    Protección local impulsada por IA para desarrolladores que no se la juegan. Cero fugas.
-                </p>
-
-                <div class="terminal-code p-8 mono text-lg shadow-xl reveal">
-                    <p class="opacity-40 mb-2">// Iniciar escaneo</p>
+                <div class="terminal reveal active mono">
+                    <p class="opacity-40">// Iniciar escaneo</p>
                     <p class="typing"><span class="text-white">❯</span> sentinel --monitor</p>
-                    <p class="text-emerald-300 animate-pulse mt-4">_ STATUS: PROTECTED</p>
+                    <p style="color: var(--frog-green); margin-top: 1rem;">_ STATUS: PROTECTED</p>
                 </div>
 
-                <div class="flex flex-wrap gap-6 reveal">
-                    <button class="btn-action btn-glow px-10 py-5 font-black text-xl rounded-2xl flex items-center gap-3">
+                <div class="reveal active">
+                    <a href="https://github.com/javier20dev25/Sentinel" target="_blank" class="btn btn-glow">
                         <i data-lucide="download"></i> DESCARGAR SENTINEL
-                    </button>
+                    </a>
                 </div>
             </div>
 
-            <!-- RANA DERECHA -->
-            <div class="order-1 lg:order-2">
+            <div class="frog-scene">
                 <div id="scene-container">
-                    
-                    <!-- Elemento de la lengua -->
                     <div id="frog-tongue"></div>
-                    
-                    <!-- Mosca con alas -->
                     <div id="fly" class="pixel-fly">
                         <div class="wing wing-left"></div>
                         <div class="wing wing-right"></div>
                         <div class="fly-body"></div>
                     </div>
 
-                    <!-- SVG DE LA RANA (ViewBox Ampliado para Ondas) -->
-                    <svg id="frog-svg" width="450" height="450" viewBox="0 0 120 120" class="drop-shadow-2xl">
-                        <!-- Ondas de señal -->
+                    <svg id="frog-svg" width="450" height="450" viewBox="0 0 120 120">
                         <g transform="translate(60, 65)">
                             <circle class="signal s1" r="15" />
                             <circle class="signal s2" r="25" />
                             <circle class="signal s3" r="35" />
                         </g>
-
-                        <!-- Cuerpo Rana -->
                         <g transform="translate(10, 10)" fill="var(--frog-green)">
-                            <!-- Base -->
                             <rect x="20" y="48" width="60" height="25" rx="5" />
                             <rect x="15" y="55" width="70" height="15" rx="3" />
-                            <!-- Cabeza -->
                             <rect x="28" y="38" width="18" height="15" rx="4" />
                             <rect x="54" y="38" width="18" height="15" rx="4" />
                         </g>
-
-                        <!-- Sombras (Shifted) -->
                         <g transform="translate(10, 10)" fill="var(--emerald-dark)">
                             <rect x="20" y="70" width="60" height="5" />
                             <rect x="35" y="65" width="30" height="2" />
                         </g>
-
-                        <!-- Ojos (Shifted) -->
                         <g transform="translate(10, 10)">
                             <rect x="32" y="41" width="10" height="10" fill="black" />
                             <rect x="58" y="41" width="10" height="10" fill="black" />
-                            <!-- Pupilas (Parpadeo) -->
                             <rect class="eye-pupil" x="35" y="44" width="4" height="4" fill="white" />
                             <rect class="eye-pupil" x="61" y="44" width="4" height="4" fill="white" />
-                            <!-- Boca -->
                             <rect id="frog-mouth" x="42" y="65" width="16" height="4" fill="var(--emerald-dark)" opacity="0.3" />
                         </g>
                     </svg>
-
                 </div>
             </div>
-         <!-- Cards Inferiores -->
-        <div class="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="hero-card p-10 text-center space-y-4 reveal">
-                <div class="flex justify-center"><i data-lucide="zap" class="w-12 h-12 text-emerald-600"></i></div>
-                <span class="text-5xl font-black block">FAST</span>
-                <p class="font-bold opacity-70">Escaneo ultra-rápido en ms</p>
-            </div>
-            <div class="hero-card p-10 text-center space-y-4 bg-emerald-400 reveal">
-                <div class="flex justify-center"><i data-lucide="database" class="w-12 h-12 text-emerald-800"></i></div>
-                <span class="text-5xl font-black block">LOCAL</span>
-                <p class="font-bold opacity-70">Tus datos nunca salen del PC</p>
-            </div>
-            <div class="hero-card p-10 text-center space-y-4 reveal">
-                <div class="flex justify-center"><i data-lucide="shield-check" class="w-12 h-12 text-emerald-600"></i></div>
-                <span class="text-5xl font-black block">SAFE</span>
-                <p class="font-bold opacity-70">Auditoría continua de PRs</p>
-            </div>
-        </div>
+        </section>
 
-        <!-- Secciones de Información Detallada -->
-        <section class="mt-40 space-y-40 mb-40">
+        <section id="stats">
+            <div class="stat-card reveal">
+                <i data-lucide="zap" class="w-12 h-12 text-emerald-600"></i>
+                <h3>FAST</h3>
+                <p>Escaneo ultra-rápido en ms</p>
+            </div>
+            <div class="stat-card featured reveal">
+                <i data-lucide="database" class="w-12 h-12 text-emerald-800"></i>
+                <h3>LOCAL</h3>
+                <p>Tus datos nunca salen del PC</p>
+            </div>
+            <div class="stat-card reveal">
+                <i data-lucide="shield-check" class="w-12 h-12 text-emerald-600"></i>
+                <h3>SAFE</h3>
+                <p>Auditoría continua de PRs</p>
+            </div>
+        </section>
+
+        <section id="features">
             
-            <!-- Característica 1 -->
-            <div id="funcionalidades" class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
-                <div class="space-y-6">
+            <div class="feature-block reveal">
+                <div class="feature-text">
                     <span class="badge"><i data-lucide="key"></i> Protección Activa</span>
-                    <h2 class="text-6xl font-black uppercase italic leading-none">Búsqueda de <br> Secretos.</h2>
-                    <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Sentinel escanea en tiempo real cada cambio en tu código. Detecta automáticamente <strong>API Keys, JWTs y tokens</strong> antes de que lleguen a GitHub. Si intentas subir algo infectado, Sentinel bloquea el paquete.
-                    </p>
-                    <ul class="space-y-4 font-bold text-emerald-900/60">
-                        <li class="flex items-center gap-3">
-                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Bloqueo de Git Commit (Bouncer)
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Cuarentena automática de código sospechoso
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i> Escaneo de entropía en variables
-                        </li>
+                    <h2>Búsqueda de <br> Secretos.</h2>
+                    <p>Sentinel escanea cada cambio en tu código. Detecta automáticamente API Keys, JWTs y tokens antes de que lleguen a GitHub.</p>
+                    <ul class="feature-list">
+                        <li><i data-lucide="check-circle" class="status-badge"></i> Bloqueo de Commit (Bouncer)</li>
+                        <li><i data-lucide="check-circle" class="status-badge"></i> Cuarentena automática</li>
+                        <li><i data-lucide="check-circle" class="status-badge"></i> Escaneo de entropía</li>
                     </ul>
                 </div>
-                <div class="info-card bg-emerald-100/30">
-                    <div class="mono text-sm space-y-2 opacity-60">
+                <div class="image-placeholder bg-emerald-100-30">
+                    <div class="mono text-sm opacity-60">
                         <p class="text-emerald-700 font-bold">SENTINEL SCAN REPORT</p>
-                        <hr class="border-emerald-900/20">
-                        <p>> Checking config.json...</p>
-                        <p class="bg-red-500 text-white px-2 inline-block font-bold">!! CRITICAL THREAT DETECTED</p>
+                        <hr style="margin: 1rem 0; border: 0; border-top: 1px solid rgba(0,0,0,0.1)">
+                        <p class="bg-red-500 text-white" style="padding: 0.5rem; margin: 1rem 0;">!! CRITICAL THREAT DETECTED</p>
                         <p class="text-red-600">Rule: AWS_ACCESS_KEY_ID_FOUND</p>
-                        <p class="text-red-600">Line: 12, Column: 24</p>
                         <p>> Action: Local Block Successful.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Característica 2: CONTRIBUCIONES -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
-                <div class="order-2 lg:order-1 info-card bg-emerald-900 flex flex-col items-center justify-center min-h-[350px] p-12 text-center text-white relative">
-                     <i data-lucide="git-pull-request" class="w-20 h-20 text-emerald-300 mb-6"></i>
-                      <div class="space-y-2 mono text-[10px] opacity-60">
-                        <p class="text-emerald-400 font-bold uppercase">Sentinel PR Monitor</p>
-                        <hr class="border-emerald-600 w-full mb-4">
-                        <p>> Fetching PR #42 from @dev_external</p>
-                        <p>> Analyzing 4 changed files...</p>
-                        <p class="bg-red-500 text-white px-2 inline-block">!! ALERT: Malicious postinstall Hook</p>
-                      </div>
-                </div>
-                <div class="order-1 lg:order-2 space-y-6">
+            <div class="feature-block reverse reveal">
+                <div class="feature-text">
                     <span class="badge"><i data-lucide="github"></i> Auditoría de PRs</span>
-                    <h2 class="text-6xl font-black uppercase italic leading-none">Scout antes <br> del Merge.</h2>
-                    <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Sentinel vigila tu repositorio y conecta con la <strong>GitHub CLI</strong> para escanear propuestas (Pull Requests) de terceros **antes** de que las descargues o las fusiones. Evita troyanos y scripts maliciosos.
-                    </p>
-                    <div class="flex gap-4">
-                        <div class="flex-1 p-4 border-2 border-emerald-900 rounded-xl">
-                            <p class="text-xs font-black uppercase mb-1">Escaneo Inicial</p>
-                            <p class="text-sm opacity-60">Auditamos todo tu repo al conectarlo por primera vez.</p>
+                    <h2>Scout antes <br> del Merge.</h2>
+                    <p>Conecta con GitHub CLI para escanear propuestas de terceros antes de que las descargues o las fusiones. Evita troyanos.</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <div style="flex:1; padding: 1.5rem; border: 2px solid var(--emerald-dark); border-radius: 1rem;">
+                            <p style="font-size: 0.7rem; text-transform: uppercase;">Escaneo Inicial</p>
+                            <p style="font-size: 0.9rem; opacity: 0.6;">Auditamos todo tu repo al inicio.</p>
                         </div>
-                        <div class="flex-1 p-4 border-2 border-emerald-900 rounded-xl">
-                            <p class="text-xs font-black uppercase mb-1">Configurable</p>
-                            <p class="text-sm opacity-60">Tú decides los periodos y la intensidad del escaneo.</p>
+                        <div style="flex:1; padding: 1.5rem; border: 2px solid var(--emerald-dark); border-radius: 1rem;">
+                            <p style="font-size: 0.7rem; text-transform: uppercase;">Configurable</p>
+                            <p style="font-size: 0.9rem; opacity: 0.6;">Tú decides los periodos.</p>
                         </div>
                     </div>
                 </div>
+                <div class="image-placeholder bg-terminal">
+                     <i data-lucide="git-pull-request" style="width: 80px; height: 80px; color: var(--frog-green); margin-bottom: 2rem;"></i>
+                      <div class="mono text-xs opacity-60 text-center">
+                        <p>> Fetching PR #42 from @dev_external</p>
+                        <p>> Analyzing changed files...</p>
+                        <p style="color: var(--red-alert); font-weight: bold; margin-top: 1rem;">!! ALERT: Malicious postinstall Hook</p>
+                      </div>
+                </div>
             </div>
 
-            <!-- Característica 3 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center reveal">
-                <div class="order-2 lg:order-1 info-card bg-white flex items-center justify-center min-h-[300px]">
-                     <!-- Visualización de Bóveda Local -->
-                     <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-dark)" stroke-width="1.5">
-                        <rect x="3" y="11" width="18" height="11" rx="2" stroke-dasharray="2 2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        <circle cx="12" cy="16" r="1.5" fill="var(--emerald-dark)" />
-                        <path d="M12 17.5v1.5" />
-                     </svg>
-                     <p class="absolute mt-32 text-emerald-900 mono text-xs uppercase tracking-widest opacity-50">Local Encrypted Engine</p>
-                </div>
-                <div class="order-1 lg:order-2 space-y-6">
+            <div class="feature-block reveal">
+                <div class="feature-text">
                     <span class="badge"><i data-lucide="eye-off"></i> Arquitectura Local</span>
-                    <h2 class="text-5xl font-black uppercase italic leading-none">Cero Nube, <br> Cero Fugas.</h2>
-                    <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Incluso si no ves las alertas, Sentinel puede detener instalaciones peligrosas de npm. Funciona como un <strong>bouncer</strong> para tus repositorios, aislando el malware antes de que ejecute scripts de ataque.
-                    </p>
-                    <div class="p-6 bg-emerald-900 text-emerald-300 rounded-xl font-bold italic">
+                    <h2>Cero Nube, <br> Cero Fugas.</h2>
+                    <p>Incluso si no ves las alertas, Sentinel detiene instalaciones peligrosas de npm. Funciona como un bouncer para tu entorno.</p>
+                    <div style="padding: 2rem; background: var(--emerald-dark); color: var(--frog-green); border-radius: 1.5rem; font-style: italic; font-weight: 700;">
                         "Privacidad no es una característica, es el cimiento de Sentinel."
                     </div>
                 </div>
-            </div>
-
-            <!-- EXPLICACIÓN SENCILLA: Bouncer -->
-            <div class="hero-card p-12 bg-emerald-50 reveal">
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                    <div class="space-y-6">
-                        <h3 class="text-4xl font-black uppercase">¿Cómo me protege?</h3>
-                        <p class="text-xl font-semibold opacity-70">
-                            Imagina que Sentinel es un <strong>portero de seguridad</strong> en la puerta de tu PC. 
-                        </p>
-                        <p class="text-lg leading-relaxed">
-                            Antes de que cualquier cambio salga hacia GitHub o antes de que algo entre a tu máquina, el portero revisa tu código. Si encuentra algo sospechoso, detiene la operación y manda el archivo a <strong>cuarentena</strong> hasta que tú decidas.
-                        </p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <i data-lucide="shield-off" class="mx-auto w-8 h-8 text-emerald-700"></i>
-                            <p class="font-black text-[10px] mt-2 uppercase">Bloqueo Preventivo</p>
-                        </div>
-                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <i data-lucide="file-search" class="mx-auto w-8 h-8 text-emerald-700"></i>
-                            <p class="font-black text-[10px] mt-2 uppercase">Escaneo de Diffs</p>
-                        </div>
-                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                            <i data-lucide="anchor" class="mx-auto w-8 h-8 text-emerald-700"></i>
-                            <p class="font-black text-[10px] mt-2 uppercase">Git Hooks Nativos</p>
-                        </div>
-                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
-                             <i data-lucide="brain" class="mx-auto w-8 h-8 text-emerald-700"></i>
-                            <p class="font-black text-[10px] mt-2 uppercase">IA Vigilante</p>
-                        </div>
-                    </div>
-                 </div>
-            </div>
-
-            <!-- TABLA DE FUNCIONALIDADES -->
-            <div class="space-y-12 reveal">
-                <h3 class="text-4xl font-black uppercase text-center">Capacidades del Sistema</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full border-4 border-emerald-900 text-left font-bold">
-                        <thead class="bg-emerald-900 text-white uppercase text-xs">
-                            <tr>
-                                <th class="p-4 border-r-4 border-white">Función</th>
-                                <th class="p-4">Descripción</th>
-                                <th class="p-4 text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm">
-                            <tr class="border-t-4 border-emerald-900">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
-                                     <i data-lucide="eye" class="w-4 h-4"></i> Scan de Secretos
-                                </td>
-                                <td class="p-4">Detección de AWS keys, tokens y credenciales en tiempo real.</td>
-                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
-                            </tr>
-                            <tr class="border-t-4 border-emerald-900 bg-white">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
-                                    <i data-lucide="user-check" class="w-4 h-4"></i> Auditoría PR
-                                </td>
-                                <td class="p-4">Revisión profunda de Pull Requests antes de ser integrados.</td>
-                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
-                            </tr>
-                            <tr class="border-t-4 border-emerald-900">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
-                                    <i data-lucide="bug" class="w-4 h-4"></i> Anti-Malware
-                                </td>
-                                <td class="p-4">Bloqueo de scripts post-install y troyanos en dependencias.</td>
-                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
-                            </tr>
-                            <tr class="border-t-4 border-emerald-900 bg-white">
-                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100 flex items-center gap-2">
-                                    <i data-lucide="terminal" class="w-4 h-4"></i> CLI Bridge
-                                </td>
-                                <td class="p-4">Conexión cifrada local-first con la GitHub CLI oficial.</td>
-                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="image-placeholder">
+                     <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="11" width="18" height="11" rx="2" stroke-dasharray="2 2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <circle cx="12" cy="16" r="1.5" />
+                     </svg>
+                     <p style="position:absolute; bottom: 2rem; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; opacity: 0.4;">Encrypted Engine</p>
                 </div>
             </div>
-                </div>
+
+            <div class="table-container reveal">
+                <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 3rem; text-transform: uppercase; font-weight: 900;">Capacidades</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Función</th>
+                            <th>Descripción</th>
+                            <th style="text-align:center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i data-lucide="eye" style="width:14px; vertical-align:middle"></i> Scan Secretos</td>
+                            <td>Detección de AWS keys y tokens en tiempo real.</td>
+                            <td class="status-badge" style="text-align:center">ACTIVO</td>
+                        </tr>
+                        <tr>
+                            <td><i data-lucide="user-check" style="width:14px; vertical-align:middle"></i> Auditoría PR</td>
+                            <td>Revisión profunda de Pull Requests de terceros.</td>
+                            <td class="status-badge" style="text-align:center">ACTIVO</td>
+                        </tr>
+                        <tr>
+                            <td><i data-lucide="bug" style="width:14px; vertical-align:middle"></i> Anti-Malware</td>
+                            <td>Bloqueo de scripts post-install maliciosos.</td>
+                            <td class="status-badge" style="text-align:center">ACTIVO</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
         </section>
 
-        <!-- Final Call to Action -->
-        <section class="mb-32 text-center space-y-10">
-            <h3 class="text-6xl font-black uppercase tracking-tighter">¿Listo para el <br> Overwatcher?</h3>
-            <div class="flex justify-center flex-col items-center gap-6">
-                 <div class="p-4 border-2 border-dashed border-emerald-900/30 rounded-2xl mono text-sm">
+        <!-- CTA -->
+        <section style="margin: 10rem 0 8rem; text-align: center;" class="reveal">
+            <h3 style="font-size: 4rem; font-weight: 900; line-height: 1; margin-bottom: 4rem;">¿LISTO PARA EL<br>OVERWATCHER?</h3>
+            <div style="display: flex; flex-direction: column; align-items:center; gap: 2rem;">
+                  <div class="mono" style="padding: 1.5rem; border: 2px dashed rgba(0,0,0,0.2); border-radius: 1rem; font-size: 0.8rem;">
                     git clone https://github.com/javier20dev25/Sentinel.git
-                 </div>
-                 <button onclick="window.open('https://javier20dev25.github.io/Sentinel/', '_blank')" class="btn-action px-16 py-6 font-black text-2xl rounded-2xl shadow-2xl">
-                    VISITAR WEB OFICIAL
-                 </button>
+                  </div>
+                  <a href="https://github.com/javier20dev25/Sentinel" target="_blank" class="btn p-10" style="font-size: 2rem; padding: 2rem 5rem;">
+                       WEB OFICIAL
+                  </a>
             </div>
         </section>
-    </main>
+
+    </div>
+
     <script>
+        // --- GLOBAL SETUP ---
         const fly = document.getElementById('fly');
         const container = document.getElementById('scene-container');
         const tongue = document.getElementById('frog-tongue');
@@ -543,24 +551,21 @@
         let angle = 0;
         let isCaptured = false;
         let flyX, flyY;
+        let audioCtx;
 
-        window.onload = () => {
-            lucide.createIcons();
-            updateFly();
-            huntCycle();
-            startBubbles();
-            initReveal();
-        };
-
-        // --- SISTEMA DE SONIDOS ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playCatchSound() {
+        // --- AUDIO ---
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        window.addEventListener('click', initAudio, { once: true });
+
+        function playCatchSound() {
+            if (!audioCtx || audioCtx.state === 'suspended') return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.type = 'sine';
             osc.frequency.setValueAtTime(150, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
@@ -569,52 +574,45 @@
             osc.stop(audioCtx.currentTime + 0.2);
         }
 
-        // --- REVELACIÓN POR SCROLL ---
+        // --- INIT ---
+        window.onload = () => {
+            lucide.createIcons();
+            updateFly();
+            huntCycle();
+            startBubbles();
+            initReveal();
+        };
+
         function initReveal() {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                    }
+                    if (entry.isIntersecting) entry.target.classList.add('active');
                 });
             }, { threshold: 0.1 });
-
             document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         }
 
-        // --- SISTEMA DE BURBUJAS PIXELADAS ---
+        // --- BUBBLES ---
         function startBubbles() {
-            setInterval(() => {
-                if (Math.random() > 0.7) createBubble();
-            }, 500);
+            setInterval(() => { if (Math.random() > 0.8) createBubble(); }, 400);
         }
 
         function createBubble() {
             const bubble = document.createElement('div');
             bubble.className = 'pixel-bubble';
-            
             const x = Math.random() * window.innerWidth;
             bubble.style.left = x + 'px';
             bubble.style.bottom = '-30px';
-            
-            const size = 6 + Math.random() * 24; 
+            const size = 6 + Math.random() * 20; 
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
-
             document.body.appendChild(bubble);
 
             let currentY = -30;
-            const speed = 0.8 + Math.random() * 2;
-            const drift = (Math.random() - 0.5) * 1.5;
-            let currentX = x;
-
             const floatInterval = setInterval(() => {
-                currentY += speed;
-                currentX += drift;
+                currentY += 1.5;
                 bubble.style.bottom = currentY + 'px';
-                bubble.style.left = currentX + 'px';
-
-                if (currentY > window.innerHeight * 0.85 || Math.random() > 0.995) {
+                if (currentY > window.innerHeight * 0.9) {
                     clearInterval(floatInterval);
                     bubble.classList.add('bubble-pop');
                     setTimeout(() => bubble.remove(), 200);
@@ -622,6 +620,7 @@
             }, 16);
         }
 
+        // --- ANIMATION ---
         function updateFly() {
             if (isCaptured) {
                 const tongueRect = tongue.getBoundingClientRect();
@@ -630,10 +629,9 @@
                 flyY = tongueRect.top - containerRect.top;
             } else {
                 angle += 0.08;
-                flyX = (container.clientWidth / 2) + Math.cos(angle * 1.5) * 180 + Math.sin(angle * 4) * 40;
-                flyY = (container.clientHeight / 2) + Math.sin(angle * 0.9) * 120 - 40;
+                flyX = (container.clientWidth / 2) + Math.cos(angle * 1.5) * 150;
+                flyY = (container.clientHeight / 2) + Math.sin(angle * 0.9) * 100 - 40;
             }
-
             fly.style.left = flyX + 'px';
             fly.style.top = flyY + 'px';
             requestAnimationFrame(updateFly);
@@ -641,13 +639,11 @@
 
         async function huntCycle() {
             while(true) {
-                await new Promise(r => setTimeout(r, 3000 + Math.random() * 4000));
-                
+                await new Promise(r => setTimeout(r, 4000));
                 const rect = container.getBoundingClientRect();
                 const mouthRect = mouth.getBoundingClientRect();
                 const startX = mouthRect.left - rect.left + (mouthRect.width / 2);
                 const startY = mouthRect.top - rect.top + (mouthRect.height / 2);
-
                 const dx = flyX - startX;
                 const dy = flyY - startY;
                 const dist = Math.sqrt(dx*dx + dy*dy);
@@ -657,22 +653,20 @@
                 tongue.style.left = startX + 'px';
                 tongue.style.top = startY + 'px';
                 tongue.style.transform = `rotate(${rot}deg)`;
-                
-                tongue.style.transition = 'width 0.1s cubic-bezier(0, 0, 0.2, 1.2)';
                 tongue.style.width = `${dist}px`;
+                tongue.style.transition = 'width 0.1s ease-out';
 
                 setTimeout(() => {
                     isCaptured = true;
                     playCatchSound();
-                    tongue.style.transition = 'width 0.35s ease-in';
+                    tongue.style.transition = 'width 0.3s ease-in';
                     tongue.style.width = '0px';
-                    
                     setTimeout(() => {
                         isCaptured = false;
                         tongue.style.display = 'none';
                         angle = Math.random() * 10;
-                    }, 400);
-                }, 120);
+                    }, 350);
+                }, 100);
             }
         }
     </script>
