@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, GitBranch, Lock, Globe, Check, Loader2, Shield, ChevronRight } from 'lucide-react';
-import axios from 'axios';
-
-const API = 'http://localhost:3001';
+import { api } from '../lib/api';
 
 interface GHRepo {
   name: string;
@@ -32,8 +30,8 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
   const fetchRepos = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`${API}/api/github/repos`);
-      setRepos(data);
+      const { data } = await api.get('/api/github/repos');
+      setRepos(data.repos);
     } catch (e) {
       console.error('Failed to fetch repos:', e);
     } finally {
@@ -72,7 +70,7 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
     if (selected.size === 0) return;
     setLinking(true);
     try {
-      await axios.post(`${API}/api/repositories/bulk`, { repos: Array.from(selected) });
+      await api.post('/api/repositories/bulk', { repos: Array.from(selected) });
       onComplete();
     } catch (e) {
       console.error('Failed to link repos:', e);

@@ -12,7 +12,6 @@ try { notifier = require('node-notifier'); } catch (_) {}
 function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
 
 // Detection logic for packaged vs development environment
-// If the command is called through a shim that uses node directly or the app's own executable
 const isPackaged = (process.argv0 && process.argv0.toLowerCase().endsWith('sentinel.exe')) || 
                    process.execPath.toLowerCase().endsWith('sentinel.exe');
 
@@ -105,7 +104,6 @@ program
         const repoId = db.addRepository(fullPath, info.fullName);
         console.log(`✅ Success! Linked to ${info.fullName}`);
         
-        // Initial scan
         performManualScan(repoId, info.fullName);
     });
 
@@ -148,32 +146,23 @@ program
 
     try {
         if (isPackagedFinal) {
-            console.log("📡 Sentinel Production detected. Launching app directly...");
             const exeToSpawn = isPackaged ? process.execPath : appExePath;
             
             spawn(exeToSpawn, ['.'], { 
                 detached: true, 
                 stdio: 'ignore' 
             });
-            
-            console.log("✅ Sentinel launched. Closing CLI.");
-            process.exit(0); // Direct exit for production
+            process.exit(0);
         }
 
-        // Development mode or backend intent logic
         await postIntent(intentPayload);
         console.log("✅ Sentinel UI navigated successfully via running backend.");
     } catch (e) {
         if (e.code === 'ECONNREFUSED' || e.message.includes('ECONNREFUSED')) {
-            console.log("📡 Sentinel UI not running. Launching dev environment...");
-            
-            // In development, launch via npm run electron:dev
             const isWindows = process.platform === 'win32';
             const cmd = isWindows ? 'npm.cmd' : 'npm';
             const args = ['run', 'electron:dev'];
-            const spawnCwd = path.resolve(__dirname, '..'); // 'ui' directory
-            
-            console.log(`📡 Launching via: ${cmd}`);
+            const spawnCwd = path.resolve(__dirname, '..'); 
             
             const uiProcess = spawn(cmd, args, { 
                 cwd: spawnCwd,
@@ -184,20 +173,15 @@ program
             });
 
             uiProcess.unref();
-            
-            console.log("⏳ Waiting for UI to initialize (this may take a few seconds)...");
-            
             let retries = 0;
             const retryInterval = setInterval(async () => {
                 try {
                     await postIntent(intentPayload);
-                    console.log("✅ Sentinel launched and navigated.");
                     clearInterval(retryInterval);
                     process.exit(0);
                 } catch (err) {
                     retries++;
                     if (retries > 20) {
-                        console.error("❌ Error: Sentinel UI did not become ready in time.");
                         clearInterval(retryInterval);
                         process.exit(1);
                     }

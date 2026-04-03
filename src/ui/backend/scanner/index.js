@@ -108,12 +108,19 @@ function scanFile(filename, content) {
             try {
                 rule.regex.lastIndex = 0; // reset
                 if (safeRegexTest(rule.regex, line)) {
+                    // Capture snippet: 2 lines before, current line, 2 lines after
+                    const start = Math.max(0, index - 2);
+                    const end = Math.min(lines.length, index + 3);
+                    const snippet = lines.slice(start, end).map((l, i) => `${start + i + 1}: ${l}`).join('\n');
+
                     results.alerts.push({
                         ruleName: rule.name,
                         category: rule.category || 'general',
                         riskLevel: rule.severity || 5,
                         description: rule.description,
-                        line: line.trim().substring(0, 500) // Limit evidence length
+                        line: line.trim().substring(0, 400),
+                        evidence: snippet.substring(0, 2000), // Max snippet length
+                        line_number: index + 1
                     });
                 }
             } catch (e) {
