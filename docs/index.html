@@ -36,27 +36,27 @@
         /* Mosca Pixelada con Alas */
         .pixel-fly {
             position: absolute;
-            width: 14px;
-            height: 10px;
+            width: 24px;
+            height: 18px;
             z-index: 100;
             pointer-events: none;
         }
 
         .fly-body {
-            width: 6px;
-            height: 6px;
+            width: 10px;
+            height: 10px;
             background: #1e293b;
             position: absolute;
-            top: 2px;
-            left: 4px;
+            top: 4px;
+            left: 7px;
         }
 
         .wing {
-            width: 5px;
-            height: 5px;
-            background: rgba(30, 41, 59, 0.3);
+            width: 8px;
+            height: 8px;
+            background: rgba(30, 41, 59, 0.4);
             position: absolute;
-            animation: flap 0.08s infinite alternate;
+            animation: flap 0.05s infinite alternate;
         }
 
         .wing-left { left: -1px; top: 0; transform-origin: right bottom; }
@@ -183,6 +183,28 @@
             color: white;
         }
 
+        /* Animación de escritura Terminal */
+        .typing {
+            overflow: hidden;
+            border-right: .15em solid var(--frog-green);
+            white-space: nowrap;
+            margin: 0 auto;
+            letter-spacing: .15em;
+            animation: 
+                typing 3.5s steps(30, end),
+                blink-caret .5s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--frog-green) }
+        }
+
         /* Secciones de Información */
         .info-card {
             background: white;
@@ -206,8 +228,8 @@
 <body class="p-6 md:p-12">
 
     <nav class="max-w-6xl mx-auto flex justify-end space-x-8 mb-12 font-extrabold uppercase text-sm tracking-widest">
-        <a href="#" class="hover:text-emerald-500 transition-colors">Vulnerabilidades</a>
-        <a href="#" class="hover:text-emerald-500 transition-colors">GitHub</a>
+        <a href="#funcionalidades" class="hover:text-emerald-500 transition-colors">Vulnerabilidades</a>
+        <a href="https://github.com/javier20dev25/Sentinel" target="_blank" class="hover:text-emerald-500 transition-colors">GitHub</a>
     </nav>
 
     <main class="max-w-6xl mx-auto">
@@ -226,7 +248,7 @@
 
                 <div class="terminal-code p-8 mono text-lg shadow-xl">
                     <p class="opacity-40 mb-2">// Iniciar escaneo</p>
-                    <p><span class="text-white">❯</span> sentinel --monitor</p>
+                    <p class="typing"><span class="text-white">❯</span> sentinel --monitor</p>
                     <p class="text-emerald-300 animate-pulse mt-4">_ STATUS: PROTECTED</p>
                 </div>
 
@@ -251,17 +273,17 @@
                         <div class="fly-body"></div>
                     </div>
 
-                    <!-- SVG DE LA RANA (Verde Sincronizado) -->
-                    <svg id="frog-svg" width="380" height="380" viewBox="0 0 100 100" class="drop-shadow-2xl">
+                    <!-- SVG DE LA RANA (ViewBox Ampliado para Ondas) -->
+                    <svg id="frog-svg" width="450" height="450" viewBox="0 0 120 120" class="drop-shadow-2xl">
                         <!-- Ondas de señal -->
-                        <g transform="translate(50, 55)">
+                        <g transform="translate(60, 65)">
                             <circle class="signal s1" r="15" />
                             <circle class="signal s2" r="25" />
                             <circle class="signal s3" r="35" />
                         </g>
 
                         <!-- Cuerpo Rana -->
-                        <g fill="var(--frog-green)">
+                        <g transform="translate(10, 10)" fill="var(--frog-green)">
                             <!-- Base -->
                             <rect x="20" y="48" width="60" height="25" rx="5" />
                             <rect x="15" y="55" width="70" height="15" rx="3" />
@@ -270,21 +292,22 @@
                             <rect x="54" y="38" width="18" height="15" rx="4" />
                         </g>
 
-                        <!-- Sombras -->
-                        <g fill="var(--emerald-dark)">
+                        <!-- Sombras (Shifted) -->
+                        <g transform="translate(10, 10)" fill="var(--emerald-dark)">
                             <rect x="20" y="70" width="60" height="5" />
                             <rect x="35" y="65" width="30" height="2" />
                         </g>
 
-                        <!-- Ojos Negros -->
-                        <rect x="32" y="41" width="10" height="10" fill="black" />
-                        <rect x="58" y="41" width="10" height="10" fill="black" />
-                        <!-- Pupilas (Parpadeo) -->
-                        <rect class="eye-pupil" x="35" y="44" width="4" height="4" fill="white" />
-                        <rect class="eye-pupil" x="61" y="44" width="4" height="4" fill="white" />
-
-                        <!-- Boca (Punto de salida de la lengua) -->
-                        <rect id="frog-mouth" x="42" y="65" width="16" height="4" fill="var(--emerald-dark)" opacity="0.3" />
+                        <!-- Ojos (Shifted) -->
+                        <g transform="translate(10, 10)">
+                            <rect x="32" y="41" width="10" height="10" fill="black" />
+                            <rect x="58" y="41" width="10" height="10" fill="black" />
+                            <!-- Pupilas (Parpadeo) -->
+                            <rect class="eye-pupil" x="35" y="44" width="4" height="4" fill="white" />
+                            <rect class="eye-pupil" x="61" y="44" width="4" height="4" fill="white" />
+                            <!-- Boca -->
+                            <rect id="frog-mouth" x="42" y="65" width="16" height="4" fill="var(--emerald-dark)" opacity="0.3" />
+                        </g>
                     </svg>
 
                 </div>
@@ -311,12 +334,12 @@
         <section class="mt-40 space-y-32 mb-40">
             
             <!-- Característica 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div id="funcionalidades" class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                 <div class="space-y-6">
                     <span class="badge">Protección Activa</span>
                     <h2 class="text-5xl font-black uppercase italic leading-none">Búsqueda de <br> Secretos.</h2>
                     <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Sentinel escanea en tiempo real cada archivo que guardas. Detecta automáticamente **API Keys, JWTs, contraseñas y tokens** de AWS, Stripe, GitHub y más de 100 servicios antes de que lleguen a tu repositorio.
+                        Sentinel escanea en tiempo real cada archivo que guardas. Detecta automáticamente <strong>API Keys, JWTs, contraseñas y tokens</strong> de AWS, Stripe, GitHub y más de 100 servicios antes de que lleguen a tu repositorio.
                     </p>
                     <ul class="space-y-3 font-bold text-emerald-900/60">
                         <li class="flex items-center gap-3">
@@ -345,22 +368,96 @@
 
             <!-- Característica 2 -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                <div class="order-2 lg:order-1 info-card bg-white">
-                     <div class="flex flex-col gap-6">
-                        <div class="h-12 w-full bg-emerald-50 rounded" style="width: 80%"></div>
-                        <div class="h-12 w-full bg-emerald-50 rounded" style="width: 65%"></div>
-                        <div class="h-12 w-full bg-emerald-400 rounded" style="box-shadow: 4px 4px 0 #065f46"></div>
-                     </div>
+                <div class="order-2 lg:order-1 info-card bg-emerald-900 flex items-center justify-center min-h-[300px]">
+                     <!-- Visualización de Bóveda Local -->
+                     <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--frog-green)" stroke-width="1.5">
+                        <rect x="3" y="11" width="18" height="11" rx="2" stroke-dasharray="2 2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <circle cx="12" cy="16" r="1.5" fill="var(--frog-green)" />
+                        <path d="M12 17.5v1.5" />
+                     </svg>
+                     <p class="absolute mt-32 text-emerald-300 mono text-xs uppercase tracking-widest opacity-50">Local Encrypted SQLite</p>
                 </div>
                 <div class="order-1 lg:order-2 space-y-6">
                     <span class="badge">Arquitectura Local</span>
                     <h2 class="text-5xl font-black uppercase italic leading-none">Cero Nube, <br> Cero Fugas.</h2>
                     <p class="text-lg font-medium opacity-80 leading-relaxed">
-                        Tus archivos nunca abandonan tu máquina. Sentinel procesa todo usando un motor **SQLite local** y un puente cifrado con la **GitHub CLI**. Tus credenciales están seguras en el llavero de tu sistema operativo, no en nuestros servidores.
+                        Tus archivos nunca abandonan tu máquina. Sentinel procesa todo usando un motor <strong>SQLite local</strong> y un puente cifrado con la <strong>GitHub CLI</strong>. Tus credenciales están seguras en el llavero de tu sistema operativo, no en nuestros servidores.
                     </p>
                     <div class="p-6 bg-emerald-900 text-emerald-300 rounded-xl font-bold italic">
                         "Privacidad no es una característica, es el cimiento de Sentinel."
                     </div>
+                </div>
+            </div>
+
+            <!-- EXPLICACIÓN SENCILLA: Bouncer -->
+            <div class="hero-card p-12 bg-emerald-50">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <h3 class="text-4xl font-black uppercase">¿Cómo me protege?</h3>
+                        <p class="text-xl font-semibold opacity-70">
+                            Imagina que Sentinel es un <strong>portero de seguridad</strong> en la puerta de tu PC. 
+                        </p>
+                        <p class="text-lg leading-relaxed">
+                            Antes de que cualquier cambio salga hacia GitHub, el portero revisa tu "maleta" (tu código). Si encuentra una llave olvidada o una puerta abierta (un secreto), detiene la salida en seco y te avisa para que lo arregles. Así, nunca nada peligroso llega a internet.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
+                            <span class="text-3xl">🛡️</span>
+                            <p class="font-black text-xs mt-2 uppercase">Bloqueo Preventivo</p>
+                        </div>
+                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
+                            <span class="text-3xl">🔍</span>
+                            <p class="font-black text-xs mt-2 uppercase">Escaneo de Diffs</p>
+                        </div>
+                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
+                            <span class="text-3xl">⚓</span>
+                            <p class="font-black text-xs mt-2 uppercase">Git Hooks Nativos</p>
+                        </div>
+                        <div class="p-6 bg-white border-2 border-emerald-900 rounded-xl text-center">
+                            <span class="text-3xl">🤖</span>
+                            <p class="font-black text-xs mt-2 uppercase">IA Vigilante</p>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- TABLA DE FUNCIONALIDADES -->
+            <div class="space-y-12">
+                <h3 class="text-4xl font-black uppercase text-center">Capacidades del Sistema</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-4 border-emerald-900 text-left font-bold">
+                        <thead class="bg-emerald-900 text-white uppercase text-xs">
+                            <tr>
+                                <th class="p-4 border-r-4 border-white">Función</th>
+                                <th class="p-4">Descripción</th>
+                                <th class="p-4 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-t-4 border-emerald-900">
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Scan de Secretos</td>
+                                <td class="p-4">Detección de AWS keys, tokens y credenciales en tiempo real.</td>
+                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
+                            </tr>
+                            <tr class="border-t-4 border-emerald-900 bg-white">
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Auditoría de PRs</td>
+                                <td class="p-4">Revisión de cambios en Pull Requests antes de ser integrados.</td>
+                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
+                            </tr>
+                            <tr class="border-t-4 border-emerald-900">
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Prevención de Malware</td>
+                                <td class="p-4">Bloqueo de scripts post-install peligrosos en paquetes npm.</td>
+                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
+                            </tr>
+                            <tr class="border-t-4 border-emerald-900 bg-white">
+                                <td class="p-4 border-r-4 border-emerald-900 bg-emerald-100">Consola Interactiva</td>
+                                <td class="p-4">Dashboard en tiempo real para visualizar amenazas y logs.</td>
+                                <td class="p-4 text-center text-emerald-600">ACTIVO</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -373,8 +470,8 @@
                  <div class="p-4 border-2 border-dashed border-emerald-900/30 rounded-2xl mono text-sm">
                     git clone https://github.com/javier20dev25/Sentinel.git
                  </div>
-                 <button class="btn-action px-16 py-6 font-black text-2xl rounded-2xl shadow-2xl">
-                    EMPEZAR AHORA
+                 <button onclick="window.open('https://javier20dev25.github.io/Sentinel/', '_blank')" class="btn-action px-16 py-6 font-black text-2xl rounded-2xl shadow-2xl">
+                    VISITAR WEB OFICIAL
                  </button>
             </div>
         </section>
@@ -390,14 +487,14 @@
         let isCaptured = false;
         let flyX, flyY;
 
-        // Movimiento de la mosca
+        // Movimiento de la mosca (Errático)
         function updateFly() {
             if (isCaptured) return;
 
-            angle += 0.06;
-            // Trayectoria dinámica
-            flyX = (container.clientWidth / 2) + Math.cos(angle * 1.2) * 150 + Math.sin(angle * 3) * 20;
-            flyY = (container.clientHeight / 2) + Math.sin(angle * 0.8) * 90 - 30;
+            angle += 0.08;
+            // Trayectoria dinámica más amplia y errática
+            flyX = (container.clientWidth / 2) + Math.cos(angle * 1.5) * 180 + Math.sin(angle * 4) * 40;
+            flyY = (container.clientHeight / 2) + Math.sin(angle * 0.9) * 120 - 40;
 
             fly.style.left = flyX + 'px';
             fly.style.top = flyY + 'px';
