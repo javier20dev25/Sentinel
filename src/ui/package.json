@@ -8,9 +8,8 @@
   },
   "author": "Sentinel Team <sentinel@example.com>",
   "private": true,
-  "main": "electron/main.js",
   "bin": {
-    "sentinel": "./cli/index.js",
+    "sentinel": "./launcher.js",
     "sntl": "./cli/index.js"
   },
   "scripts": {
