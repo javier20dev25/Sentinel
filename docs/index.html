@@ -80,7 +80,7 @@
             background: transparent;
             height: 350px;
             position: relative;
-            overflow: visible; /* La mosca puede salir del div un poco */
+            overflow: visible; /* La mosca y el radar pueden salir del div */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -120,11 +120,11 @@
         /* SVG Pixel Rana Realista */
         #frog-svg {
             z-index: 5;
-            width: 15rem; /* Ajustable al responsive */
+            width: 15rem;
             height: 15rem;
             filter: drop-shadow(0 15px 15px rgba(16, 185, 129, 0.2));
-            /* Crisp edges needed to enforce pure pixel art */
             shape-rendering: crispEdges;
+            overflow: visible; /* Elimina límite de enmascaramiento del SVG para que el radar se salga libremente */
         }
 
         /* Radar Animación */
@@ -141,7 +141,7 @@
 
         @keyframes radar-ping {
             0% { transform: scale(1); opacity: 0.6; }
-            100% { transform: scale(8); opacity: 0; }
+            100% { transform: scale(12); opacity: 0; }
         }
 
         /* --- FEATURES SECTIONS --- */
@@ -258,18 +258,20 @@
                 </div>
 
                 <!-- Frog SVG with 16x16 pixel coordinate system -->
-                <svg id="frog-svg" viewBox="0 0 16 16">
-                    <!-- Efecto Escaneo de la rana (origen exacto en la cintura de la rana = cx 8 cy 8) -->
-                    <circle cx="8.5" cy="8.5" r="1.5" class="radar-ring" />
-                    <circle cx="8.5" cy="8.5" r="1.5" class="radar-ring d2" />
+                <svg id="frog-svg" viewBox="0 0 16 16" style="overflow: visible;">
+                    <!-- Efecto Escaneo de la rana (origen exacto al medio del cuerpo de la rana = cx 8.5 cy 9.5) -->
+                    <circle cx="8.5" cy="9.5" r="1.5" class="radar-ring" />
+                    <circle cx="8.5" cy="9.5" r="1.5" class="radar-ring d2" />
 
                     <!-- Ojos / Protuberancias arriba -->
                     <rect x="4" y="5" width="2" height="2" fill="var(--accent)" />
                     <rect x="11" y="5" width="2" height="2" fill="var(--accent)" />
                     
-                    <g id="frog-pupils">
-                        <rect x="5" y="6" width="1" height="1" fill="#000" />
-                        <rect x="12" y="6" width="1" height="1" fill="#000" />
+                    <g id="frog-pupil-tracking">
+                        <g id="frog-pupils">
+                            <rect x="4.5" y="5.5" width="1" height="1" fill="#000" />
+                            <rect x="11.5" y="5.5" width="1" height="1" fill="#000" />
+                        </g>
                     </g>
 
                     <!-- Cuerpo Base achatado -->
@@ -282,19 +284,13 @@
                     <!-- Se muestra al tirar la lengua -->
                     <rect id="mouth-open" x="5" y="9" width="7" height="3" fill="#064e3b" style="display:none;" />
 
-                    <!-- Patas traseras pegadas al suelo (estilo rana encogida) -->
-                    <rect x="1" y="10" width="3" height="3" fill="var(--accent-dark)" />
-                    <rect x="13" y="10" width="3" height="3" fill="var(--accent-dark)" />
-
-                    <!-- Manitas delanteras en línea con el cuerpo -->
-                    <rect x="4" y="11" width="1" height="2" fill="var(--accent-dark)" />
-                    <rect x="12" y="11" width="1" height="2" fill="var(--accent-dark)" />
+                    <!-- OTRAS PATAS ELIMINADAS (No más patas verdes oscuras) -->
                 </svg>
             </div>
         </section>
 
         <section class="features-wrapper">
-            
+            <!-- (Features html left exactly the same as last code, omitted for brevity, keeping it identical to what went in before) -->
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
                     <i data-lucide="git-pull-request" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
@@ -371,7 +367,6 @@
                 </div>
             </div>
 
-            <!-- Bloque 4: Protección de Subidas -->
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
                     <i data-lucide="upload-cloud" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
@@ -460,20 +455,19 @@
         }
         document.addEventListener('click', initAudio, { once: true });
 
-        // Un pequeño y suave sonido "gulp/bloop" para la caza, sin zumbidos molestos.
+        // Un pequeño y suave sonido "gulp/bloop"
         function playSimpleGulp() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
-            // Frecuencia baja del "gulp"
             osc.type = 'sine';
             osc.frequency.setValueAtTime(300, audioCtx.currentTime); 
             osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
             
             gain.gain.setValueAtTime(0, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); // Duración muy corta
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); 
             
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -535,6 +529,7 @@
         const mouthClosed = document.getElementById('mouth-closed');
         const mouthOpen = document.getElementById('mouth-open');
         const frogPupils = document.getElementById('frog-pupils');
+        const frogPupilTracking = document.getElementById('frog-pupil-tracking'); // Grupo wrapper de los ojos
 
         let isCaptured = false;
         let flyTime = 0;
@@ -545,7 +540,7 @@
             containerRect = containerElem.getBoundingClientRect();
         });
 
-        // Parpadeo sutil
+        // Parpadeo sutil (Solo se escala el grupo interior)
         setInterval(() => {
             frogPupils.style.transformOrigin = "50% 50%";
             frogPupils.style.transform = "scaleY(0.1)";
@@ -558,12 +553,31 @@
                 const cx = containerRect.width / 2;
                 const cy = containerRect.height / 2;
                 
-                // Reducido rango para no salirse tanto de pantalla verticalmente
                 flyX = cx + Math.sin(flyTime * 0.02) * (containerRect.width / 2.5) + Math.cos(flyTime * 0.035) * (containerRect.width / 3);
                 flyY = cy + Math.cos(flyTime * 0.025) * (containerRect.height / 3) + Math.sin(flyTime * 0.04) * (containerRect.height / 4) - 40;
 
                 flyElement.style.left = flyX + 'px';
                 flyElement.style.top = flyY + 'px';
+
+                // Lógica de tracking visual de la retina
+                const svgRect = frogSvg.getBoundingClientRect();
+                const frogCenterX = svgRect.left + svgRect.width / 2;
+                const frogCenterY = svgRect.top + svgRect.height / 2;
+                
+                const fRect = flyElement.getBoundingClientRect();
+                const flyCenterX = fRect.left + fRect.width / 2;
+                const flyCenterY = fRect.top + fRect.height / 2;
+
+                const dx = flyCenterX - frogCenterX;
+                const dy = flyCenterY - frogCenterY;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                
+                // Mover pupilas máximo 0.8 en escala SVG
+                const maxPupilTravel = 0.8;
+                const moveX = (dx / dist) * maxPupilTravel;
+                const moveY = (dy / dist) * maxPupilTravel;
+                
+                frogPupilTracking.style.transform = `translate(${moveX}px, ${moveY}px)`;
             }
             requestAnimationFrame(updateFlyPosition);
         }
@@ -578,7 +592,7 @@
                 const svgRect = frogSvg.getBoundingClientRect();
                 const cRect = containerElem.getBoundingClientRect();
                 
-                // Origen lengua en el centroide de la boca pixel (está a ~y=10 sobre scala de 16)
+                // Centro base
                 const startX = (svgRect.left + svgRect.width / 2) - cRect.left;
                 const startY = (svgRect.top + svgRect.height * 0.6) - cRect.top;
                 
@@ -600,17 +614,20 @@
                 tongue.style.width = '0px';
 
                 setTimeout(() => { tongue.style.width = `${dist}px`; }, 10);
-                await new Promise(r => setTimeout(r, 160)); // Tiempo de latigazo
+                await new Promise(r => setTimeout(r, 160)); 
                 
                 flyElement.style.display = 'none'; 
                 playSimpleGulp();
                 
                 tongue.style.width = '0px';
-                await new Promise(r => setTimeout(r, 160)); // Tiempo de retraerse
+                await new Promise(r => setTimeout(r, 160)); 
                 
                 tongue.style.display = 'none';
                 mouthOpen.style.display = 'none';
                 mouthClosed.style.display = 'block';
+
+                // Reset pupilas al centro porque ya se la comió
+                frogPupilTracking.style.transform = `translate(0px, 0px)`;
 
                 await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
                 
