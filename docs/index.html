@@ -436,6 +436,41 @@
             </div>
         </section>
 
+        <section id="instalacion" class="capabilities reveal-on-scroll" style="margin-top: 4rem;">
+            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 2rem; color: var(--text-main);">¿WINDOWS BLOQUEÓ LA INSTALACIÓN?</h3>
+            
+            <div class="feature-row" style="margin-bottom: 2rem; flex-direction: column; align-items: stretch; gap: 2rem;">
+                <div class="terminal-block" style="border-color: #f59e0b;">
+                    <div class="terminal-header">
+                        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                        <span class="title">Opción A: Desbloqueo Manual (.exe)</span>
+                    </div>
+                    <div class="terminal-body" style="font-family: inherit;">
+                        <p style="color: #f8fafc; margin-bottom: 1rem;"><i data-lucide="info" class="icon-inline" style="color: #f59e0b;"></i> Si <strong>Smart App Control</strong> de Windows frena la instalación, es por la falta de un certificado de desarrollador de pago. Es completamente seguro e inofensivo. Para permitir su ejecución:</p>
+                        <ul style="padding-left: 2rem; margin-bottom: 1rem; color: #94a3b8;">
+                            <li>Haz clic derecho en <code>Sentinel.exe</code> y selecciona <strong>Propiedades</strong>.</li>
+                            <li>En la pestaña "General", abajo del todo, marca la casilla <strong>Desbloquear</strong> (Unblock) y haz click en Aplicar.</li>
+                            <li>Si aparece la pantalla azul de SmartScreen, haz clic en <strong>Más información</strong> -> <strong>Ejecutar de todas formas</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="terminal-block">
+                    <div class="terminal-header">
+                        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                        <span class="title">Opción B: Instalación CLI Directa (Recomendado)</span>
+                    </div>
+                    <div class="terminal-body mono">
+                        <p style="color: #94a3b8; font-family: inherit; margin-bottom: 1rem;">Para evitar los falsos positivos de antivirus sobre ejecutables, clona el código fuente oficial y ejecútalo mediante la terminal:</p>
+                        <p style="color: #34d399;">> git clone https://github.com/javier20dev25/Sentinel.git</p>
+                        <p style="color: #34d399;">> cd Sentinel</p>
+                        <p style="color: #34d399;">> npm install</p>
+                        <p style="color: #34d399;">> npm start</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <footer>
             <div class="reveal-on-scroll">
                 <div class="btn-group" style="justify-content: center;">
