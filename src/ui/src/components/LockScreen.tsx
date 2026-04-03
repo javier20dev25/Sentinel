@@ -105,14 +105,19 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Key className="w-4 h-4 text-zinc-500" />
             </div>
-            <input
-              type="password"
-              placeholder={phase === 'setup' ? 'Create a master password' : 'Enter master password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-              autoFocus
-            />
+            <div suppressHydrationWarning>
+              <input
+                type="password"
+                placeholder={phase === 'setup' ? 'Create a master password' : 'Enter master password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                autoFocus
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore
+              />
+            </div>
           </div>
 
           {phase === 'setup' && (
@@ -120,13 +125,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Lock className="w-4 h-4 text-zinc-500" />
               </div>
-              <input
-                type="password"
-                placeholder="Confirm master password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-              />
+              <div suppressHydrationWarning>
+                <input
+                  type="password"
+                  placeholder="Confirm master password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore
+                />
+              </div>
             </div>
           )}
 
