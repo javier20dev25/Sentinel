@@ -1,4 +1,4 @@
-# 🛡️ Sentinel: Local Security Guardian for GitHub Repositories
+# Sentinel: Local Security Guardian for GitHub Repositories
 
 **[Visit the Official Website](https://javier20dev25.github.io/Sentinel/)**
 
@@ -6,117 +6,91 @@ Sentinel is a high-performance, local security monitoring and auditing suite des
 
 ---
 
-## Vision
+## Important Notice: Active Development
 
-Sentinel acts as a persistent "Overwatch" for your development environment, scanning PRs, commits, and local configurations in real-time, all while keeping your security data entirely under your control.
-
-## 🌐 Sentinel Local Web Edition v1.0
-
-This release marks the evolution of Sentinel into a **proactive security platform**. It introduces three major security layers designed to prevent threats before they reach your remote repositories.
-
-### ✨ New Enterprise-Grade Features
-
-- **🛡️ Sentinel Project Shield (SPS)**: 
-  - **In-place Hardening**: Automatically configures `.npmrc` to disable scripts and enforce exact versions.
-  - **AST Static Analysis**: Deep inspection of dependencies using `acorn` to detect data exfiltration and C2 communication.
-  - **Safe Install**: A supervised installation flow that intercepts malicious packages in real-time.
-
-- **🔒 Asset Guard (DLP)**:
-  - **Forbidden Asset Tracker**: Mark sensitive files (SSH keys, `.env`, certificates) as "PROHIBITED".
-  - **Push Interception**: Automatically blocks `git push` if any prohibited asset is detected in the staging area.
-  - **Master Password Override**: Secure bypass mechanism requiring your master password for emergency pushes.
-
-- **📜 Global Audit Trail (SGA)**:
-  - **Immutable Logging**: Every detection, push, and configuration change is recorded in a local SQLite audit table.
-  - **GitHub Commit Traceability**: Successful pushes automatically capture the Git commit hash, providing a direct link from Sentinel to the specific changes in GitHub.
-  - **Interactive Timeline**: A premium glassmorphic interface to review all security events across all your projects.
-
-### 🔐 Getting Started with Hardened Access
-
-1. **Initialize Master Password**: On the first run, Sentinel will ask you to set a master password (with double confirmation). This password is encrypted using `bcrypt` and is required for unlocking the suite and for security overrides.
-2. **Session Control**: Use the new sidebar controls to **Lock Sentinel** (session clear) or **Shutdown Core** (stops the backend process entirely).
+Sentinel is currently a work in progress, developed by a single individual. As such, there are still bugs to resolve and features to be implemented across all interfaces (CLI, Desktop App, and Web Version). We appreciate your patience as we continue to refine the security engine and user experience.
 
 ---
 
-## 🛠️ Tech Stack
+## Available Versions
 
-- **Frontend**: [React.js](https://reactjs.org/) + [Vite](https://vitejs.dev/) + [Framer Motion](https://www.framer.com/motion/) (Premium UI)
-- **Desktop Wrapper**: [Electron](https://www.electronjs.org/)
-- **Backend**: [Express.js](https://expressjs.com/) (Hardened API)
-- **Database**: [SQLite](https://www.sqlite.org/) (via `better-sqlite3`)
-- **Git Engine**: Direct [Git](https://git-scm.com/) & [GitHub CLI](https://cli.github.com/) integration
+Sentinel is distributed in three distinct formats to suit different user needs.
+
+### 1. Windows Installer (Standard Edition)
+The easiest way to get started on Windows.
+- **Format**: .exe installer.
+- **Installation**: Download `Sentinel Setup.exe` from the Releases page, run it, and follow the installation wizard.
+- **Note**: Since the application is not yet enterprise code-signed, you may see a Windows SmartScreen warning. Click "More info" and "Run anyway" to proceed.
+
+### 2. Portable Version (No Installation)
+For users who prefer not to install software or want to run Sentinel from a USB drive.
+- **Format**: .zip archive.
+- **Usage**: Download `Sentinel-win32-x64.zip`, extract the contents to a folder, and run `Sentinel.exe` directly.
+
+### 3. Sentinel Local Web Edition (Advanced/Power User)
+This is the most powerful and feature-complete version of Sentinel. It runs directly from the source code, providing the full range of proactive security tools and direct control over the local backend server.
+- **Format**: Source code execution via NPM.
+- **Exclusive Features**:
+  - **Sentinel Project Shield (SPS)**: Real-time environment hardening and AST-based static analysis.
+  - **Asset Guard (SAG)**: Git push interception for prohibited files with master password override.
+  - **Global Audit Trail (SGA)**: Full event logging with Git commit traceability and historical timeline.
+  - **Direct Server Control**: Ability to remote shutdown the backend and monitor real-time system telemetry.
 
 ---
 
-## Key Features
+## Guide for Local Web Edition (Recommended)
 
-- **Real-time Scanning**: Monitors for secrets, vulnerabilities, and misconfigurations in local paths and remote repositories.
-- **Interactive Security Dashboard**: Manage all your linked repositories and security status from a sleek, glassmorphic UI.
-- **Built-in CLI**: Run security audits and manage links directly from your terminal.
-- **Hardened Command Execution**: Sentinel uses strict whitelisting and direct argument arrays to prevent shell injection and path traversal attacks.
-- **GitHub Auth Integration**: Uses official OAuth via the GitHub CLI for secure access.
-
----
-
-## 🚀 Tutorial: Running Sentinel Locally (Recommended)
-
-The best way for developers to experience Sentinel—and contribute to its core—is to run it directly from the source. No installers, no Windows SmartScreen warnings, and 100% control over the environment.
+Running from source provides 100% control over the security environment and bypasses all OS-level signature warnings.
 
 ### Prerequisites
 
-1. [Node.js](https://nodejs.org/) (v18 or higher)
-2. [Git](https://git-scm.com/) installed
-3. [GitHub CLI (gh)](https://cli.github.com/) installed and authenticated (`gh auth login`)
+1. Node.js (v18 or higher)
+2. Git installed
+3. GitHub CLI (gh) installed and authenticated (`gh auth login`)
 
-### A Single Command to Overwatch
+### Running the Local Web Edition
 
-Open your favorite terminal (PowerShell, Bash, Command Prompt) and paste this single line:
+Open your terminal and execute the following:
 
 ```bash
-git clone https://github.com/javier20dev25/Sentinel.git && cd Sentinel/src/ui && npm install && npm run electron:dev
+git clone https://github.com/javier20dev25/Sentinel.git
+cd Sentinel/src/ui
+npm install
+npm run electron:dev
 ```
 
-And BOOM 💥! Electron will download, compile, and open with the full Sentinel dashboard connected to your local backend. Everything runs directly on your machine.
-*(Note: The first time running this may take a minute since it compiles the native SQLite module for your system).*
+The first execution will compile the native SQLite modules for your specific system. Once running, you will be prompted to set a master password for hardened session access.
 
 ---
 
-## 📦 Alternative: Pre-built Downloads
+## Technical Features
 
-Pre-built Windows binaries are available on the [Releases](https://github.com/javier20dev25/Sentinel/releases/latest) page if you prefer a standard setup:
-
-| File | Description |
-|---|---|
-| `Sentinel Setup.exe` | Windows installer |
-| `Sentinel-win32-x64.zip` | Portable -- extract and run directly |
-
-> **Important**: Since Sentinel is independently developed and not currently enterprise code-signed, Windows SmartScreen or Smart App Control may show a warning.
-> - Click **"More info"** then **"Run anyway"** to proceed.
-> - If you are blocked by Smart App Control, it is highly recommended to use the **Run from Source** tutorial above.
+- **Real-time Scanning**: Monitors for secrets, vulnerabilities, and misconfigurations.
+- **Interactive Security Dashboard**: Glassmorphic UI for managing linked repositories.
+- **Built-in CLI**: Manage links and run audits directly from the terminal.
+- **Hardened Command Execution**: Uses strict whitelisting and direct argument arrays to prevent shell injection (CWE-78).
+- **GitHub Auth Integration**: Secure OAuth via the official GitHub CLI.
 
 ---
 
-## 🛡️ Security Principles
+## Security Principles
 
-Sentinel was built with a "Security-First" approach:
-- **Zero Shell Interaction**: All system commands are executed via `execFileSync` with static argument arrays, remediating Common Weakness Enumeration issues like [CWE-78](https://cwe.mitre.org/data/definitions/78.html).
-- **In-Memory Sanitization**: All logs and outputs are sanitized before being displayed or stored.
-- **Local Sovereignty**: No scanning data ever leaves your machine; it stays securely in your local SQLite database.
+Sentinel follows a "Local-First" security model:
+- **Zero Shell Interaction**: All commands are executed with static argument arrays.
+- **In-Memory Sanitization**: Data is cleaned before storage or display.
+- **Data Sovereignty**: Your security data never leaves your machine; it remains in your local SQLite database.
 
 ---
 
-## 🤝 Calling All Developers & White Hats!
+## Contributing
 
-Sentinel is a community-driven project built to secure the open-source ecosystem. **We need YOUR help to make it better!**
-
-Whether you are a React wizard, a Node.js backend architect, or an active security researcher writing better threat signatures, **this tool is yours to improve**. 
+As this is a solo-developer project, contributions from the community are highly encouraged. Whether you specialize in React, Node.js, or Security Research, your help is valuable.
 
 ### How to contribute:
-1. Clone the project using the tutorial above.
-2. Look through our issues or create one for a feature you'd like to see.
-3. Hack away! Break things, build new panels, add better regex security scanners!
-4. Submit a **Pull Request**. Every contributor is honored.
+1. Clone the project using the Local Web Edition guide.
+2. Review current issues or suggest new features.
+3. Submit a Pull Request with your improvements.
 
 ---
 
-*Sentinel: Because your code deserves an uncompromising guardian.*
+*Sentinel: Protecting your code with a local, uncompromising guardian.*

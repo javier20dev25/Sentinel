@@ -75,12 +75,55 @@
         @media (min-width: 1024px) { .hero { grid-template-columns: 1.1fr 0.9fr; } }
         .hero-content p { font-size: 1.25rem; max-width: 500px; margin-bottom: 3rem; }
 
-        /* --- ESCENARIO LIBRE --- */
+        .warning-banner {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+            color: #92400e;
+            box-shadow: 4px 4px 0px #f59e0b;
+        }
+
+        .comparison-section {
+            padding: 6rem 0;
+            background: #fff;
+            margin: 4rem 0;
+            border-radius: 1.5rem;
+            border: 4px solid var(--text-main);
+            box-shadow: 12px 12px 0px var(--bg-surface);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .version-card {
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .version-card.featured {
+            background-color: var(--bg-surface);
+            border-color: var(--accent);
+            box-shadow: 6px 6px 0px var(--accent);
+        }
+
+        .version-card h3 { margin-bottom: 1rem; }
+        .version-card ul { list-style: none; margin: 1.5rem 0; }
+        .version-card ul li { margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+
         .canvas-wrapper {
             background: transparent;
             height: 350px;
             position: relative;
-            overflow: visible; /* La mosca y el radar pueden salir del div */
+            overflow: visible;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -91,63 +134,21 @@
             top: 0; left: 0; pointer-events: none;
         }
 
-        /* Mosca Pixel */
         .pixel-fly { position: absolute; width: 12px; height: 12px; z-index: 100; pointer-events: none; }
-        
-        .fly-body {
-            width: 8px; height: 8px; background: #1e293b;
-            position: absolute; top: 2px; left: 2px; border-radius: 2px;
-        }
-        
-        .wing {
-            width: 6px; height: 6px; background: rgba(148, 163, 184, 0.8);
-            position: absolute; animation: flap 0.03s infinite alternate;
-        }
-
+        .fly-body { width: 8px; height: 8px; background: #1e293b; position: absolute; top: 2px; left: 2px; border-radius: 2px; }
+        .wing { width: 6px; height: 6px; background: rgba(148, 163, 184, 0.8); position: absolute; animation: flap 0.03s infinite alternate; }
         .wing-left { left: -2px; top: -2px; transform-origin: right bottom; }
         .wing-right { right: -2px; top: -2px; transform-origin: left bottom; }
 
-        @keyframes flap {
-            from { transform: rotate(10deg) scaleY(1); }
-            to { transform: rotate(-45deg) scaleY(0.4); }
-        }
-
-        #frog-tongue {
-            position: absolute; height: 4px; background-color: var(--danger);
-            transform-origin: left center; z-index: 10; display: none; transition: width 0.15s ease-out;
-        }
-
-        /* SVG Pixel Rana Realista */
-        #frog-svg {
-            z-index: 5;
-            width: 15rem;
-            height: 15rem;
-            filter: drop-shadow(0 15px 15px rgba(16, 185, 129, 0.2));
-            shape-rendering: crispEdges;
-            overflow: visible; /* Elimina límite de enmascaramiento del SVG para que el radar se salga libremente */
-        }
-
-        /* Radar Animación */
-        .radar-ring {
-            stroke: var(--accent);
-            stroke-width: 0.3px;
-            fill: none;
-            opacity: 0;
-            transform-origin: center;
-            animation: radar-ping 4s infinite cubic-bezier(0.1, 0.6, 0.4, 1);
-        }
-
+        @keyframes flap { from { transform: rotate(10deg) scaleY(1); } to { transform: rotate(-45deg) scaleY(0.4); } }
+        #frog-tongue { position: absolute; height: 4px; background-color: var(--danger); transform-origin: left center; z-index: 10; display: none; transition: width 0.15s ease-out; }
+        #frog-svg { z-index: 5; width: 15rem; height: 15rem; filter: drop-shadow(0 15px 15px rgba(16, 185, 129, 0.2)); shape-rendering: crispEdges; overflow: visible; }
+        .radar-ring { stroke: var(--accent); stroke-width: 0.3px; fill: none; opacity: 0; transform-origin: center; animation: radar-ping 4s infinite cubic-bezier(0.1, 0.6, 0.4, 1); }
         .radar-ring.d2 { animation-delay: 2s; }
+        @keyframes radar-ping { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(12); opacity: 0; } }
 
-        @keyframes radar-ping {
-            0% { transform: scale(1); opacity: 0.6; }
-            100% { transform: scale(12); opacity: 0; }
-        }
-
-        /* --- FEATURES SECTIONS --- */
         .features-wrapper { padding: 8rem 0; border-top: 2px solid var(--border); }
         .feature-row { display: flex; flex-direction: column; gap: 4rem; margin-bottom: 10rem; align-items: center; }
-        
         @media (min-width: 1024px) {
             .feature-row { flex-direction: row; justify-content: space-between; }
             .feature-row:nth-child(even) { flex-direction: row-reverse; }
@@ -156,14 +157,8 @@
             .feature-visual { width: 45%; }
         }
 
-        .terminal-block {
-            background-color: #0f172a; border: 4px solid var(--text-main); border-radius: 0.75rem;
-            overflow: hidden; box-shadow: 12px 12px 0px rgba(6, 78, 59, 0.2);
-        }
-        .terminal-header {
-            background-color: #1e293b; padding: 0.75rem 1rem; border-bottom: 2px solid var(--text-main);
-            display: flex; align-items: center; gap: 0.5rem;
-        }
+        .terminal-block { background-color: #0f172a; border: 4px solid var(--text-main); border-radius: 0.75rem; overflow: hidden; box-shadow: 12px 12px 0px rgba(6, 78, 59, 0.2); }
+        .terminal-header { background-color: #1e293b; padding: 0.75rem 1rem; border-bottom: 2px solid var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         .terminal-header .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; }
         .dot.red { background-color: #ef4444; } .dot.yellow { background-color: #f59e0b; } .dot.green { background-color: #10b981; }
         .terminal-header .title { margin-left: auto; margin-right: auto; color: #94a3b8; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
@@ -171,30 +166,12 @@
         .terminal-body p { margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; display: flex; align-items: flex-start; gap: 0.5rem; }
         .icon-inline { width: 16px; height: 16px; flex-shrink: 0; margin-top: 4px; }
 
-        /* DATA TABLE */
         .capabilities { margin: 8rem 0; }
-        .table-responsive {
-            width: 100%; overflow-x: auto; border-radius: 0.75rem; border: 4px solid var(--text-main);
-            box-shadow: 8px 8px 0 rgba(6, 78, 59, 0.1);
-        }
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 0.75rem; border: 4px solid var(--text-main); box-shadow: 8px 8px 0 rgba(6, 78, 59, 0.1); }
         table { width: 100%; border-collapse: collapse; background-color: var(--bg-card); text-align: left; }
         th, td { padding: 1.25rem 1.5rem; border-bottom: 2px solid var(--border); }
         th { background-color: var(--bg-surface); font-weight: 900; color: var(--text-main); text-transform: uppercase; }
-        tr:last-child td { border-bottom: none; }
         
-        .badge {
-            display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem;
-            background-color: var(--accent); color: white; border-radius: 1rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
-        }
-
-        /* PIXEL BUBBLES */
-        .pixel-bubble {
-            position: fixed; background: rgba(16, 185, 129, 0.2); border: 2px solid rgba(16, 185, 129, 0.4);
-            z-index: -1; pointer-events: none;
-        }
-        .bubble-pop { animation: pop-pixel 0.2s forwards; }
-        @keyframes pop-pixel { 100% { transform: scale(1.5); opacity: 0; } }
-
         .reveal-on-scroll {
             opacity: 0; transform: translateY(40px);
             transition: opacity 0.8s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -202,22 +179,9 @@
         .reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
 
         footer { text-align: center; padding: 8rem 0 4rem; border-top: 2px solid var(--border); }
-        
-        .audio-notice {
-            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-            background: var(--text-main); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem;
-            font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;
-            z-index: 1000; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: opacity 0.3s, transform 0.3s;
-        }
-        .audio-notice.hidden { opacity: 0; transform: translate(-50%, 20px); pointer-events: none; }
     </style>
 </head>
 <body>
-
-    <div id="audio-notice" class="audio-notice">
-        <i data-lucide="volume-2" class="w-4 h-4"></i>
-        <span>Cualquier click en la página activará los sutiles efectos de sonido</span>
-    </div>
 
     <div class="container">
         <nav>
@@ -227,6 +191,7 @@
             </div>
             <div class="nav-links">
                 <a href="#capacidades">Capacidades</a>
+                <a href="#comparativa">Versiones</a>
                 <a href="https://github.com/javier20dev25/Sentinel" target="_blank">
                     <i data-lucide="github" class="w-5 h-5"></i> Repositorio
                 </a>
@@ -235,14 +200,17 @@
 
         <section class="hero">
             <div class="hero-content">
+                <div class="warning-banner reveal-on-scroll">
+                    <strong>Nota de Desarrollo:</strong> Sentinel es un proyecto en fase activa por un único desarrollador. Estamos trabajando para corregir errores y añadir funciones en la CLI, la App y la versión Web.
+                </div>
                 <h1 class="reveal-on-scroll">MÁXIMA SEGURIDAD LOCAL</h1>
                 <p class="reveal-on-scroll">Motor de seguridad profundo e inspección de repositorios. Identifica amenazas antes de que comprometan tu entorno.</p>
                 <div class="reveal-on-scroll btn-group">
-                    <a href="https://github.com/javier20dev25/Sentinel/releases/latest" target="_blank" class="btn btn-primary">
-                        <i data-lucide="download"></i> Descargar Sentinel (.zip / .exe)
+                    <a href="#comparativa" class="btn btn-primary">
+                        <i data-lucide="zap"></i> Ver Versión Web Local (Recomendado)
                     </a>
-                    <a href="https://github.com/javier20dev25/Sentinel" target="_blank" class="btn">
-                        <i data-lucide="code"></i> Ver Código Fuente
+                    <a href="https://github.com/javier20dev25/Sentinel/releases/latest" target="_blank" class="btn">
+                        <i data-lucide="download"></i> Descargar Aplicación
                     </a>
                 </div>
             </div>
@@ -256,92 +224,79 @@
                         <div class="fly-body"></div>
                     </div>
                 </div>
-
-                <!-- Frog SVG with 16x16 pixel coordinate system -->
                 <svg id="frog-svg" viewBox="0 0 16 16" style="overflow: visible;">
-                    <!-- Efecto Escaneo de la rana (origen exacto al medio del cuerpo de la rana = cx 8 cy 9) -->
                     <circle cx="8" cy="9" r="1.5" class="radar-ring" />
                     <circle cx="8" cy="9" r="1.5" class="radar-ring d2" />
-
-                    <!-- Ojos grandes (bloques de 4x4) -->
                     <rect x="3" y="3" width="4" height="4" fill="var(--accent)" />
                     <rect x="9" y="3" width="4" height="4" fill="var(--accent)" />
-                    
-                    <!-- Esclerótica (blanco de los ojos, bloque de 2x2 para dar espacio a la pupila) -->
                     <rect x="4" y="4" width="2" height="2" fill="#fff" />
                     <rect x="10" y="4" width="2" height="2" fill="#fff" />
-                    
-                    <!-- Grupo móvil para las pupilas -->
                     <g id="frog-pupil-tracking">
                         <g id="frog-pupils">
-                            <!-- Pupilas (1x1) acomodadas por defecto al centro del blanco -->
                             <rect x="4.5" y="4.5" width="1" height="1" fill="#000" />
                             <rect x="10.5" y="4.5" width="1" height="1" fill="#000" />
                         </g>
                     </g>
-
-                    <!-- Cuerpo Base achatado -->
                     <rect x="2" y="7" width="12" height="6" fill="var(--accent)" />
-
-                    <!-- Patas traseras (para dar forma a la pose típica) -->
                     <rect x="0" y="11" width="3" height="2" fill="var(--accent-dark)" />
                     <rect x="13" y="11" width="3" height="2" fill="var(--accent-dark)" />
-
-                    <!-- Boca de la rana -->
                     <rect id="mouth-closed" x="5" y="10" width="6" height="1" fill="#064e3b" />
                     <rect id="mouth-open" x="5" y="9" width="6" height="3" fill="#064e3b" style="display:none;" />
                 </svg>
             </div>
         </section>
 
+        <section id="comparativa" class="comparison-section reveal-on-scroll">
+            <div class="container">
+                <h2 style="text-align: center;">ELEGIR VERSIÓN DE SENTINEL</h2>
+                <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem;">Sentinel está evolucionando hacia una "Local Web Edition" más potente que permite el control total del servidor y funciones avanzadas de seguridad.</p>
+                
+                <div class="grid-3">
+                    <div class="version-card">
+                        <h3>Instalador / Portable</h3>
+                        <p>Ideal para usuarios que buscan rapidez y simplicidad en Windows.</p>
+                        <ul>
+                            <li><i data-lucide="check-circle" class="w-4 h-4 text-accent"></i> Monitoreo básico</li>
+                            <li><i data-lucide="check-circle" class="w-4 h-4 text-accent"></i> Interfaz de usuario estándar</li>
+                            <li><i data-lucide="x-circle" class="w-4 h-4 text-danger"></i> Sin Auditoría Global SGA</li>
+                            <li><i data-lucide="x-circle" class="w-4 h-4 text-danger"></i> Sin Project Shield (SPS)</li>
+                        </ul>
+                        <a href="https://github.com/javier20dev25/Sentinel/releases/latest" class="btn" style="width: 100%; justify-content: center;">Bajar .exe / .zip</a>
+                    </div>
+
+                    <div class="version-card featured">
+                        <h3>Versión Web Local</h3>
+                        <div class="badge" style="margin-bottom: 1rem;">La más potente</div>
+                        <p>Ejecución desde el servidor local. Incluye todas las herramientas proactivas de Sentinel.</p>
+                        <ul>
+                            <li><i data-lucide="shield-plus" class="w-4 h-4 text-accent"></i> Auditoría Global (SGA)</li>
+                            <li><i data-lucide="shield-check" class="w-4 h-4 text-accent"></i> Project Shield (SPS)</li>
+                            <li><i data-lucide="lock" class="w-4 h-4 text-accent"></i> Asset Guard (SAG)</li>
+                            <li><i data-lucide="server" class="w-4 h-4 text-accent"></i> Control de Servidor en Vivo</li>
+                            <li><i data-lucide="check" class="w-4 h-4 text-accent"></i> Sin avisos de firma de SO</li>
+                        </ul>
+                        <a href="https://github.com/javier20dev25/Sentinel" class="btn btn-primary" style="width: 100%; justify-content: center;">Ver Guía en GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="features-wrapper">
-            <!-- (Features html left exactly the same as last code, omitted for brevity, keeping it identical to what went in before) -->
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
                     <i data-lucide="git-pull-request" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
                     <h2>Auditoría de Repositorios y Pull Requests</h2>
-                    <p>Sentinel se especializa en asegurar tus repositorios conectándose directamente a tu flujo de trabajo. Al conectar un repositorio, Sentinel está al pendiente y examina las propuestas (Pull Requests) que envían otros desarrolladores.</p>
-                    <p>Este escaneo vital ocurre ANTES de que el dueño del repositorio las visualice, las descargue a su máquina local o llegue a fusionarlas a producción, previniendo eficazmente que código malicioso se infiltre en componentes críticos de la aplicación.</p>
+                    <p>Sentinel se especializa en asegurar tus repositorios conectándose directamente a tu flujo de trabajo. Examina las propuestas (PRs) antes de que el código malicioso se infiltre en componentes críticos.</p>
                 </div>
                 <div class="feature-visual">
                     <div class="terminal-block">
                         <div class="terminal-header">
                             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">sentinel-pr-monitor.exe</span>
+                            <span class="title">sentinel-pr-monitor</span>
                         </div>
                         <div class="terminal-body mono">
                             <p style="color: #94a3b8;"><i data-lucide="radio" class="icon-inline"></i> Monitoreando repositorio: @usuario/core-app</p>
-                            <p><i data-lucide="git-merge" class="icon-inline"></i> Nueva PR detectada (#42) de fork externo.</p>
-                            <p style="color: #34d399;"><i data-lucide="search" class="icon-inline"></i> Iniciando pre-análisis de 12 archivos modificados...</p>
                             <p style="color: #ef4444;"><i data-lucide="alert-octagon" class="icon-inline"></i> PELIGRO: Hook malicioso detectado en dependencias.</p>
-                            <p style="color: #94a3b8;"><i data-lucide="shield" class="icon-inline"></i> Acción: Bloquear Merge / Ocultar Localmente.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-row reveal-on-scroll">
-                <div class="feature-content">
-                    <i data-lucide="clock" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
-                    <h2>Análisis Inicial y Escaneos Configurables</h2>
-                    <p>Al añadir un repositorio a Sentinel por primera vez, el sistema realiza un análisis inicial profundo para verificar si ya existía alguna vulnerabilidad o amenaza inyectada, reportándolo de manera inmediata.</p>
-                    <p>Los intervalos de tiempo y la frecuencia con la que se ejecutan los escaneos de repositorios son completamente configurables. Además, cualquier revisión profunda y auditoría a repositorios puede ser ejecutada de manera "on-demand" en el instante que el usuario lo desee.</p>
-                </div>
-                <div class="feature-visual">
-                    <div class="terminal-block">
-                        <div class="terminal-header">
-                            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">audit-config.json</span>
-                        </div>
-                        <div class="terminal-body mono">
-                            <p style="color: #60a5fa;">{</p>
-                            <p style="padding-left: 1rem;"><span style="color: #93c5fd;">"initial_scan"</span>: <span style="color: #34d399;">true</span>,</p>
-                            <p style="padding-left: 1rem;"><span style="color: #93c5fd;">"deep_audit_enabled"</span>: <span style="color: #34d399;">true</span>,</p>
-                            <p style="padding-left: 1rem;"><span style="color: #93c5fd;">"scan_interval_hours"</span>: <span style="color: #fca5a5;">24</span>,</p>
-                            <p style="padding-left: 1rem;"><span style="color: #93c5fd;">"on_demand_allowed"</span>: <span style="color: #34d399;">true</span></p>
-                            <p style="color: #60a5fa;">}</p>
-                            <br>
-                            <p style="color: #94a3b8;">> guardado exitosamente.</p>
                         </div>
                     </div>
                 </div>
@@ -350,9 +305,8 @@
             <div class="feature-row reveal-on-scroll">
                 <div class="feature-content">
                     <i data-lucide="shield-alert" style="color: var(--danger); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
-                    <h2>Bloqueo Local de Instalaciones Peligrosas</h2>
-                    <p>En caso de que se omita o se pase por alto una alerta de seguridad generada por el código, y el usuario intente descargar los archivos o ejecutarlos, Sentinel detiene de forma proactiva cualquier instalación de paquetes en la máquina (como dependencias maliciosas de npm).</p>
-                    <p>Funciona como una barrera impenetrable de última línea, cancelando el proceso y protegiendo el entorno de desarrollo local contra la ejecución y propagación de troyanos o scripts ofuscados.</p>
+                    <h2>Bloqueo de Instalaciones Peligrosas</h2>
+                    <p>Sentinel detiene de forma proactiva cualquier instalación de paquetes (como npm) si detecta scripts maliciosos, cancelando el proceso para proteger tu máquina local.</p>
                 </div>
                 <div class="feature-visual">
                     <div class="terminal-block" style="border-color: #ef4444;">
@@ -361,42 +315,12 @@
                             <span class="title">npm install --force</span>
                         </div>
                         <div class="terminal-body mono">
-                            <p style="color: #94a3b8;">> fetching packages...</p>
                             <p style="color: #ef4444; font-weight: 800;">[SENTINEL INTERCEPT]</p>
-                            <p style="color: #94a3b8;">Analizando binarios entrantes...</p>
-                            <p style="color: #ef4444;"><i data-lucide="x-circle" class="icon-inline"></i> FIRMA MALICIOSA ENCONTRADA EN: react-dom-parser</p>
                             <p style="color: white; background: #ef4444; padding: 0.2rem 0.5rem; display: inline-block;">PROCESO MATADO (SIGKILL)</p>
-                            <p style="color: #94a3b8; margin-top: 1rem;">Instalación local cancelada para proteger el entorno.</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="feature-row reveal-on-scroll">
-                <div class="feature-content">
-                    <i data-lucide="upload-cloud" style="color: var(--accent-dark); width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
-                    <h2>Protección de Subida y Cuarentena</h2>
-                    <p>Durante el envío de aportaciones hacia los repositorios remotos, Sentinel inspecciona exhaustivamente los paquetes y las subidas.</p>
-                    <p>Si durante la subida (push) la herramienta detecta que el paquete va infectado o contiene información sensible expuesta (como llaves de acceso, tokens, o APIs privadas), Sentinel bloquea inmediatamente la subida y manda los archivos específicos a una zona de cuarentena segura. El código inseguro nunca abandonará tu máquina.</p>
-                </div>
-                <div class="feature-visual">
-                    <div class="terminal-block">
-                        <div class="terminal-header">
-                            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                            <span class="title">git push origin main</span>
-                        </div>
-                        <div class="terminal-body mono">
-                            <p style="color: #94a3b8;">> Enumerating objects: 15, done.</p>
-                            <p style="color: #34d399;">> Activando Pre-Push Hook de Sentinel...</p>
-                            <p><i data-lucide="key" class="icon-inline"></i> Escaneando archivos por secretos...</p>
-                            <p style="color: #ef4444;"><i data-lucide="alert-triangle" class="icon-inline"></i> SECRETO EXPUESTO: AWS_ACCESS_KEY en src/config.js</p>
-                            <p style="color: #94a3b8;">Aislando src/config.js -> ./quarantine_zone/</p>
-                            <p style="color: #ef4444; font-weight:bold;">PUSH RECHAZADO.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </section>
 
         <section id="capacidades" class="capabilities reveal-on-scroll">
@@ -407,116 +331,37 @@
                         <tr>
                             <th>Sistema Central</th>
                             <th>Descripción Técnica</th>
-                            <th>Estado</th>
+                            <th>Local Web</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><i data-lucide="search" style="width:16px; margin-right:8px; vertical-align:middle"></i> Auditoría de Repositorios</td>
-                            <td class="text-muted">Análisis inicial completo al enlazar un repositorio, verificando historial y vulnerabilidades.</td>
-                            <td><span class="badge"><i data-lucide="check" style="width:12px;"></i> Activo</span></td>
+                            <td>Auditoría SGA</td>
+                            <td class="text-muted">Registro inmutable de eventos de seguridad con trazabilidad de Git.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                         <tr>
-                            <td><i data-lucide="git-pull-request" style="width:16px; margin-right:8px; vertical-align:middle"></i> Monitoreo de PRs</td>
-                            <td class="text-muted">Escaneo perimetral de Pull Requests enviadas por terceros antes de interacción local.</td>
-                            <td><span class="badge"><i data-lucide="check" style="width:12px;"></i> Activo</span></td>
+                            <td>Project Shield (SPS)</td>
+                            <td class="text-muted">Hardening de entorno (.npmrc) y análisis estático AST profundo.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                         <tr>
-                            <td><i data-lucide="shield-off" style="width:16px; margin-right:8px; vertical-align:middle"></i> Bloqueo de Ejecución</td>
-                            <td class="text-muted">Terminación de procesos locales si se intentan instalar paquetes maliciosos.</td>
-                            <td><span class="badge"><i data-lucide="check" style="width:12px;"></i> Activo</span></td>
-                        </tr>
-                        <tr>
-                            <td><i data-lucide="lock" style="width:16px; margin-right:8px; vertical-align:middle"></i> Cuarentena Saliente</td>
-                            <td class="text-muted">Intercepción de push para aislar llaves API expuestas y bloquear envíos infectados.</td>
-                            <td><span class="badge"><i data-lucide="check" style="width:12px;"></i> Activo</span></td>
+                            <td>Asset Guard (SAG)</td>
+                            <td class="text-muted">Bloqueo de push para prevenir fuga de activos prohibidos como llaves API.</td>
+                            <td><i data-lucide="check" class="text-accent"></i></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="instalacion" class="capabilities reveal-on-scroll" style="margin-top: 4rem;">
-            <h3 style="font-size: 2.5rem; text-align: center; margin-bottom: 2rem; color: var(--text-main);">¿WINDOWS BLOQUEÓ LA INSTALACIÓN?</h3>
-            
-            <div class="feature-row" style="margin-bottom: 2rem; flex-direction: column; align-items: stretch; gap: 2rem;">
-                <div class="terminal-block" style="border-color: #f59e0b;">
-                    <div class="terminal-header">
-                        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                        <span class="title">Opción A: Desbloqueo Manual (.exe)</span>
-                    </div>
-                    <div class="terminal-body" style="font-family: inherit;">
-                        <p style="color: #f8fafc; margin-bottom: 1rem;"><i data-lucide="info" class="icon-inline" style="color: #f59e0b;"></i> Si <strong>Smart App Control</strong> de Windows frena la instalación, es por la falta de un certificado de desarrollador de pago. Es completamente seguro e inofensivo. Para permitir su ejecución:</p>
-                        <ul style="padding-left: 2rem; margin-bottom: 1rem; color: #94a3b8;">
-                            <li>Haz clic derecho en <code>Sentinel.exe</code> y selecciona <strong>Propiedades</strong>.</li>
-                            <li>En la pestaña "General", abajo del todo, marca la casilla <strong>Desbloquear</strong> (Unblock) y haz click en Aplicar.</li>
-                            <li>Si aparece la pantalla azul de SmartScreen, haz clic en <strong>Más información</strong> -> <strong>Ejecutar de todas formas</strong>.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="terminal-block">
-                    <div class="terminal-header">
-                        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                        <span class="title">Opción B: Instalación CLI Directa (Recomendado)</span>
-                    </div>
-                    <div class="terminal-body mono">
-                        <p style="color: #94a3b8; font-family: inherit; margin-bottom: 1rem;">Para evitar los falsos positivos de antivirus sobre ejecutables, clona el código fuente oficial y ejecútalo mediante la terminal:</p>
-                        <p style="color: #34d399;">> git clone https://github.com/javier20dev25/Sentinel.git</p>
-                        <p style="color: #34d399;">> cd Sentinel</p>
-                        <p style="color: #34d399;">> npm install</p>
-                        <p style="color: #34d399;">> npm start</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <footer>
-            <div class="reveal-on-scroll">
-                <div class="btn-group" style="justify-content: center;">
-                    <a href="https://github.com/javier20dev25/Sentinel/releases/latest" target="_blank" class="btn btn-primary" style="padding: 1.5rem 3rem; font-size: 1.1rem;">
-                        <i data-lucide="download"></i> Descargar Sentinel
-                    </a>
-                </div>
-            </div>
+            <p>&copy; 2026 Sentinel Security Engine. Desarrollado por javier20dev25.</p>
         </footer>
-
     </div>
 
     <script>
         lucide.createIcons();
-
-        // 1. EFECTO SONIDO
-        let audioCtx;
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            document.getElementById('audio-notice').classList.add('hidden');
-        }
-        document.addEventListener('click', initAudio, { once: true });
-
-        // Un pequeño y suave sonido "gulp/bloop"
-        function playSimpleGulp() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(300, audioCtx.currentTime); 
-            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
-            
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); 
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.2);
-        }
-
-        // 2. SCROLL ANIMATIONS Y BURBUJAS
         function initScrollAnimations() {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -526,98 +371,31 @@
             document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
         }
 
-        function startBubbles() {
-            setInterval(() => { if (Math.random() > 0.6) createBubble(); }, 400);
-        }
-
-        function createBubble() {
-            const bubble = document.createElement('div');
-            bubble.className = 'pixel-bubble';
-            const xPos = Math.random() * window.innerWidth;
-            bubble.style.left = xPos + 'px';
-            bubble.style.bottom = '-60px'; 
-            
-            const size = 5 + (Math.random() * 55);
-            bubble.style.width = size + 'px';
-            bubble.style.height = size + 'px';
-            
-            document.body.appendChild(bubble);
-
-            let currentY = -60;
-            const speed = 1.0 + (20 / size); 
-            const driftOffset = (Math.random() - 0.5) * 1.0;
-            let currentX = xPos;
-
-            const interval = setInterval(() => {
-                currentY += speed;
-                currentX += driftOffset;
-                bubble.style.bottom = currentY + 'px';
-                bubble.style.left = currentX + 'px';
-                if (currentY > window.innerHeight) {
-                    clearInterval(interval);
-                    bubble.classList.add('bubble-pop');
-                    setTimeout(() => bubble.remove(), 200);
-                }
-            }, 16);
-        }
-
-        // 3. ANIMACIONES SVG Y LENGUA
         const flyElement = document.getElementById('fly');
         const containerElem = document.getElementById('scene-container');
         const tongue = document.getElementById('frog-tongue');
         const frogSvg = document.getElementById('frog-svg');
         const mouthClosed = document.getElementById('mouth-closed');
         const mouthOpen = document.getElementById('mouth-open');
-        const frogPupils = document.getElementById('frog-pupils');
-        const frogPupilTracking = document.getElementById('frog-pupil-tracking'); // Grupo wrapper de los ojos
-
-        let isCaptured = false;
-        let flyTime = 0;
-        let flyX = 0, flyY = 0;
+        const frogPupilTracking = document.getElementById('frog-pupil-tracking');
+        
+        let isCaptured = false, flyTime = 0, flyX = 0, flyY = 0;
         let containerRect = containerElem.getBoundingClientRect();
-
-        window.addEventListener('resize', () => {
-            containerRect = containerElem.getBoundingClientRect();
-        });
-
-        // Parpadeo sutil (Solo se escala el grupo interior)
-        setInterval(() => {
-            frogPupils.style.transformOrigin = "50% 50%";
-            frogPupils.style.transform = "scaleY(0.1)";
-            setTimeout(() => { frogPupils.style.transform = "scaleY(1)"; }, 150);
-        }, 4000);
 
         function updateFlyPosition() {
             if (!isCaptured && flyElement.style.display !== 'none') {
                 flyTime += 1;
-                const cx = containerRect.width / 2;
-                const cy = containerRect.height / 2;
-                
+                const cx = containerRect.width / 2, cy = containerRect.height / 2;
                 flyX = cx + Math.sin(flyTime * 0.02) * (containerRect.width / 2.5) + Math.cos(flyTime * 0.035) * (containerRect.width / 3);
                 flyY = cy + Math.cos(flyTime * 0.025) * (containerRect.height / 3) + Math.sin(flyTime * 0.04) * (containerRect.height / 4) - 40;
-
                 flyElement.style.left = flyX + 'px';
                 flyElement.style.top = flyY + 'px';
-
-                // Lógica de tracking visual de la retina
+                
                 const svgRect = frogSvg.getBoundingClientRect();
-                const frogCenterX = svgRect.left + svgRect.width / 2;
-                const frogCenterY = svgRect.top + svgRect.height / 2;
-                
-                const fRect = flyElement.getBoundingClientRect();
-                const flyCenterX = fRect.left + fRect.width / 2;
-                const flyCenterY = fRect.top + fRect.height / 2;
-
-                const dx = flyCenterX - frogCenterX;
-                const dy = flyCenterY - frogCenterY;
+                const dx = (flyX + containerRect.left) - (svgRect.left + svgRect.width/2);
+                const dy = (flyY + containerRect.top) - (svgRect.top + svgRect.height/2);
                 const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-                
-                // Mover pupilas máximo 0.8 en escala SVG
-                const maxPupilTravel = 0.8;
-                const moveX = (dx / dist) * maxPupilTravel;
-                const moveY = (dy / dist) * maxPupilTravel;
-                
-                frogPupilTracking.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                frogPupilTracking.style.transform = `translate(${(dx/dist)*0.8}px, ${(dy/dist)*0.8}px)`;
             }
             requestAnimationFrame(updateFlyPosition);
         }
@@ -625,65 +403,27 @@
         async function frogHuntCycle() {
             while(true) {
                 await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-                if (flyElement.style.display === 'none') { continue; }
-
+                if (flyElement.style.display === 'none') continue;
                 isCaptured = true;
-                const fRect = flyElement.getBoundingClientRect();
-                const svgRect = frogSvg.getBoundingClientRect();
-                const cRect = containerElem.getBoundingClientRect();
-                
-                // Centro base
-                const startX = (svgRect.left + svgRect.width / 2) - cRect.left;
-                const startY = (svgRect.top + svgRect.height * 0.6) - cRect.top;
-                
-                const targetX = fRect.left - cRect.left + (fRect.width / 2);
-                const targetY = fRect.top - cRect.top + (fRect.height / 2);
-
-                const dx = targetX - startX;
-                const dy = targetY - startY;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                const rot = Math.atan2(dy, dx) * (180/Math.PI);
-
-                mouthClosed.style.display = 'none';
-                mouthOpen.style.display = 'block';
-
-                tongue.style.display = 'block';
-                tongue.style.left = startX + 'px';
-                tongue.style.top = startY + 'px';
+                const fRect = flyElement.getBoundingClientRect(), svgRect = frogSvg.getBoundingClientRect(), cRect = containerElem.getBoundingClientRect();
+                const startX = (svgRect.left + svgRect.width / 2) - cRect.left, startY = (svgRect.top + svgRect.height * 0.6) - cRect.top;
+                const tx = fRect.left - cRect.left + 6, ty = fRect.top - cRect.top + 6;
+                const dx = tx - startX, dy = ty - startY, dist = Math.sqrt(dx*dx + dy*dy), rot = Math.atan2(dy, dx) * (180/Math.PI);
+                mouthClosed.style.display = 'none'; mouthOpen.style.display = 'block';
+                tongue.style.display = 'block'; tongue.style.left = startX + 'px'; tongue.style.top = startY + 'px';
                 tongue.style.transform = `rotate(${rot}deg)`;
-                tongue.style.width = '0px';
-
-                setTimeout(() => { tongue.style.width = `${dist}px`; }, 10);
+                tongue.style.width = '0px'; setTimeout(() => tongue.style.width = `${dist}px`, 10);
                 await new Promise(r => setTimeout(r, 160)); 
-                
                 flyElement.style.display = 'none'; 
-                playSimpleGulp();
-                
-                tongue.style.width = '0px';
-                await new Promise(r => setTimeout(r, 160)); 
-                
-                tongue.style.display = 'none';
-                mouthOpen.style.display = 'none';
-                mouthClosed.style.display = 'block';
-
-                // Reset pupilas al centro porque ya se la comió
+                tongue.style.width = '0px'; await new Promise(r => setTimeout(r, 160)); 
+                tongue.style.display = 'none'; mouthOpen.style.display = 'none'; mouthClosed.style.display = 'block';
                 frogPupilTracking.style.transform = `translate(0px, 0px)`;
-
-                await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000));
-                
-                flyTime += Math.random() * 1000;
-                isCaptured = false;
-                flyElement.style.display = 'block';
+                await new Promise(r => setTimeout(r, 2000));
+                flyElement.style.display = 'block'; isCaptured = false;
             }
         }
 
-        window.onload = () => {
-            initScrollAnimations();
-            startBubbles();
-            updateFlyPosition();
-            frogHuntCycle();
-            setTimeout(() => { window.dispatchEvent(new Event('scroll')); }, 100);
-        };
+        window.onload = () => { initScrollAnimations(); updateFlyPosition(); frogHuntCycle(); };
     </script>
 </body>
 </html>
