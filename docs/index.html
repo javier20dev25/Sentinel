@@ -534,6 +534,15 @@
             </div>
         </section>
     </main>
+    <script>
+        const fly = document.getElementById('fly');
+        const container = document.getElementById('scene-container');
+        const tongue = document.getElementById('frog-tongue');
+        const mouth = document.getElementById('frog-mouth');
+        
+        let angle = 0;
+        let isCaptured = false;
+        let flyX, flyY;
 
         window.onload = () => {
             lucide.createIcons();
@@ -546,6 +555,7 @@
         // --- SISTEMA DE SONIDOS ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playCatchSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -587,7 +597,6 @@
             bubble.style.left = x + 'px';
             bubble.style.bottom = '-30px';
             
-            // TAMAÑOS VARIABLES
             const size = 6 + Math.random() * 24; 
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
@@ -613,10 +622,8 @@
             }, 16);
         }
 
-        // Movimiento de la mosca (Errático Continuo)
         function updateFly() {
             if (isCaptured) {
-                // Sincronizar con la punta de la lengua
                 const tongueRect = tongue.getBoundingClientRect();
                 const containerRect = container.getBoundingClientRect();
                 flyX = (tongueRect.left + (tongueRect.width * 0.8)) - containerRect.left;
@@ -636,7 +643,6 @@
             while(true) {
                 await new Promise(r => setTimeout(r, 3000 + Math.random() * 4000));
                 
-                // Disparo
                 const rect = container.getBoundingClientRect();
                 const mouthRect = mouth.getBoundingClientRect();
                 const startX = mouthRect.left - rect.left + (mouthRect.width / 2);
@@ -655,7 +661,6 @@
                 tongue.style.transition = 'width 0.1s cubic-bezier(0, 0, 0.2, 1.2)';
                 tongue.style.width = `${dist}px`;
 
-                // Captura
                 setTimeout(() => {
                     isCaptured = true;
                     playCatchSound();
@@ -665,7 +670,7 @@
                     setTimeout(() => {
                         isCaptured = false;
                         tongue.style.display = 'none';
-                        angle = Math.random() * 10; // Reset position
+                        angle = Math.random() * 10;
                     }, 400);
                 }, 120);
             }
