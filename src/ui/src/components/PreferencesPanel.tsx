@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Info, Bell, Clock, Save, CheckCircle2, HardDrive, Trash2, Loader2, Globe, BrainCircuit } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { api } from '../lib/api';
 import { SecurityHardener } from './SecurityHardener';
 import { TrustedContributors } from './TrustedContributors';
 
@@ -22,14 +23,38 @@ export const PreferencesPanel: React.FC = () => {
   const [clearing, setClearing] = useState(false);
   const [memoryMessage, setMemoryMessage] = useState('');
 
-  const handleSave = () => {
-    // Persist API Keys
-    localStorage.setItem('sentinel_ai_provider', aiProvider);
-    localStorage.setItem('sentinel_ai_key', aiKey);
-    localStorage.setItem('sentinel_ai_model', aiModel);
-    
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  // Fetch from backend on mount
+  React.useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data } = await api.get('/api/settings');
+        if (data.ai_provider) setAiProvider(data.ai_provider);
+        if (data.ai_model) setAiModel(data.ai_model);
+        // We don't fetch the key back for security, but we know it exists if data.has_key is true
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await api.post('/api/settings', {
+        ai_provider: aiProvider,
+        ai_key: aiKey,
+        ai_model: aiModel
+      });
+      
+      // Still keep in localStorage for UI speed / fallback
+      localStorage.setItem('sentinel_ai_provider', aiProvider);
+      localStorage.setItem('sentinel_ai_model', aiModel);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      console.error("Save failed", e);
+    }
   };
 
   const handleClearMemory = async () => {

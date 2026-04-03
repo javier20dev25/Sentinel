@@ -1,4 +1,4 @@
-# Sentinel: Local Security Guardian for GitHub Repositories
+# 🛡️ Sentinel: Local Security Guardian for GitHub Repositories
 
 **[Visit the Official Website](https://javier20dev25.github.io/Sentinel/)**
 
@@ -10,14 +10,43 @@ Sentinel is a high-performance, local security monitoring and auditing suite des
 
 Sentinel acts as a persistent "Overwatch" for your development environment, scanning PRs, commits, and local configurations in real-time, all while keeping your security data entirely under your control.
 
-## Tech Stack
+## 🌐 Sentinel Local Web Edition v1.0
 
-- **Frontend**: [React.js](https://reactjs.org/) + [Vite](https://vitejs.dev/) + [TailwindCSS](https://tailwindcss.com/)
+This release marks the evolution of Sentinel into a **proactive security platform**. It introduces three major security layers designed to prevent threats before they reach your remote repositories.
+
+### ✨ New Enterprise-Grade Features
+
+- **🛡️ Sentinel Project Shield (SPS)**: 
+  - **In-place Hardening**: Automatically configures `.npmrc` to disable scripts and enforce exact versions.
+  - **AST Static Analysis**: Deep inspection of dependencies using `acorn` to detect data exfiltration and C2 communication.
+  - **Safe Install**: A supervised installation flow that intercepts malicious packages in real-time.
+
+- **🔒 Asset Guard (DLP)**:
+  - **Forbidden Asset Tracker**: Mark sensitive files (SSH keys, `.env`, certificates) as "PROHIBITED".
+  - **Push Interception**: Automatically blocks `git push` if any prohibited asset is detected in the staging area.
+  - **Master Password Override**: Secure bypass mechanism requiring your master password for emergency pushes.
+
+- **📜 Global Audit Trail (SGA)**:
+  - **Immutable Logging**: Every detection, push, and configuration change is recorded in a local SQLite audit table.
+  - **GitHub Commit Traceability**: Successful pushes automatically capture the Git commit hash, providing a direct link from Sentinel to the specific changes in GitHub.
+  - **Interactive Timeline**: A premium glassmorphic interface to review all security events across all your projects.
+
+### 🔐 Getting Started with Hardened Access
+
+1. **Initialize Master Password**: On the first run, Sentinel will ask you to set a master password (with double confirmation). This password is encrypted using `bcrypt` and is required for unlocking the suite and for security overrides.
+2. **Session Control**: Use the new sidebar controls to **Lock Sentinel** (session clear) or **Shutdown Core** (stops the backend process entirely).
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: [React.js](https://reactjs.org/) + [Vite](https://vitejs.dev/) + [Framer Motion](https://www.framer.com/motion/) (Premium UI)
 - **Desktop Wrapper**: [Electron](https://www.electronjs.org/)
 - **Backend**: [Express.js](https://expressjs.com/) (Hardened API)
 - **Database**: [SQLite](https://www.sqlite.org/) (via `better-sqlite3`)
-- **CLI**: [Commander.js](https://github.com/tj/commander.js)
-- **GitHub Integration**: Official [GitHub CLI (gh)](https://cli.github.com/) bridge
+- **Git Engine**: Direct [Git](https://git-scm.com/) & [GitHub CLI](https://cli.github.com/) integration
+
+---
 
 ## Key Features
 
