@@ -6,91 +6,91 @@ Sentinel is a high-performance, local security monitoring and auditing suite des
 
 ---
 
-## Important Notice: Active Development
+## Vision
 
-Sentinel is currently a work in progress, developed by a single individual. As such, there are still bugs to resolve and features to be implemented across all interfaces (CLI, Desktop App, and Web Version). We appreciate your patience as we continue to refine the security engine and user experience.
+Sentinel acts as a persistent "Overwatch" for your development environment, scanning PRs, commits, and local configurations in real-time, all while keeping your security data entirely under your control.
 
 ---
 
-## Available Versions
+## Important Note: Ongoing Development
 
-Sentinel is distributed in three distinct formats to suit different user needs.
+Sentinel is a work in progress developed by a single person. While the core security engine is robust, certain features in the CLI, Desktop App, and Web interfaces are still being refined. We are actively working on resolving bugs and expanding functionality.
+
+---
+
+## Available Versions and Deployment Guides
+
+Sentinel is distributed in three formats. Choose the one that best fits your workflow.
 
 ### 1. Windows Installer (Standard Edition)
-The easiest way to get started on Windows.
-- **Format**: .exe installer.
-- **Installation**: Download `Sentinel Setup.exe` from the Releases page, run it, and follow the installation wizard.
-- **Note**: Since the application is not yet enterprise code-signed, you may see a Windows SmartScreen warning. Click "More info" and "Run anyway" to proceed.
+The most convenient option for Windows users who want a traditional desktop experience.
+* **Format**: .exe installer.
+* **Guide**: Download `Sentinel Setup.exe` from the latest release, run the installer, and follow the steps. 
+* **Note**: If Windows SmartScreen displays a warning, click "More info" and "Run anyway".
 
-### 2. Portable Version (No Installation)
-For users who prefer not to install software or want to run Sentinel from a USB drive.
-- **Format**: .zip archive.
-- **Usage**: Download `Sentinel-win32-x64.zip`, extract the contents to a folder, and run `Sentinel.exe` directly.
+### 2. Portable Version (Zero Installation)
+Ideal for portable environments or systems where installation is restricted.
+* **Format**: .zip package.
+* **Guide**: Download `Sentinel-win32-x64.zip`, extract to any directory, and execute `Sentinel.exe`.
 
-### 3. Sentinel Local Web Edition (Advanced/Power User)
-This is the most powerful and feature-complete version of Sentinel. It runs directly from the source code, providing the full range of proactive security tools and direct control over the local backend server.
-- **Format**: Source code execution via NPM.
-- **Exclusive Features**:
-  - **Sentinel Project Shield (SPS)**: Real-time environment hardening and AST-based static analysis.
-  - **Asset Guard (SAG)**: Git push interception for prohibited files with master password override.
-  - **Global Audit Trail (SGA)**: Full event logging with Git commit traceability and historical timeline.
-  - **Direct Server Control**: Ability to remote shutdown the backend and monitor real-time system telemetry.
+### 3. Sentinel Local Web Edition (Recommended / Most Powerful)
+This is the ultimate version of Sentinel. It runs directly from the source code and provides the most comprehensive security features, including advanced hardening and local server management.
+* **Format**: Source code via NPM.
+* **Exclusive Features**:
+    * **Sentinel Project Shield (SPS)**: In-place environment hardening and deep AST static analysis for dependency safety.
+    * **Asset Guard (SAG)**: Proactive Git push interception for prohibited files (keys, .env) with master password override.
+    * **Global Audit Trail (SGA)**: Full immutable event logging with direct Git commit traceability to GitHub.
+    * **Server Process Management**: Remote shutdown and real-time backend monitoring.
 
----
-
-## Guide for Local Web Edition (Recommended)
-
-Running from source provides 100% control over the security environment and bypasses all OS-level signature warnings.
-
-### Prerequisites
-
-1. Node.js (v18 or higher)
-2. Git installed
-3. GitHub CLI (gh) installed and authenticated (`gh auth login`)
-
-### Running the Local Web Edition
-
-Open your terminal and execute the following:
-
+**How to run the Local Web Edition:**
 ```bash
 git clone https://github.com/javier20dev25/Sentinel.git
 cd Sentinel/src/ui
 npm install
 npm run electron:dev
 ```
-
-The first execution will compile the native SQLite modules for your specific system. Once running, you will be prompted to set a master password for hardened session access.
+*(Note: Initial run may take a moment to compile native SQLite modules).*
 
 ---
 
-## Technical Features
+## Key Features
 
-- **Real-time Scanning**: Monitors for secrets, vulnerabilities, and misconfigurations.
-- **Interactive Security Dashboard**: Glassmorphic UI for managing linked repositories.
-- **Built-in CLI**: Manage links and run audits directly from the terminal.
-- **Hardened Command Execution**: Uses strict whitelisting and direct argument arrays to prevent shell injection (CWE-78).
-- **GitHub Auth Integration**: Secure OAuth via the official GitHub CLI.
+* **Real-time Scanning**: Constant monitoring for secrets, vulnerabilities, and misconfigurations in local and remote paths.
+* **Interactive Security Dashboard**: Manage all your linked repositories and security status from a sleek, professional interface.
+* **Built-in CLI**: Run security audits, manage links, and trigger scans directly from your terminal.
+* **Hardened Command Execution**: Uses strict whitelisting and direct argument arrays to prevent shell injection (CWE-78).
+* **GitHub Auth Integration**: Secure OAuth flow via the official GitHub CLI for repository access.
+
+---
+
+## Technical Stack
+
+* **Frontend**: React.js + Vite + Framer Motion (Premium UI)
+* **Desktop Wrapper**: Electron
+* **Backend**: Express.js (Hardened Security API)
+* **Database**: SQLite (via better-sqlite3)
+* **Git Engine**: Direct Git & GitHub CLI integration
 
 ---
 
 ## Security Principles
 
-Sentinel follows a "Local-First" security model:
-- **Zero Shell Interaction**: All commands are executed with static argument arrays.
-- **In-Memory Sanitization**: Data is cleaned before storage or display.
-- **Data Sovereignty**: Your security data never leaves your machine; it remains in your local SQLite database.
+Sentinel follows a "Local-First, Zero-Trust" approach:
+* **Zero Shell Interaction**: All system commands are executed via execFileSync with static argument arrays.
+* **In-Memory Sanitization**: All security logs are sanitized before storage or display.
+* **Data Sovereignty**: No scanning data ever leaves your machine; everything stays securely in your local SQLite database.
 
 ---
 
 ## Contributing
 
-As this is a solo-developer project, contributions from the community are highly encouraged. Whether you specialize in React, Node.js, or Security Research, your help is valuable.
+As a solo-developer project, Sentinel thrives on community feedback. If you are a developer or security researcher, your contributions are highly welcome.
 
-### How to contribute:
-1. Clone the project using the Local Web Edition guide.
-2. Review current issues or suggest new features.
-3. Submit a Pull Request with your improvements.
+**How to contribute:**
+1. Clone the repository using the Local Web Edition guide.
+2. Review the issues or suggest new features.
+3. Submit a Pull Request. Every contribution helps make Sentinel more effective.
 
 ---
 
-*Sentinel: Protecting your code with a local, uncompromising guardian.*
+*Sentinel: Because your code deserves an uncompromising guardian.*
