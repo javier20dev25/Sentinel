@@ -27,7 +27,7 @@ const {
 const { scanFile, scanDirectory } = require('../scanner/index');
 const shield = require('../lib/shield_bridge');
 const fsExplorer = require('../lib/fs_explorer');
-const gitHooks = require('../lib/git_hooks_bridge');
+const gitHooks = require('../lib/git_hooks');
 const hardener = require('../lib/hardener_bridge');
 
 // ─── Remote UI Intents (SSE) ───
