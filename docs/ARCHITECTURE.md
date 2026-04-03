@@ -28,5 +28,20 @@ Inspects the `package.json` and shell environment.
 ### 3. Background Watchman
 The background process (polling) ensures that even if you miss a browser notification from GitHub, your local system tray will alert you before you run `git pull`.
 
+### 4. Cinematic Launcher (`launcher.js`)
+The **Electronic Orchestration Layer** manages the boot process of the security suite. It performs initial system telemetry (available RAM, CPU threads) and starts the Express Backend and Vite Frontend in parallel, ensuring all services are synchronized before the user interacts with the UI.
+
+### 5. SSE Intent System
+Sentinel uses **Server-Sent Events (SSE)** to allow the CLI (`sntl`) to communicate with the Desktop UI. This "Intent" architecture enables headless operations to trigger UI focus or navigation without direct process coupling.
+
+---
+
+## Technical Stack
+
+- **Frontend**: React 18, Vite, Framer Motion.
+- **Backend**: Node.js, Express (Sanitized).
+- **Persistence**: SQLite (Better-SQLite3).
+- **Desktop**: Electron (Secure context).
+
 ---
 *Created by Antigravity for Sentinel Project.*
