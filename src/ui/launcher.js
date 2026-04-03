@@ -207,7 +207,7 @@ async function boot() {
     cwd: __dirname,
     stdio: 'pipe',
     env: { ...process.env, FORCE_COLOR: '1' },
-    shell: false,
+    shell: true,
   });
 
   vite.stdout.on('data', (data) => {
@@ -224,10 +224,25 @@ async function boot() {
         printLine(`  ${GREEN}${BOLD}║  ${CYAN}${BOLD}${urlMatch[0]}${RESET}${GREEN}${BOLD}                      ║${RESET}`);
         printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
         printLine(`  ${GREEN}${BOLD}║  ${DIM}${WHITE}Open this URL in your browser to begin.${RESET}${GREEN}${BOLD}         ║${RESET}`);
+        printLine(`  ${GREEN}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ENTER]${WHITE} to launch dashboard.${RESET}${GREEN}${BOLD}            ║${RESET}`);
         printLine(`  ${GREEN}${BOLD}║  ${DIM}${WHITE}Press ${YELLOW}Ctrl+C${DIM}${WHITE} to shutdown all services.${RESET}${GREEN}${BOLD}       ║${RESET}`);
         printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
         printLine(`  ${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}`);
         printLine('');
+        
+        // Setup input for "Press Enter"
+        process.stdin.resume();
+        process.stdin.setEncoding('utf8');
+        const onData = (data) => {
+          if (data.toString().includes('\r') || data.toString().includes('\n')) {
+             const url = urlMatch[0];
+             const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
+             spawn(startCmd, [url], { shell: true, detached: true }).unref();
+             printLine(`  ${CYAN}> Launching default browser at ${url}...${RESET}`);
+          }
+        };
+        process.stdin.on('data', onData);
+        
         process.stdout.write(SHOW_CURSOR);
       }
     }
