@@ -20,7 +20,7 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "rebuild-native": "electron-rebuild -f -w better-sqlite3",
     "electron:dev": "cross-env NODE_ENV=development concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
-    "electron:build": "npm run rebuild-native && vite build && npx electron-builder build --win --publish never"
+    "electron:build": "electron-rebuild -f -w better-sqlite3 && vite build && npx electron-builder build --win --publish never"
   },
   "build": {
     "appId": "com.sentinel.app",
@@ -99,7 +99,7 @@
     "cross-env": "^7.0.3",
     "electron": "^36.1.0",
     "electron-builder": "^25.1.8",
-    "electron-rebuild": "^3.2.9",
+    "@electron/rebuild": "^3.7.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
