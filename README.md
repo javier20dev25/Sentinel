@@ -1,6 +1,6 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
 
-**[Visit the Official Website](https://javier20dev25.github.io/Sentinel/)**
+**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [API Docs](docs/API_REFERENCE.md) | [Architecture](docs/ARCHITECTURE.md)**
 
 Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
 
@@ -47,9 +47,9 @@ This is the ultimate version of Sentinel. It runs directly from the source code 
 git clone https://github.com/javier20dev25/Sentinel.git
 cd Sentinel/src/ui
 npm install
-npm run electron:dev
+npm run sentinel
 ```
-*(Note: Initial run may take a moment to compile native SQLite modules).*
+*(Note: Using Node.js 20/22 LTS is required for optimal performance and compatibility).*
 
 ---
 
