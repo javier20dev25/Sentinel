@@ -225,64 +225,88 @@ async function boot() {
   });
 
   let isLive = false;
+  let autoOpenTimeout;
+  let interval;
+
+  const showBox = (url = 'http://localhost:5173') => {
+    if (isLive) return;
+    isLive = true;
+    if (fallbackTimeout) clearTimeout(fallbackTimeout);
+
+    let hue = 0;
+    const printAnimatedBox = () => {
+      const color = getRgbAnsi(hue);
+      process.stdout.write(`${ESC}s`); // Save cursor
+      process.stdout.write(`\n  ${color}${BOLD}╔══════════════════════════════════════════════════╗${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}SENTINEL IS LIVE${RESET}${color}${BOLD}                                ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║  ${CYAN}${BOLD}${url}${RESET}${color}${BOLD}                      ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Open this URL in your browser to begin.${RESET}${color}${BOLD}         ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ANY KEY]${WHITE} to launch dashboard.${RESET}${color}${BOLD}           ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Automating launch in 4s...${RESET}${color}${BOLD}                      ║${RESET}\n`);
+      process.stdout.write(`  ${color}${BOLD}╚══════════════════════════════════════════════════╝${RESET}\n`);
+      process.stdout.write(`${ESC}u`); // Restore cursor
+      hue = (hue + 5) % 360;
+    };
+
+    interval = setInterval(printAnimatedBox, 100);
+
+    const launchBrowser = () => {
+      if (autoOpenTimeout) clearTimeout(autoOpenTimeout);
+      if (interval) clearInterval(interval);
+      const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
+      spawn(startCmd, [url], { shell: true, detached: true }).unref();
+      printLine(`\n  ${CYAN}${BOLD}> Launching Dashboard at ${url}...${RESET}\n`);
+      if (process.stdin.setRawMode) process.stdin.setRawMode(false);
+      process.stdin.pause();
+    };
+
+    // Auto-open after 4 seconds
+    autoOpenTimeout = setTimeout(() => {
+      printLine(`\n  ${YELLOW}> Auto-launching...${RESET}`);
+      launchBrowser();
+    }, 4000);
+
+    // Setup input for "Press Any Key"
+    if (process.stdin.setRawMode) {
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.on('data', (key) => {
+        if (key.toString() === '\u0003') { // Ctrl+C
+          cleanup();
+          return;
+        }
+        launchBrowser();
+      });
+    }
+    
+    process.stdout.write(SHOW_CURSOR);
+  };
+
+  // Fallback: If Vite doesn't output a URL in 5s, show the box anyway
+  const fallbackTimeout = setTimeout(() => {
+    if (!isLive) {
+      printLine(`  ${GRAY}${DIM}[VITE] Detection timeout. Forcing UI link...${RESET}`);
+      showBox();
+    }
+  }, 5000);
+
   vite.stdout.on('data', (data) => {
     const msg = data.toString().trim();
     if (msg && !isLive) {
-      // Specifically target the Vite Local URL (usually starts with ➜ or has 'Local:')
-      const urlMatch = msg.match(/http:\/\/localhost:5173/);
+      const urlMatch = msg.match(/http:\/\/localhost:\d+/);
       if (urlMatch) {
-        isLive = true;
-        const url = urlMatch[0];
-        let hue = 0;
-        let autoOpenTimeout;
-
-        const printAnimatedBox = () => {
-          const color = getRgbAnsi(hue);
-          process.stdout.write(`${ESC}s`); // Save cursor
-          process.stdout.write(`\n  ${color}${BOLD}╔══════════════════════════════════════════════════╗${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}SENTINEL IS LIVE${RESET}${color}${BOLD}                                ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║  ${CYAN}${BOLD}${url}${RESET}${color}${BOLD}                      ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Open this URL in your browser to begin.${RESET}${color}${BOLD}         ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ANY KEY]${WHITE} to launch dashboard.${RESET}${color}${BOLD}           ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Automating launch in 4s...${RESET}${color}${BOLD}                      ║${RESET}\n`);
-          process.stdout.write(`  ${color}${BOLD}╚══════════════════════════════════════════════════╝${RESET}\n`);
-          process.stdout.write(`${ESC}u`); // Restore cursor
-          hue = (hue + 5) % 360;
-        };
-
-        const interval = setInterval(printAnimatedBox, 100);
-
-        const launchBrowser = () => {
-          if (autoOpenTimeout) clearTimeout(autoOpenTimeout);
-          clearInterval(interval);
-          const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
-          spawn(startCmd, [url], { shell: true, detached: true }).unref();
-          printLine(`\n  ${CYAN}${BOLD}> Launching Dashboard at ${url}...${RESET}\n`);
-          process.stdin.pause();
-        };
-
-        // Auto-open after 4 seconds
-        autoOpenTimeout = setTimeout(() => {
-          printLine(`\n  ${YELLOW}> Auto-launching...${RESET}`);
-          launchBrowser();
-        }, 4000);
-
-        // Setup input for "Press Any Key"
-        process.stdin.setRawMode(true);
-        process.stdin.resume();
-        process.stdin.on('data', (key) => {
-          if (key.toString() === '\u0003') { // Ctrl+C
-            cleanup();
-            return;
-          }
-          launchBrowser();
-        });
-        
-        process.stdout.write(SHOW_CURSOR);
+         showBox(urlMatch[0]);
       }
+    }
+  });
+
+  vite.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    if (msg && !msg.includes('Warning') && !msg.includes('MODULE_TYPELESS')) {
+      printLine(`  ${RED}${DIM}[VITE-ERR]${RESET} ${YELLOW}${msg}${RESET}`);
     }
   });
 
