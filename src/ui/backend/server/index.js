@@ -465,6 +465,23 @@ app.get('/api/shield/prohibited/:repoId', (req, res) => {
     res.json(rows);
 });
 
+// ─── System & UI Heartbeat ───
+app.get('/', (req, res) => {
+    // If accessed via browser, redirect to the Vite frontend
+    res.send(`
+        <html>
+            <head><title>Sentinel Redirect</title></head>
+            <body style="background:#0a0a0f;color:#00ff88;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+                <div style="text-align:center;">
+                    <h2>🛡️ SENTINEL ENGINE</h2>
+                    <p>Redirecting to Dashboard...</p>
+                    <script>setTimeout(() => window.location.href = 'http://localhost:5173', 500);</script>
+                </div>
+            </body>
+        </html>
+    `);
+});
+
 // ─── System Shutdown ───
 app.post('/api/system/shutdown', (req, res) => {
     res.json({ success: true, message: 'Shutting down...' });
@@ -472,5 +489,5 @@ app.post('/api/system/shutdown', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`📡 Sentinel API running on http://localhost:${PORT}`);
+    console.log(`🛡️ Sentinel API Heartbeat [OK] at port ${PORT}`);
 });
