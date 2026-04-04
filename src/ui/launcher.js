@@ -65,6 +65,20 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+function hslToRgb(h, s, l) {
+  s /= 100;
+  l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+}
+
+function getRgbAnsi(h) {
+  const [r, g, b] = hslToRgb(h, 100, 50);
+  return `\x1b[38;2;${r};${g};${b}m`;
+}
+
 function typewrite(text, color = WHITE) {
   return new Promise(async (resolve) => {
     for (const char of text) {
@@ -210,38 +224,62 @@ async function boot() {
     shell: true,
   });
 
+  let isLive = false;
   vite.stdout.on('data', (data) => {
     const msg = data.toString().trim();
-    if (msg) {
-      // Highlight the URL
-      const urlMatch = msg.match(/http:\/\/localhost:\d+/);
+    if (msg && !isLive) {
+      // Specifically target the Vite Local URL (usually starts with ➜ or has 'Local:')
+      const urlMatch = msg.match(/http:\/\/localhost:5173/);
       if (urlMatch) {
-        printLine('');
-        printLine(`  ${GREEN}${BOLD}╔══════════════════════════════════════════════════╗${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║  ${WHITE}${BOLD}SENTINEL IS LIVE${RESET}${GREEN}${BOLD}                                ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║  ${CYAN}${BOLD}${urlMatch[0]}${RESET}${GREEN}${BOLD}                      ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║  ${DIM}${WHITE}Open this URL in your browser to begin.${RESET}${GREEN}${BOLD}         ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ENTER]${WHITE} to launch dashboard.${RESET}${GREEN}${BOLD}            ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║  ${DIM}${WHITE}Press ${YELLOW}Ctrl+C${DIM}${WHITE} to shutdown all services.${RESET}${GREEN}${BOLD}       ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}║                                                  ║${RESET}`);
-        printLine(`  ${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}`);
-        printLine('');
-        
-        // Setup input for "Press Enter"
-        process.stdin.resume();
-        process.stdin.setEncoding('utf8');
-        const onData = (data) => {
-          if (data.toString().includes('\r') || data.toString().includes('\n')) {
-             const url = urlMatch[0];
-             const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
-             spawn(startCmd, [url], { shell: true, detached: true }).unref();
-             printLine(`  ${CYAN}> Launching default browser at ${url}...${RESET}`);
-          }
+        isLive = true;
+        const url = urlMatch[0];
+        let hue = 0;
+        let autoOpenTimeout;
+
+        const printAnimatedBox = () => {
+          const color = getRgbAnsi(hue);
+          process.stdout.write(`${ESC}s`); // Save cursor
+          process.stdout.write(`\n  ${color}${BOLD}╔══════════════════════════════════════════════════╗${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}SENTINEL IS LIVE${RESET}${color}${BOLD}                                ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║  ${CYAN}${BOLD}${url}${RESET}${color}${BOLD}                      ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Open this URL in your browser to begin.${RESET}${color}${BOLD}         ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ANY KEY]${WHITE} to launch dashboard.${RESET}${color}${BOLD}           ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Automating launch in 4s...${RESET}${color}${BOLD}                      ║${RESET}\n`);
+          process.stdout.write(`  ${color}${BOLD}╚══════════════════════════════════════════════════╝${RESET}\n`);
+          process.stdout.write(`${ESC}u`); // Restore cursor
+          hue = (hue + 5) % 360;
         };
-        process.stdin.on('data', onData);
+
+        const interval = setInterval(printAnimatedBox, 100);
+
+        const launchBrowser = () => {
+          if (autoOpenTimeout) clearTimeout(autoOpenTimeout);
+          clearInterval(interval);
+          const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
+          spawn(startCmd, [url], { shell: true, detached: true }).unref();
+          printLine(`\n  ${CYAN}${BOLD}> Launching Dashboard at ${url}...${RESET}\n`);
+          process.stdin.pause();
+        };
+
+        // Auto-open after 4 seconds
+        autoOpenTimeout = setTimeout(() => {
+          printLine(`\n  ${YELLOW}> Auto-launching...${RESET}`);
+          launchBrowser();
+        }, 4000);
+
+        // Setup input for "Press Any Key"
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.on('data', (key) => {
+          if (key.toString() === '\u0003') { // Ctrl+C
+            cleanup();
+            return;
+          }
+          launchBrowser();
+        });
         
         process.stdout.write(SHOW_CURSOR);
       }
