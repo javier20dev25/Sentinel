@@ -1,0 +1,7 @@
+# PR_SECURITY_TEST_FILE
+This file is generated automatically by the assistant to test the Sentinel PR scanner.
+It contains purely simulated signatures (EICAR, Fake AWS Keys) meant to safely trigger Sentinel's detection engines on the Pull Request interface without causing any actual harm or exposing real secrets.
+
+AWS_SECRET_TEST="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
+EICAR_STANDARD="X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
