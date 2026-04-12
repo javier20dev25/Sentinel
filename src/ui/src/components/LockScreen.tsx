@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Shield, Lock, ArrowRight, Loader2, Key } from 'lucide-react';
-
-const API = 'http://localhost:3001';
 
 interface LockScreenProps {
   onUnlocked: (token: string) => void;
@@ -22,7 +20,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
 
   const checkStatus = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/auth/local/status`);
+      const { data } = await api.get('/api/auth/local/status');
       setPhase(data.setupRequired ? 'setup' : 'login');
     } catch (e: any) {
       setError('Cannot connect to Sentinel Core (Backend dead?)');
@@ -45,7 +43,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
 
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API}/api/auth/local/setup`, { password });
+      const { data } = await api.post('/api/auth/local/setup', { password });
       if (data.token) {
         onUnlocked(data.token);
       }
@@ -62,7 +60,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
     setLoading(true);
     
     try {
-      const { data } = await axios.post(`${API}/api/auth/local/login`, { password });
+      const { data } = await api.post('/api/auth/local/login', { password });
       if (data.token) {
         onUnlocked(data.token);
       }
@@ -82,7 +80,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-[#09090b] relative overflow-hidden font-sans">
+    <div className="h-screen flex items-center justify-center bg-[#09090b] relative overflow-hidden font-sans" translate="no">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
 
       <motion.div
@@ -105,19 +103,17 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Key className="w-4 h-4 text-zinc-500" />
             </div>
-            <div suppressHydrationWarning>
-              <input
-                type="password"
-                placeholder={phase === 'setup' ? 'Create a master password' : 'Enter master password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-                autoFocus
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore
-              />
-            </div>
+            <input
+              type="password"
+              placeholder={phase === 'setup' ? 'Create a master password' : 'Enter master password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+              autoFocus
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore
+            />
           </div>
 
           {phase === 'setup' && (
@@ -125,18 +121,16 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlocked }) => {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Lock className="w-4 h-4 text-zinc-500" />
               </div>
-              <div suppressHydrationWarning>
-                <input
-                  type="password"
-                  placeholder="Confirm master password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore
-                />
-              </div>
+              <input
+                type="password"
+                placeholder="Confirm master password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore
+              />
             </div>
           )}
 

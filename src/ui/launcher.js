@@ -217,7 +217,8 @@ async function boot() {
 
   // Launch Vite frontend
   const isWindows = process.platform === 'win32';
-  const vite = spawn(isWindows ? 'npx.cmd' : 'npx', ['vite', '--host'], {
+  const viteCmd = isWindows ? 'npx.cmd vite --host' : 'npx vite --host';
+  const vite = spawn(viteCmd, {
     cwd: __dirname,
     stdio: 'pipe',
     env: { ...process.env, FORCE_COLOR: '1' },
@@ -234,9 +235,8 @@ async function boot() {
     if (fallbackTimeout) clearTimeout(fallbackTimeout);
 
     let hue = 0;
-    const printAnimatedBox = () => {
-      const color = getRgbAnsi(hue);
-      process.stdout.write(`${ESC}s`); // Save cursor
+    const printStaticBox = () => {
+      const color = CYAN;
       process.stdout.write(`\n  ${color}${BOLD}╔══════════════════════════════════════════════════╗${RESET}\n`);
       process.stdout.write(`  ${color}${BOLD}║                                                  ║${RESET}\n`);
       process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}SENTINEL IS LIVE${RESET}${color}${BOLD}                                ║${RESET}\n`);
@@ -247,17 +247,18 @@ async function boot() {
       process.stdout.write(`  ${color}${BOLD}║  ${WHITE}${BOLD}Press ${YELLOW}[ANY KEY]${WHITE} to launch dashboard.${RESET}${color}${BOLD}           ║${RESET}\n`);
       process.stdout.write(`  ${color}${BOLD}║  ${DIM}${WHITE}Automating launch in 4s...${RESET}${color}${BOLD}                      ║${RESET}\n`);
       process.stdout.write(`  ${color}${BOLD}╚══════════════════════════════════════════════════╝${RESET}\n`);
-      process.stdout.write(`${ESC}u`); // Restore cursor
-      hue = (hue + 5) % 360;
     };
 
-    interval = setInterval(printAnimatedBox, 100);
+    printStaticBox();
 
     const launchBrowser = () => {
       if (autoOpenTimeout) clearTimeout(autoOpenTimeout);
       if (interval) clearInterval(interval);
-      const startCmd = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
-      spawn(startCmd, [url], { shell: true, detached: true }).unref();
+      
+      const isWin = process.platform === 'win32';
+      const cmd = isWin ? `start "" "${url}"` : (process.platform === 'darwin' ? `open "${url}"` : `xdg-open "${url}"`);
+      
+      spawn(cmd, { shell: true, detached: true }).unref();
       printLine(`\n  ${CYAN}${BOLD}> Launching Dashboard at ${url}...${RESET}\n`);
       if (process.stdin.setRawMode) process.stdin.setRawMode(false);
       process.stdin.pause();
@@ -305,15 +306,12 @@ async function boot() {
 
   vite.stderr.on('data', (data) => {
     const msg = data.toString().trim();
-    if (msg && !msg.includes('Warning') && !msg.includes('MODULE_TYPELESS')) {
-      printLine(`  ${RED}${DIM}[VITE-ERR]${RESET} ${YELLOW}${msg}${RESET}`);
-    }
-  });
-
-  vite.stderr.on('data', (data) => {
-    const msg = data.toString().trim();
-    if (msg && !msg.includes('Warning') && !msg.includes('MODULE_TYPELESS')) {
-      printLine(`  ${YELLOW}${DIM}[VITE]${RESET} ${YELLOW}${msg}${RESET}`);
+    if (msg) {
+      if (msg.includes('Error') || msg.includes('failed')) {
+        printLine(`  ${RED}${DIM}[VITE-ERR]${RESET} ${YELLOW}${msg}${RESET}`);
+      } else if (!msg.includes('Warning') && !msg.includes('MODULE_TYPELESS')) {
+        printLine(`  ${GRAY}${DIM}[VITE-STDERR]${RESET} ${msg}${RESET}`);
+      }
     }
   });
 

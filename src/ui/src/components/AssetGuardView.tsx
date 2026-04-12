@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   File, Folder, Lock as LockIcon, Unlock as UnlockIcon, Search, CheckCircle, 
-  AlertCircle, ChevronRight, ChevronDown, Database, Key, Shield
+  AlertCircle, ChevronRight, ChevronDown, Database, Key, Shield, Loader2
 } from 'lucide-react';
 
 interface AssetGuardViewProps {
@@ -29,8 +29,8 @@ const AssetGuardView: React.FC<AssetGuardViewProps> = ({ repoId }) => {
     setLoading(true);
     try {
       const [{ data: struct }, { data: prohibited }] = await Promise.all([
-        axios.get(`http://localhost:3001/api/shield/structure/${repoId}`),
-        axios.get(`http://localhost:3001/api/shield/prohibited/${repoId}`)
+        api.get(`/api/shield/structure/${repoId}`),
+        api.get(`/api/shield/prohibited/${repoId}`)
       ]);
       setStructure(struct);
       setProhibitedPaths(prohibited.map((p: any) => p.path));
@@ -47,7 +47,7 @@ const AssetGuardView: React.FC<AssetGuardViewProps> = ({ repoId }) => {
 
   const toggleProhibit = async (path: string, currentlyProhibited: boolean) => {
     try {
-      await axios.post('http://localhost:3001/api/shield/prohibit', {
+      await api.post('/api/shield/prohibit', {
         repoId,
         path,
         prohibited: !currentlyProhibited

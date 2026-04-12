@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, GitMerge, Loader2, X, Check } from 'lucide-react';
-
-const API = 'http://localhost:3001';
 
 export const SecurityHardener: React.FC = () => {
   const [switches, setSwitches] = useState({ npmIgnoreScripts: false, globalGitHooks: false, secretScanning: true });
@@ -13,7 +11,7 @@ export const SecurityHardener: React.FC = () => {
 
   const fetchStatus = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/hardener/status`);
+      const { data } = await api.get('/api/hardener/status');
       setSwitches(data);
     } catch (e) {
       console.error('Failed to fetch hardener status', e);
@@ -37,7 +35,7 @@ export const SecurityHardener: React.FC = () => {
   const executeToggle = async (key: string, enable: boolean) => {
     setToggling(true);
     try {
-      const { data } = await axios.post(`${API}/api/hardener/switch`, { key, enable });
+      const { data } = await api.post('/api/hardener/switch', { key, enable });
       if (data.success) {
         setSwitches(prev => ({ ...prev, [key]: data.enabled }));
         setModalOpen(false);

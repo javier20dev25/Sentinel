@@ -189,6 +189,10 @@ class SentinelDB {
         return this.db.prepare('SELECT * FROM repositories WHERE id = ?').get(id);
     }
 
+    getRepositoryByFullName(fullName) {
+        return this.db.prepare('SELECT * FROM repositories WHERE github_full_name = ?').get(fullName);
+    }
+
     updateRepoStatus(repoId, status) {
         const stmt = this.db.prepare('UPDATE repositories SET status = ?, last_scan_at = CURRENT_TIMESTAMP WHERE id = ?');
         return stmt.run(status, repoId);

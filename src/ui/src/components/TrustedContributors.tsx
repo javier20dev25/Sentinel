@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Trash2, Loader2, GitBranch as Github, ShieldCheck } from 'lucide-react';
-
-const API = 'http://localhost:3001';
 
 export const TrustedContributors: React.FC = () => {
   const [trusted, setTrusted] = useState<any[]>([]);
@@ -15,7 +13,7 @@ export const TrustedContributors: React.FC = () => {
 
   const fetchTrusted = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/trusted`);
+      const { data } = await api.get('/api/trusted');
       setTrusted(data || []);
     } catch (e) {} finally { setLoading(false); }
   };
@@ -23,7 +21,7 @@ export const TrustedContributors: React.FC = () => {
   const fetchSuggestions = async () => {
     setLoadingSuggestions(true);
     try {
-      const { data } = await axios.get(`${API}/api/github/collaborators`);
+      const { data } = await api.get('/api/github/collaborators');
       setSuggestions(data || []);
     } catch (e) {} finally { setLoadingSuggestions(false); }
   };
@@ -36,7 +34,7 @@ export const TrustedContributors: React.FC = () => {
     if (!username.trim()) return;
     setAdding(true);
     try {
-      await axios.post(`${API}/api/trusted`, { username: username.trim() });
+      await api.post('/api/trusted', { username: username.trim() });
       await fetchTrusted();
       setNewUser('');
     } catch (e) {} finally { setAdding(false); }
@@ -44,7 +42,7 @@ export const TrustedContributors: React.FC = () => {
 
   const handleRemove = async (username: string) => {
     try {
-      await axios.delete(`${API}/api/trusted/${username}`);
+      await api.delete(`/api/trusted/${username}`);
       await fetchTrusted();
     } catch (e) {}
   };
