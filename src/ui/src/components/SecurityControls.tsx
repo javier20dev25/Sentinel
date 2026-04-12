@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Clock, Cpu, Server, CheckCircle2, PauseCircle, Activity, Loader2 } from 'lucide-react';
-import axios from 'axios';
-
-const API = 'http://localhost:3001';
+import { api } from '../lib/api';
 
 const processMeta: Record<string, any> = {
   'poller': {
@@ -40,7 +38,7 @@ export const SecurityControls: React.FC = () => {
 
   const fetchProcesses = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/system/processes`);
+      const { data } = await api.get('/api/system/processes');
       setProcesses(data);
     } catch (e) {
       console.error('Failed to fetch processes:', e);
@@ -52,7 +50,7 @@ export const SecurityControls: React.FC = () => {
   const toggleProc = async (id: string, currentState: boolean) => {
     setToggling(id);
     try {
-      const { data } = await axios.post(`${API}/api/system/processes`, {
+      const { data } = await api.post('/api/system/processes', {
         id,
         active: !currentState
       });

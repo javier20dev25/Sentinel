@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, Zap, Terminal, AlertTriangle, CheckCircle, 
@@ -32,7 +32,7 @@ const ProjectShieldView: React.FC<ProjectShieldViewProps> = ({ repoId }) => {
   const handleHarden = async () => {
     setHardenStatus('idle');
     try {
-      await axios.post('http://localhost:3001/api/shield/harden', { repoId });
+      await api.post('/api/shield/harden', { repoId });
       setHardenStatus('success');
     } catch (e) {
       setHardenStatus('error');
@@ -44,7 +44,7 @@ const ProjectShieldView: React.FC<ProjectShieldViewProps> = ({ repoId }) => {
     setLogs(['[SENTINEL] Starting Safe Install sequence...']);
     setThreats([]);
     try {
-      const { data } = await axios.post('http://localhost:3001/api/shield/safe-install', { repoId });
+      const { data } = await api.post('/api/shield/safe-install', { repoId });
       setThreats(data.threats || []);
       setLogs(prev => [...prev, `[DONE] Installation and AST Scan complete.`]);
     } catch (e) {

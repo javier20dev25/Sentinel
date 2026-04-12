@@ -119,7 +119,8 @@ const App: React.FC = () => {
   const setTokens = (token: string) => {
     if (token) {
       localStorage.setItem('sentinel_jwt', token);
-      setPhase('loading');
+      // Use timeout to prevent removeChild crash with password managers or autofill
+      setTimeout(() => setPhase('loading'), 0);
     } else {
       localStorage.removeItem('sentinel_jwt');
       setPhase('locked');
@@ -181,7 +182,19 @@ const App: React.FC = () => {
 
   // ── Lock Screen ──
   if (phase === 'locked') {
-    return <LockScreen onUnlocked={setTokens} />;
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+           key="locked"
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="h-full w-full"
+        >
+          <LockScreen onUnlocked={setTokens} />
+        </motion.div>
+      </AnimatePresence>
+    );
   }
 
   // ── Loading ──

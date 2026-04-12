@@ -121,9 +121,10 @@ class GitHubBridge {
      */
     login() {
         return new Promise((resolve, reject) => {
-            // SECURITY: Static command and safe arguments. Using shell=true on Windows to ensure 'gh' is found.
-            const child = spawn('gh', ['auth', 'login', '-w', '-p', 'https', '--skip-ssh-key'], {
-                shell: process.platform === 'win32',
+            // SECURITY: Static command and safe arguments. Using .exe on Windows for GH CLI.
+            const ghCmd = process.platform === 'win32' ? 'gh.exe' : 'gh';
+            const child = spawn(ghCmd, ['auth', 'login', '-w', '-p', 'https', '--skip-ssh-key'], {
+                shell: false,
                 stdio: ['pipe', 'pipe', 'pipe']
             });
 
@@ -192,7 +193,6 @@ class GitHubBridge {
                 '--limit', safeLimit,
                 '--json', 'name,nameWithOwner,description,visibility,updatedAt'
             ], {
-                shell: process.platform === 'win32',
                 encoding: 'utf-8',
                 timeout: 30000
             });
@@ -310,6 +310,75 @@ class GitHubBridge {
                 timeout: 10000
             }));
         } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Gets global repository metadata via GitHub API.
+     * SECURITY: repoFullName validated.
+     */
+    getRepoMetadata(repoFullName) {
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'repo', 'view', repoFullName,
+                '--json', 'description,stargazerCount,updatedAt,defaultBranchRef,url'
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            return JSON.parse(output);
+        } catch (e) {
+            console.error(`Error getting metadata for ${repoFullName}:`, sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
+    /**
+     * Gets latest commits for a repository.
+     * @param {string} repoFullName 
+     * @param {number} limit 
+     */
+    getCommits(repoFullName, limit = 5) {
+        if (!isValidOwnerRepo(repoFullName)) return [];
+        try {
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}/commits`,
+                '--limit', String(limit),
+                '--json', 'sha,commit,html_url'
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            return JSON.parse(output);
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Fetches a file content from a remote GitHub repository.
+     * Returns decoded UTF-8 string or null.
+     */
+    getRemoteFileContent(repoFullName, filePath) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidGitPath(filePath)) return null;
+        try {
+            // Use gh api to fetch contents
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}/contents/${filePath}`,
+                '--jq', '.content'
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            
+            if (!output || output.trim() === '') return null;
+            
+            // Decodes the base64 content from GitHub API
+            return Buffer.from(output.trim(), 'base64').toString('utf-8');
+        } catch (e) {
+            console.error(`Error fetching remote file ${filePath}:`, sanitizeForLog(e.message));
             return null;
         }
     }
