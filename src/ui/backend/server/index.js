@@ -24,11 +24,12 @@ const {
     isValidOwnerRepo, isValidHardenerKey, getWhitelistedCommand, 
     sanitizeForLog, isValidLocalPath, isValidGitPath 
 } = require('../lib/sanitizer');
-const { scanFile, scanDirectory } = require('../scanner/index');
+const { scanFile, scanDirectory, analyzeLifecycleScripts } = require('../scanner/index');
 const shield = require('../lib/shield_bridge');
 const fsExplorer = require('../lib/fs_explorer');
 const gitHooks = require('../lib/git_hooks');
 const hardener = require('../lib/hardener_bridge');
+const polling = require('../services/polling');
 
 // ─── Remote UI Intents (SSE) ───
 let sseClients = [];
@@ -50,7 +51,7 @@ const app = express();
 const PORT = 3001;
 
 // Ensure SSE endpoint is registered early
-app.get('/api/ui/stream', (req, res) => {
+app.get(['/api/ui/stream', '/api/shield/logs'], (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -238,7 +239,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/github/repos', (req, res) => {
     try {
         const repos = gh.listUserRepos(200);
-        res.json(repos);
+        res.json({ repos });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
@@ -287,6 +288,27 @@ app.post('/api/repositories', (req, res) => {
     try {
         const id = db.addRepository('', fullName);
         res.status(201).json({ id, github_full_name: fullName });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.post('/api/repositories/bulk', (req, res) => {
+    const { repos } = req.body;
+    if (!Array.isArray(repos) || repos.length === 0) {
+        return res.status(400).json({ error: 'repos must be a non-empty array of fullName strings' });
+    }
+    try {
+        const results = [];
+        for (const fullName of repos) {
+            if (!isValidOwnerRepo(fullName)) {
+                console.warn(`[BULK] Skipping invalid repo name: ${sanitizeForLog(String(fullName))}`);
+                continue;
+            }
+            const id = db.addRepository('', fullName);
+            results.push({ id, github_full_name: fullName });
+        }
+        res.status(201).json({ linked: results.length, repos: results });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
@@ -356,6 +378,133 @@ app.post('/api/repositories/:id/scan', (req, res) => {
     }
 });
 
+/** Fast-scan by repo name - used by clinical terminal or CLI simulations */
+app.post('/api/repositories/scan-by-name', (req, res) => {
+    try {
+        const { fullName } = req.body;
+        if (!fullName) return res.status(400).json({ error: 'Repository name required' });
+
+        const repo = db.getRepositoryByFullName(fullName);
+        if (!repo) return res.status(404).json({ error: 'Repository not yet linked to Sentinel' });
+
+        const repoId = repo.id;
+        let threats = 0;
+        let prsScanned = 0;
+        let filesScanned = 0;
+        let details = [];
+
+        // Scan local if exists
+        if (repo.local_path && fs.existsSync(repo.local_path)) {
+            const results = scanDirectory(repo.local_path, repoId);
+            threats += results.threats;
+            filesScanned += results.filesScanned;
+            details.push(...results.details);
+        }
+
+        // Scan remote PRs
+        try {
+            const prs = gh.listPRs(repo.github_full_name);
+            prsScanned = prs.length;
+            for (const pr of prs) {
+                const diff = gh.getPRDiff(repo.github_full_name, pr.number);
+                if (diff) {
+                    const scan = scanFile(`PR #${pr.number}.diff`, diff);
+                    if (scan.alerts.length > 0) {
+                        threats += scan.alerts.length;
+                        scan.alerts.forEach(alert => {
+                            details.push(`PR #${pr.number}: ${alert.ruleName}`);
+                            db.addScanLog(repoId, 'TERMINAL_PR_SCAN', 8, `Threat in PR #${pr.number}: ${alert.ruleName}`, scan.alerts);
+                        });
+                    }
+                }
+            }
+        } catch (err) {}
+
+        // Update status for the dashboard
+        if (threats > 0) {
+            db.updateRepoStatus(repoId, 'INFECTED');
+        } else {
+            db.updateRepoStatus(repoId, 'SAFE');
+        }
+
+        res.json({ 
+            prs_scanned: prsScanned, 
+            files_scanned: filesScanned, 
+            threats_found: threats,
+            details: details.slice(0, 10) // Limit details sent to terminal
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Add a repository by GitHub URL (Aura Intelligence) */
+app.post('/api/repositories/add-url', (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'GitHub URL required' });
+
+        // Basic parsing: github.com/owner/repo
+        const match = url.match(/github\.com\/([^\/]+\/[^\/\s?#.]+)/i);
+        if (!match) return res.status(400).json({ error: 'Invalid GitHub repository URL' });
+
+        const fullName = match[1];
+        const metadata = gh.getRepoMetadata(fullName);
+        if (!metadata) return res.status(404).json({ error: 'Repository not found or private (check gh auth)' });
+
+        // Add to DB
+        const repoId = db.addRepository(null, fullName); // local_path is null for remote-only repos
+        res.json({ id: repoId, fullName: fullName, metadata });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Remote Dependency Audit (Aura Permissions) */
+app.get('/api/repositories/:id/audit', (req, res) => {
+    try {
+        const repo = db.getRepositories().find(r => r.id === parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const packageJson = gh.getRemoteFileContent(repo.github_full_name, 'package.json');
+        if (!packageJson) {
+            return res.json({ 
+                dependencies: 0,
+                list: [],
+                rootAlerts: [],
+                noPackageJson: true
+            });
+        }
+
+        const pkg = JSON.parse(packageJson);
+        const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+        
+        // Audit root lifecycle scripts
+        const rootAlerts = analyzeLifecycleScripts(packageJson);
+
+        res.json({ 
+            dependencies: Object.keys(deps).length,
+            list: Object.keys(deps),
+            rootAlerts 
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Commit History (Aura Monitor) */
+app.get('/api/repositories/:id/commits', (req, res) => {
+    try {
+        const repo = db.getRepositories().find(r => r.id === parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const commits = gh.getCommits(repo.github_full_name, 10);
+        res.json({ commits });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
 // ─── Global Audit Trail (SGA) ───
 app.get('/api/audit/logs', (req, res) => {
     try {
@@ -370,18 +519,28 @@ app.get('/api/audit/logs', (req, res) => {
 app.get('/api/system/processes', (req, res) => {
     res.json({
         'pre-push': { active: gitHooks.isInstalled(), freq: 'On Push' },
-        'hardener': { active: hardener.getSwitchesStatus().npmIgnoreScripts, freq: 'Always' }
+        'hardener': { active: hardener.getSwitchesStatus().npmIgnoreScripts, freq: 'Always' },
+        'poller': { active: polling.isActive(), freq: '5 mins', lastRun: polling.getLastRun() }
     });
 });
 
 app.post('/api/system/processes', (req, res) => {
     const { id, active } = req.body;
+    let resultState = { active, freq: 'Unknown' };
+
     if (id === 'pre-push') {
         active ? gitHooks.install() : gitHooks.uninstall();
+        resultState.freq = 'On Push';
     } else if (id === 'hardener') {
         hardener.setNpmIgnoreScripts(active);
+        resultState.freq = 'Always';
+    } else if (id === 'poller') {
+        active ? polling.start() : polling.stop();
+        resultState.freq = '5 mins';
+        resultState.lastRun = polling.getLastRun();
     }
-    res.json({ success: true });
+    
+    res.json({ success: true, process: resultState });
 });
 
 // ─── Git Safe Staging ───
@@ -443,8 +602,9 @@ app.post('/api/shield/harden', async (req, res) => {
 });
 
 app.post('/api/shield/safe-install', async (req, res) => {
-    const threats = await shield.safeInstall(req.body.repoId, (msg) => {
-        emitSse({ action: 'shield-log', message: msg });
+    const { repoId } = req.body;
+    const threats = await shield.safeInstall(repoId, (msg) => {
+        emitSse({ action: 'shield-log', message: msg, repoId: parseInt(repoId) });
     });
     res.json({ success: true, threats });
 });

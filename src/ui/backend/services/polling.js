@@ -28,7 +28,13 @@ function safeNotify(options) {
 
 const POLLING_INTERVAL = 60 * 60 * 1000; // 1 hour
 
+let pollingInterval = null;
+let lastRunTime = null;
+let isPollingActive = false;
+
 function checkAllRepos() {
+    isPollingActive = true;
+    lastRunTime = Date.now();
     console.log(`[${new Date().toISOString()}] Starting background scan...`);
     const repos = db.getRepositories();
     
@@ -71,10 +77,39 @@ function checkAllRepos() {
     })();
 }
 
-// Start polling - DEFERRED to avoid blocking main process startup
-console.log("🚀 Sentinel Background Service Initializing...");
-setTimeout(() => {
-    console.log("⚡ Starting first background scan...");
+function start() {
+    if (pollingInterval) return;
+    console.log("🚀 Sentinel Background Service Starting...");
     checkAllRepos();
-    setInterval(checkAllRepos, POLLING_INTERVAL);
+    pollingInterval = setInterval(checkAllRepos, POLLING_INTERVAL);
+    isPollingActive = true;
+}
+
+function stop() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+    isPollingActive = false;
+    console.log("🛑 Sentinel Background Service Stopped.");
+}
+
+function isActive() {
+    return isPollingActive;
+}
+
+function getLastRun() {
+    return lastRunTime;
+}
+
+// Start polling - DEFERRED to avoid blocking main process startup
+setTimeout(() => {
+    start();
 }, 5000); // 5 second delay to let server start and UI load
+
+module.exports = {
+    start,
+    stop,
+    isActive,
+    getLastRun
+};

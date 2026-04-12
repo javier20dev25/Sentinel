@@ -147,4 +147,52 @@ function scanLocalFile(filepath, content) {
     return scanFile(path.basename(filepath), content);
 }
 
-module.exports = { scanFile, scanLocalFile, loadRules };
+function scanDirectory(dirPath, repoId = null, depth = 5) {
+    const results = {
+        threats: 0,
+        filesScanned: 0,
+        details: []
+    };
+
+    if (!fs.existsSync(dirPath) || depth < 0) return results;
+
+    const excluded = ['node_modules', '.git', 'dist', 'build', '.next', 'out', 'vendor'];
+    
+    try {
+        const items = fs.readdirSync(dirPath);
+        for (const item of items) {
+            if (excluded.includes(item)) continue;
+
+            const fullPath = path.join(dirPath, item);
+            const stats = fs.statSync(fullPath);
+
+            if (stats.isDirectory()) {
+                const subResults = scanDirectory(fullPath, repoId, depth - 1);
+                results.threats += subResults.threats;
+                results.filesScanned += subResults.filesScanned;
+                results.details.push(...subResults.details);
+            } else if (stats.isFile()) {
+                try {
+                    const content = fs.readFileSync(fullPath, 'utf8');
+                    const scan = scanFile(item, content);
+                    results.filesScanned++;
+                    
+                    if (scan.alerts.length > 0) {
+                        results.threats += scan.alerts.length;
+                        scan.alerts.forEach(alert => {
+                            results.details.push(`${item}: ${alert.ruleName} (${alert.category})`);
+                        });
+                    }
+                } catch (e) {
+                    // Skip binary or unreadable files
+                }
+            }
+        }
+    } catch (err) {
+        console.error(`[SCANNER] Error scanning directory ${dirPath}:`, err.message);
+    }
+
+    return results;
+}
+
+module.exports = { scanFile, scanLocalFile, scanDirectory, loadRules, analyzeLifecycleScripts };
