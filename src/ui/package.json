@@ -2,6 +2,7 @@
   "name": "sentinel",
   "version": "1.0.0",
   "description": "Sentinel - GitHub Repository Sentinel with powerful local UI",
+  "main": "electron/main.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/javier20dev25/Sentinel.git"

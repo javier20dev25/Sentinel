@@ -77,9 +77,10 @@ class ShieldBridge {
         onProgress(`[Step 1/3] Launching ${cmd} install with --ignore-scripts...`);
 
         return new Promise((resolve, reject) => {
-            const child = spawn(cmd, ['install', '--ignore-scripts'], {
+            const platformCmd = process.platform === 'win32' ? `${cmd}.cmd` : cmd;
+            const child = spawn(platformCmd, ['install', '--ignore-scripts'], {
                 cwd: repoPath,
-                shell: true
+                shell: false
             });
 
             child.stdout.on('data', (data) => onProgress(data.toString()));

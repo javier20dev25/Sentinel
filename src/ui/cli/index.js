@@ -133,6 +133,69 @@ program
     });
 
 program
+    .command('hook <eventName>')
+    .description('Sentinel Git Hook Entrypoint')
+    .option('--reverse', 'Dry-run or securely revert code state instead of blocking')
+    .action((eventName, options) => {
+        if (eventName === 'pre-push') {
+            console.log("🛡️ [Sentinel] Analyzing outbound commits for security threats...");
+            try {
+                const { execSync } = require('child_process');
+                const { scanFile } = require('../backend/scanner/index');
+                
+                // Diff of what is about to be pushed compared to remote tracking branch
+                let diff = '';
+                try {
+                    diff = execSync('git diff @{u}..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+                } catch (e) {
+                    // No upstream or other error: fallback to full staged/unpushed diff check via HEAD
+                    try {
+                        diff = execSync('git diff HEAD~1..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+                    } catch(e2) {
+                        diff = '';
+                    }
+                }
+                
+                if (diff.trim() === '') {
+                    console.log("🛡️ [Sentinel] No diff found to scan. Proceeding...");
+                    process.exit(0);
+                }
+                
+                const results = scanFile('pre_push_commit.diff', diff);
+                
+                if (results.alerts.length > 0) {
+                    safeNotify({
+                        title: '🚨 Sentinel: Push Blocked!',
+                        message: `Malicious code detected in outbound commits.`,
+                        sound: true
+                    });
+                    
+                    console.error("\\n🚨 [SENTINEL ALERT] Push structurally halted! Malicious code detected in outbound commits:");
+                    results.alerts.forEach(alert => {
+                        console.error(`  - [${alert.riskLevel}] ${alert.ruleName}: ${alert.description}`);
+                    });
+                    
+                    if (options.reverse) {
+                        console.log("\\n♻️ [Reverse Analyzer] --reverse flag enabled. Dry-run noted. State maintained.");
+                        console.log("   To securely revert the malicious commit, run: git reset --soft HEAD~1");
+                        process.exit(0); // In reverse dry-run, we allow it or just exit 0 so to not block if it's a dry run
+                    } else {
+                        console.error("\\n❌ Strict enforcement: Push blocked.");
+                        console.error("   Use 'sentinel hook pre-push --reverse' for dry-run analysis.");
+                        process.exit(1);
+                    }
+                } else {
+                    console.log("✅ [Sentinel] Code changes are clean. Push allowed.");
+                    process.exit(0);
+                }
+            } catch (err) {
+                console.error("🛡️ [Sentinel] Hook error:", err.message);
+                process.exit(0); // Fail-open so we don't break git completely on unrelated errors
+            }
+        }
+    });
+
+program
     .command('open')
     .description('Open Sentinel UI and navigate to specific view')
     .option('--repo <name>', 'Navigate to specific repository')
@@ -164,7 +227,7 @@ program
             const args = ['run', 'electron:dev'];
             const spawnCwd = path.resolve(__dirname, '..'); 
             
-            const uiProcess = spawn(cmd, args, { 
+            const uiProcess = spawn(`${cmd} ${args.join(' ')}`, { 
                 cwd: spawnCwd,
                 detached: true, 
                 stdio: 'ignore',

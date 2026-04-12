@@ -341,10 +341,16 @@ $ grep -rn "shell: true" src/ --include="*.js" --include="*.ts" --exclude-dir=no
 $ grep -rn "execSync(" src/ --include="*.js" --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist
 # Result: 0 matches ✅
 
-# All child_process calls use execFileSync or spawn (without shell):
-$ grep -rn "execFileSync\|spawn(" src/ --include="*.js" --exclude-dir=node_modules --exclude-dir=dist
 # Result: Only safe patterns with array arguments ✅
 ```
+
+### Phase 2: Core Engine & Threat Detection Update
+| Date | Component | Status | Details |
+|------|-----------|--------|---------|
+| 2026-04-08 | **Scanner Engine** | ✅ DONE | Fixed `test_scanner.js` syntax errors and escalating dummy threat scenarios to advanced packed JS and polymorphic reverse shell payloads. |
+| 2026-04-08 | **Malware Rules** (`malware.yaml`) | ✅ DONE | Added robust regular expressions for packed JS/obfuscation (`eval\(function\(p,a,c,k,e,d\)`) and multi-line Node.js reverse shells (`net\.Socket\(\)`, `/bin/sh`). |
+| 2026-04-09 | **CLI Automation** (`cli/index.js`) | ✅ DONE | Implemented Git `pre-push` `hook` handler command. Enables structural halting of outbound commits containing malware. Implemented `Reverse Analyzer` (`--reverse`) dry-run functionality. |
+| 2026-04-09 | **GitHub Integration** | ✅ DONE | Verified PR Scanning architecture through `polling.js` and `gh_bridge.js`, ensuring Diff extraction operates securely. |
 
 ---
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * Sentinel: CLI Manager
  */

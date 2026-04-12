@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Search, GitBranch, Lock, Globe, Check, Loader2, Shield, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -31,7 +31,7 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
     setLoading(true);
     try {
       const { data } = await api.get('/api/github/repos');
-      setRepos(data.repos);
+      setRepos(data.repos || []);
     } catch (e) {
       console.error('Failed to fetch repos:', e);
     } finally {
@@ -59,10 +59,10 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
   };
 
   const selectAll = () => {
-    if (selected.size === filtered.length) {
+    if (filtered && selected.size === filtered.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map(r => r.fullName)));
+      setSelected(new Set(filtered?.map(r => r.fullName) || []));
     }
   };
 
@@ -113,7 +113,7 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
           onClick={selectAll}
           className="px-4 py-3 rounded-2xl border border-white/10 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors whitespace-nowrap"
         >
-          {selected.size === filtered.length && filtered.length > 0 ? 'Deselect All' : 'Select All'}
+          {selected.size === (filtered?.length || 0) && (filtered?.length || 0) > 0 ? 'Deselect All' : 'Select All'}
         </button>
       </div>
 
@@ -194,9 +194,9 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({ username, onComplete }) => 
           className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-blue-500 hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-colors"
         >
           {linking ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Linking...</>
+            <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Linking...</span>
           ) : (
-            <><Shield className="w-4 h-4" /> Start Monitoring <ChevronRight className="w-4 h-4" /></>
+            <span className="flex items-center gap-2"><Shield className="w-4 h-4" /> Start Monitoring <ChevronRight className="w-4 h-4" /></span>
           )}
         </motion.button>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
 import { ShieldAlert, ShieldCheck, GitBranch, Plus, LayoutDashboard, Loader2 } from 'lucide-react';
+import { api } from '../lib/api';
 import RepoCard from './RepoCard';
 
 interface DashboardProps {
@@ -25,13 +25,15 @@ const Dashboard: React.FC<DashboardProps> = ({ repos, loading, onAddProject }) =
           // Trigger scan for all repos in parallel
           await Promise.all(
             repos.map(repo => 
-              axios.post(`http://localhost:3001/api/repositories/${repo.id}/scan`)
+              api.post(`/api/repositories/${repo.id}/scan`)
             )
           );
-          new Notification("Sentinel: Global Scan Complete", {
-            body: `Successfully scanned ${repos.length} repositories.`,
-            icon: 'info'
-          });
+          if (Notification.permission === 'granted') {
+            new Notification("Sentinel: Global Scan Complete", {
+              body: `Successfully scanned ${repos.length} repositories.`,
+              icon: 'info'
+            });
+          }
         } catch (err) {
           console.error("Failed global scan", err);
         } finally {
@@ -105,15 +107,42 @@ const Dashboard: React.FC<DashboardProps> = ({ repos, loading, onAddProject }) =
             {loading ? 'Loading...' : repos.length === 0 ? 'No repositories linked yet' : `Last updated ${new Date().toLocaleTimeString()}`}
           </p>
         </div>
-        <motion.button
-          onClick={onAddProject}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-bold hover:bg-blue-500/20 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Repository
-        </motion.button>
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <input 
+              type="text" 
+              placeholder="Paste GitHub URL to monitor..." 
+              className="w-64 px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 transition-all"
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const target = e.target as HTMLInputElement;
+                  const url = target.value;
+                  if (!url) return;
+                  try {
+                    target.disabled = true;
+                    target.placeholder = "Scanning Aura...";
+                    await api.post('/api/repositories/add-url', { url });
+                    target.value = '';
+                    window.location.reload();
+                  } catch (err: any) {
+                    alert(err.response?.data?.error || "Failed to add repository");
+                    target.disabled = false;
+                    target.placeholder = "Paste GitHub URL to monitor...";
+                  }
+                }
+              }}
+            />
+          </div>
+          <motion.button
+            onClick={onAddProject}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-bold hover:bg-blue-500/20 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Repository
+          </motion.button>
+        </div>
       </div>
 
       {/* Skeletons */}
