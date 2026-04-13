@@ -3,6 +3,8 @@ name: Build Sentinel
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -28,6 +30,10 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: src/ui
+
+      - name: Run Tests
+        run: npm test
+        working-directory: .
 
       - name: Build UI (Vite)
         run: npm run build
