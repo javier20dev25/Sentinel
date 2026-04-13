@@ -1,5 +1,5 @@
 {
-  "name": "sentinel",
+  "name": "sentinel-ui",
   "version": "1.0.0",
   "description": "Sentinel - GitHub Repository Sentinel with powerful local UI",
   "main": "electron/main.js",
