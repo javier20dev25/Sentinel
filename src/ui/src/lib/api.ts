@@ -34,3 +34,14 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Sentinel 3.0: Sandbox API Helpers
+ */
+export const sandboxApi = {
+  getTemplate: () => api.get('/api/supply/sandbox/template'),
+  checkStatus: (owner: string, repo: string) => api.get(`/api/supply/sandbox/check/${owner}/${repo}`),
+  trigger: (ownerRepo: string, branch = 'main') => api.post('/api/supply/sandbox/trigger', { ownerRepo, branch }),
+  getRunStatus: (owner: string, repo: string, runId: number) => api.get(`/api/supply/sandbox/status/${owner}/${repo}/${runId}`),
+  analyze: (ownerRepo: string, runId: number) => api.post('/api/supply/sandbox/analyze', { ownerRepo, runId })
+};

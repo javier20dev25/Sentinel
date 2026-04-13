@@ -100,76 +100,121 @@ program
         });
     });
 
-// CLI open UI command -> Send Intent
-program
-    .command('open')
-    .description('Open Sentinel UI and navigate to specific view')
-    .option('--repo <name>', 'Navigate to specific repository')
-    .option('--pr <url>', 'Navigate to specific PR')
-    .option('--scan-all', 'Trigger a global scan immediately on open')
-    .action(async (options) => {
-        const intentPayload = { 
-            action: options.scanAll ? 'scan-all' : (options.pr ? 'pr' : 'repo'),
-            target: options.pr || options.repo || null
-        };
+// ─── Command: Sandbox (Sentinel 3.0) ────────────────────────────────────────
 
-        const postIntent = () => {
-            return new Promise((resolve, reject) => {
-                const req = http.request({
-                    hostname: '127.0.0.1',
-                    port: 3001,
-                    path: '/api/ui/intent',
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                }, (res) => {
-                    resolve(res.statusCode);
-                });
-                req.on('error', reject);
-                req.write(JSON.stringify(intentPayload));
-                req.end();
-            });
-        };
+const sandbox = program
+    .command('sandbox')
+    .description('Manage and monitor dynamic sandbox analysis in GitHub Actions');
 
-        try {
-            await postIntent();
-            console.log("✅ Sentinel UI navigated successfully via SSE intent.");
-        } catch (e) {
-            if (e.code === 'ECONNREFUSED') {
-                console.log("📡 Sentinel UI not running. Launching app...");
-                
-                // Spawn UI detached
-                const isWindows = process.platform === 'win32';
-                const cmd = isWindows ? 'cmd.exe' : 'npm';
-                const args = isWindows ? ['/c', 'npm', 'run', 'ui'] : ['run', 'ui'];
-                
-                spawn(cmd, args, { 
-                    cwd: require('path').resolve(__dirname, '../../'),
-                    detached: true, 
-                    stdio: 'ignore',
-                    windowsHide: true
-                }).unref();
-                
-                console.log("⏳ Starting background server & UI, please wait...");
-                
-                // Retry intent continuously for up to 15 seconds
-                let retries = 0;
-                const retryInterval = setInterval(async () => {
-                    try {
-                        await postIntent();
-                        console.log("✅ Application launched and navigated.");
-                        clearInterval(retryInterval);
-                    } catch (err) {
-                        retries++;
-                        if (retries > 15) {
-                            console.error("❌ Failed to reach UI within 15 seconds.");
-                            clearInterval(retryInterval);
-                        }
-                    }
-                }, 1000);
-            } else {
-                console.error("❌ Error sending intent:", e.message);
-            }
+sandbox
+    .command('generate')
+    .description('Generate the sentinel-sandbox.yml workflow template')
+    .action(() => {
+        const ci = require('../ui/backend/lib/ci_sandbox');
+        const result = ci.generateWorkflowTemplate();
+        if (result.success) {
+            console.log("\n--- SENTINEL SANDBOX WORKFLOW TEMPLATE ---");
+            console.log(result.workflowContent);
+            console.log("\n--- INSTRUCTIONS ---");
+            result.instructions.forEach(ins => console.log(ins));
+        } else {
+            console.error(`❌ Error: ${result.error}`);
         }
     });
+
+sandbox
+    .command('trigger <repo> [branch]')
+    .description('Trigger a dynamic sandbox analysis run')
+    .option('--async', 'Do not wait for completion (return runId immediately)')
+    .action(async (repo, branch, options) => {
+        const ci = require('../ui/backend/lib/ci_sandbox');
+        const targetBranch = branch || 'main';
+        
+        console.log(`🚀 Triggering sandbox analysis for ${repo} on branch ${targetBranch}...`);
+        const result = await ci.triggerSandboxRun(repo, targetBranch);
+
+        if (!result.success) {
+            console.error(`❌ Failed to trigger: ${result.error}`);
+            return;
+        }
+
+        console.log(`✅ Run triggered! ID: ${result.runId}`);
+        console.log(`🔗 URL: ${result.url}`);
+
+        if (options.async) {
+            console.log("Exiting (async mode). Use 'sntl sandbox status' to check progress.");
+            return;
+        }
+
+        // Wait for completion (default mode)
+        console.log("⏳ Waiting for analysis to complete (this may take a few minutes)...");
+        
+        let lastStatus = '';
+        const run = await ci.waitForSandboxRun(repo, result.runId, null, 900000, (s) => {
+            if (s.status !== lastStatus) {
+                console.log(`   [STATUS] ${s.status}${s.conclusion ? ` (${s.conclusion})` : ''}`);
+                lastStatus = s.status;
+            }
+        });
+
+        if (run.concluded && run.conclusion === 'success') {
+            console.log("✅ Analysis completed successfully. Fetching results...");
+            // Automatically analyze after successful completion
+            handleSandboxAnalysis(repo, result.runId);
+        } else {
+            console.error(`❌ Analysis ended with conclusion: ${run.conclusion || 'failed'}`);
+            if (run.timedOut) console.error("   Reason: Timeout reached.");
+        }
+    });
+
+sandbox
+    .command('status <repo> <runId>')
+    .description('Check the status of a sandbox run')
+    .action((repo, runId) => {
+        const ci = require('../ui/backend/lib/ci_sandbox');
+        const status = ci.getSandboxRunStatus(repo, parseInt(runId));
+        if (status.error) {
+            console.error(`❌ Error: ${status.error}`);
+        } else {
+            console.log(`Run status: ${status.status}`);
+            if (status.conclusion) console.log(`Conclusion: ${status.conclusion}`);
+            console.log(`URL: ${status.url}`);
+        }
+    });
+
+sandbox
+    .command('analyze <repo> <runId>')
+    .description('Download and analyze telemetry from a completed run')
+    .action(async (repo, runId) => {
+        handleSandboxAnalysis(repo, parseInt(runId));
+    });
+
+async function handleSandboxAnalysis(repo, runId) {
+    const ci = require('../ui/backend/lib/ci_sandbox');
+    console.log(`📥 Downloading artifacts for run #${runId}...`);
+    
+    const download = ci.downloadSandboxArtifacts(repo, runId);
+    if (!download.success) {
+        console.error(`❌ Download failed: ${download.error}`);
+        return;
+    }
+
+    console.log(`🔍 Analyzing telemetry...`);
+    const analysis = ci.analyzeTelemetry(download.tempDir, repo);
+    
+    if (analysis.threats.length === 0) {
+        console.log("\n✅ [SAFE] No malicious behavior detected in sandbox simulation.");
+    } else {
+        console.log(`\n🚨 FOUND ${analysis.threats.length} SUSPICIOUS BEHAVIORS IN SANDBOX:`);
+        analysis.threats.forEach(t => {
+            console.log(`\n[${t.severity}] ${t.type}`);
+            console.log(`Message: ${t.message}`);
+            console.log(`Evidence: ${t.evidence.substring(0, 150)}...`);
+        });
+        console.log(`\nRisk Score: ${analysis.riskScore.toFixed(1)}/10`);
+    }
+
+    ci.cleanupTempDir(download.tempDir);
+}
 
 program.parse(process.argv);

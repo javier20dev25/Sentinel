@@ -16,6 +16,9 @@ import { SafeStagingView } from './components/SafeStagingView';
 import ProjectShieldView from './components/ProjectShieldView';
 import AssetGuardView from './components/AssetGuardView';
 import { AuditTrailView } from './components/AuditTrailView';
+import { SupplyChainView } from './components/SupplyChainView';
+import { DependencyExplorer } from './components/DependencyExplorer';
+import { SandboxMonitor } from './components/SandboxMonitor';
 import { useLanguage } from './contexts/LanguageContext';
 
 // SECURITY: Access Electron APIs via contextBridge (preload.js)
@@ -42,6 +45,9 @@ const App: React.FC = () => {
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { id: 'sandbox', icon: Activity, label: 'Sandbox' },
+    { id: 'supply', icon: Shield, label: 'Supply Chain' },
+    { id: 'depexplorer', icon: Activity, label: 'Dep Explorer' },
     { id: 'audit', icon: History, label: 'Audit Trail' },
     { id: 'threats', icon: History, label: t('threat_logs') },
     { id: 'shield', icon: Shield, label: 'Project Shield' },
@@ -173,6 +179,9 @@ const App: React.FC = () => {
 
   const tabLabels: Record<string, string> = {
     dashboard: t('dashboard'),
+    sandbox: 'Sandbox Monitor',
+    supply: 'Supply Chain Shield',
+    depexplorer: 'Dependency Explorer',
     audit: 'Audit Trail',
     threats: t('threat_logs'),
     settings: t('settings'),
@@ -390,6 +399,9 @@ const App: React.FC = () => {
               {activeTab === 'dashboard' && (
                 <Dashboard repos={repos} loading={loading} onAddProject={handleAddMore} />
               )}
+              {activeTab === 'sandbox' && <SandboxMonitor repos={repos} />}
+              {activeTab === 'supply' && <SupplyChainView />}
+              {activeTab === 'depexplorer' && <DependencyExplorer />}
               {activeTab === 'audit' && <AuditTrailView repoId={selectedRepoId} />}
               {activeTab === 'threats' && <ThreatLog repos={repos} />}
               {activeTab === 'shield' && (

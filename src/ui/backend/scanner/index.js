@@ -14,7 +14,10 @@ const yaml = require('js-yaml');
 const vm = require('vm');
 const { detectInvisibleChars } = require('./detector_unicode');
 const { detectHighEntropy } = require('./detector_entropy');
-const { analyzeLifecycleScripts } = require('./lifecycle_filter');
+const { analyzeLifecycleScripts, analyzeTransitiveDeps } = require('./lifecycle_filter');
+const { analyzeLockfile, analyzePnpmLockfile } = require('./lockfile_filter');
+const { analyzeNpmrc, analyzeYarnrcYml } = require('./config_integrity');
+const astInspector = require('./ast_inspector');
 const { isValidRuleFilename, isPathWithinRoot } = require('../lib/sanitizer');
 
 let compiledRules = [];
@@ -90,14 +93,16 @@ function safeRegexTest(regex, string, timeoutMs = 50) {
     }
 }
 
-function scanFile(filename, content) {
+function scanFile(filename, content, authorMeta = null) {
     const results = {
         filename,
         timestamp: new Date().toISOString(),
-        alerts: []
+        alerts: [],
+        authorMeta // Store for downstream consumers
     };
 
     // 1. Run Dynamic YAML Rules
+    // ... (rest of logic)
     const lines = content.split('\n');
 
     // SECURITY: Limit total lines to prevent DoS via massive files
@@ -134,13 +139,111 @@ function scanFile(filename, content) {
     results.alerts.push(...detectInvisibleChars(content));
     results.alerts.push(...detectHighEntropy(content));
 
-    // 3. Package Manager checks (pnpm, yarn, npm, bun)
+    // 3. Package Manager checks — lifecycle scripts (npm / pnpm / yarn / bun)
     if (filename.match(/(package\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb)$/i)) {
-        results.alerts.push(...analyzeLifecycleScripts(content));
+        results.alerts.push(...analyzeLifecycleScripts(content, authorMeta));
+    }
+
+    // 4. Lockfile Integrity Guardian (Sentinel 2.0)
+    if (filename.match(/package-lock\.json$/i)) {
+        results.alerts.push(...analyzeLockfile(content, null));
+        // Transitive dependency analysis — catches attacks 2+ levels deep
+        results.alerts.push(...analyzeTransitiveDeps(content, authorMeta));
+    }
+    if (filename.match(/pnpm-lock\.yaml$/i)) {
+        results.alerts.push(...analyzePnpmLockfile(content));
+    }
+
+    // 5. Config Integrity Monitor (Sentinel 2.0)
+    if (filename.match(/\.npmrc(\.local)?$/i) || filename === '.npmrc') {
+        results.alerts.push(...analyzeNpmrc(content, filename));
+    }
+    if (filename.match(/\.yarnrc\.yml$/i)) {
+        results.alerts.push(...analyzeYarnrcYml(content, filename));
+    }
+    if (filename.match(/\.yarnrc$/i)) {
+        // Classic Yarn 1 format (INI-like) — reuse npmrc parser
+        results.alerts.push(...analyzeNpmrc(content, filename));
+    }
+
+    // 6. AST Behavior Analysis (Sentinel 2.0) — Source→Sink chain detection
+    // Run on JS/TS/MJS files but NOT on package manager manifests (already handled above)
+    const isJsFile = filename.match(/\.(js|mjs|cjs|ts|mts|cts)$/i);
+    const isPkgManagerFile = filename.match(/(package(-lock)?\.json|lockfile|yarn\.lock|\.npmrc|\.yarnrc)/i);
+    if (isJsFile && !isPkgManagerFile) {
+        try {
+            const astAlerts = astInspector.analyze(content, filename);
+            results.alerts.push(...astAlerts.filter(a => a.severity !== 'INFO'));
+        } catch (e) {
+            // AST analysis is non-fatal
+            console.warn(`[AST] Analysis failed for ${filename}: ${e.message}`);
+        }
+    }
+
+    // 7. GitHub Actions Workflow Scanner (Sentinel 3.0) ──────────────────────
+    // Detecta configuraciones maliciosas dentro de .github/workflows/*.yml
+    // como registry overrides, download-and-exec, y auto-publish sin review.
+    // Las reglas YAML están en scanner/rules/github-actions.yaml y se cargan
+    // automáticamente junto con el resto de reglas en loadRules().
+    //
+    // Activación: Solo para archivos .yml/.yaml que estén en una ruta de workflow
+    // (el caller debe pasar la ruta relativa como filename para que funcione).
+    const isWorkflowFile = filename.match(/\.(yml|yaml)$/i) &&
+        (filename.includes('.github/workflows') || filename.includes('github/workflows'));
+    if (isWorkflowFile) {
+        // Re-aplicar las reglas de CI sobre el contenido YAML del workflow.
+        // Esto captura patrones que el scanner de reglas genérico ya aplica,
+        // pero ahora también incluye las reglas específicas de github-actions.yaml.
+        // No hay lógica extra aquí — las reglas YAML ya se compilan en loadRules()
+        // y se aplican en el bloque 1 (Dynamic YAML Rules) de arriba.
+        // Este bloque sirve para añadir alertas contextuales adicionales:
+        results.alerts.push(
+            // Verificar si el CI_ENVIRONMENT_EVASION está activo en workflows también
+            ...detectWorkflowEvasionPatterns(content, filename)
+        );
     }
 
     return results;
 }
+
+/**
+ * Detecta patrones de evasión específicos de GitHub Actions workflows.
+ * Complementa las reglas YAML con lógica contextual más sofisticada.
+ *
+ * @param {string} content  - Contenido del archivo .yml
+ * @param {string} filename - Nombre del archivo (para contexto en alertas)
+ * @returns {Array}         - Lista de alertas adicionales
+ */
+function detectWorkflowEvasionPatterns(content, filename) {
+    const alerts = [];
+
+    // a) Detectar si el workflow desactiva debug/logging antes de pasos sensibles
+    if (/no[-_]?log|disable[-_]?log|ACTIONS_RUNNER_DEBUG.*false/i.test(content)) {
+        alerts.push({
+            ruleName: 'Workflow Logging Disabled',
+            category: 'ci-evasion',
+            riskLevel: 8,
+            description: `${filename} desactiva el logging de runner. Técnica usada para suprimir telemetría durante exfiltración.`,
+            line: 'See workflow logging configuration',
+            evidence: 'ACTIONS_RUNNER_DEBUG or similar logging disabling detected'
+        });
+    }
+
+    // b) Detectar if-conditions que saltan pasos según el entorno
+    if (/if:.*GITHUB_ACTIONS|if:.*CI.*==|if:.*runner\.os/i.test(content)) {
+        alerts.push({
+            ruleName: 'Conditional CI Evasion in Workflow',
+            category: 'ci-evasion',
+            riskLevel: 7,
+            description: `${filename} tiene condiciones if: basadas en el entorno CI/runner. Puede usarse para comportarse diferente según el entorno, evadiendo sandbox.`,
+            line: 'Conditional if: block detected',
+            evidence: 'if: ${{ env.CI }} or runner-based condition detected'
+        });
+    }
+
+    return alerts;
+}
+
 
 function scanLocalFile(filepath, content) {
     // For CLI wrapper

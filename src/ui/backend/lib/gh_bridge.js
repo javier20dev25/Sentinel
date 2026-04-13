@@ -243,14 +243,8 @@ class GitHubBridge {
      * SECURITY: Both repoFullName and prNumber are validated.
      */
     getPRDiff(repoFullName, prNumber) {
-        if (!isValidOwnerRepo(repoFullName)) {
-            console.error(`[SECURITY] Invalid repo format rejected: ${sanitizeForLog(repoFullName)}`);
-            return null;
-        }
-        if (!isValidPRNumber(prNumber)) {
-            console.error(`[SECURITY] Invalid PR number rejected: ${sanitizeForLog(String(prNumber))}`);
-            return null;
-        }
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        if (!isValidPRNumber(prNumber)) return null;
 
         try {
             return execFileSync('gh', [
@@ -258,8 +252,8 @@ class GitHubBridge {
                 '--repo', repoFullName
             ], {
                 encoding: 'utf-8',
-                timeout: 15000,
-                maxBuffer: 5 * 1024 * 1024 // 5MB limit to prevent OOM
+                timeout: 30000,
+                maxBuffer: 10 * 1024 * 1024 // 10MB
             });
         } catch (e) {
             console.error(`Error getting diff for PR #${prNumber}:`, sanitizeForLog(e.message));
@@ -268,29 +262,50 @@ class GitHubBridge {
     }
 
     /**
-     * Gets user account creation date.
-     * SECURITY: username validated — only alphanumeric/hyphens allowed (GitHub username format).
+     * Helper to detect if a PR modifies package.json or sensitive security files.
      */
-    getUserCreatedAt(username) {
-        // GitHub usernames: alphanumeric + hyphens, max 39 chars
-        if (typeof username !== 'string' || !/^[a-zA-Z0-9-]{1,39}$/.test(username)) {
-            console.error(`[SECURITY] Invalid username rejected: ${sanitizeForLog(String(username))}`);
-            return null;
+    async analyzePRContent(repoFullName, prNumber, author) {
+        const diff = this.getPRDiff(repoFullName, prNumber);
+        if (!diff) return { hasSensitiveChanges: false };
+
+        const changedFiles = [];
+        const diffLines = diff.split('\n');
+        
+        for (const line of diffLines) {
+            if (line.startsWith('diff --git')) {
+                const match = line.match(/b\/(.+)$/);
+                if (match) changedFiles.push(match[1]);
+            }
         }
 
-        try {
-            const output = execFileSync('gh', [
-                'api', `users/${username}`,
-                '-q', '.created_at'
-            ], {
-                encoding: 'utf-8',
-                timeout: 10000
-            });
-            return new Date(output.trim());
-        } catch (e) {
-            console.error(`Error getting user creation date for ${sanitizeForLog(username)}:`, sanitizeForLog(e.message));
-            return null;
-        }
+        const isPackageJsonModified = changedFiles.some(f => f.endsWith('package.json'));
+        const reputation = await this.getAuthorReputation(author);
+
+        return {
+            hasSensitiveChanges: isPackageJsonModified,
+            changedFiles,
+            authorReputation: reputation,
+            diff
+        };
+    }
+
+    /**
+     * Gets author metadata to assess risk.
+     * Returns { ageDays: number, isNew: boolean, username: string }
+     */
+    async getAuthorReputation(username) {
+        if (!username) return null;
+        const createdAt = this.getUserCreatedAt(username);
+        if (!createdAt) return { ageDays: 365, isNew: false, username };
+
+        const ageMs = Date.now() - createdAt.getTime();
+        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+        
+        return {
+            username,
+            ageDays: Math.floor(ageDays),
+            isNew: ageDays < 30, // New accounts (less than 30 days) are higher risk
+        };
     }
 
     /**
