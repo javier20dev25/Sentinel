@@ -1,6 +1,11 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
 
-**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [API Docs](docs/API_REFERENCE.md) | [Architecture](docs/ARCHITECTURE.md)**
+**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md)**
+
+## 🇪🇸 Resumen Ejecutivo (Spanish)
+Sentinel 3.0 integra una infraestructura de **Sandbox Dinámico** basada en GitHub Actions para el análisis de comportamiento en tiempo de ejecución. Esta funcionalidad permite identificar amenazas que evaden el análisis estático, tales como la ejecución de binarios WebAssembly (WASM), conexiones de red no autorizadas a dominios de comando y control (C2), y alteraciones en la integridad de los archivos de bloqueo (lockfiles) durante el proceso de instalación.
+
+---
 
 Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
 
@@ -82,14 +87,18 @@ Sentinel follows a "Local-First, Zero-Trust" approach:
 
 ---
 
-## Contributing
+## Contributing & Governance
 
-As a solo-developer project, Sentinel thrives on community feedback. If you are a developer or security researcher, your contributions are highly welcome.
+Sentinel is a solo-developer project that thrives on high-quality community feedback and professional collaborations.
 
 **How to contribute:**
 1. Clone the repository using the Local Web Edition guide.
-2. Review the issues or suggest new features.
-3. Submit a Pull Request. Every contribution helps make Sentinel more effective.
+2. Review the [Architecture Guide](docs/ARCHITECTURE.md), [Testing Guide](docs/TESTING_GUIDE.md), and [Official Policies](docs/POLICIES.md).
+3. Ensure all tests pass before submitting a PR: `npm test`.
+4. Submit a Pull Request. We actively accept improvements focusing on security, performance, and UI aesthetics.
+
+**Code of Conduct**: All participants are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+**Security Reports**: Use [GitHub Security Advisories](https://github.com/javier20dev25/Sentinel/security/advisories/new) to report vulnerabilities privately.
 
 ---
 
