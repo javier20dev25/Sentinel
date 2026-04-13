@@ -20,6 +20,33 @@ const appExePath = isPackaged ? process.execPath : path.resolve(__dirname, '..',
 const isPackagedFinal = isPackaged || fs.existsSync(appExePath);
 
 /**
+ * Generates a professional Markdown report for GitHub visibility.
+ */
+function generateMarkdownReport(githubName, prNumber, alerts) {
+    let report = `## 🛡️ Sentinel: Security Threat Detected in PR #${prNumber}\n\n`;
+    report += `**Repository:** ${githubName}\n`;
+    report += `**Status:** 🚨 THREAT FOUND\n\n`;
+    report += `Sentinel has identified potential security risks in this proposal. Transparency is key to maintaining repository integrity.\n\n`;
+    
+    report += `| Level | Severity | Rule | Description |\n`;
+    report += `| :--- | :--- | :--- | :--- |\n`;
+    
+    alerts.forEach(a => {
+        const severityStr = a.riskLevel >= 9 ? '🔥 CRITICAL' : (a.riskLevel >= 7 ? '🔴 HIGH' : '⚠️ MEDIUM');
+        report += `| ${a.riskLevel}/10 | ${severityStr} | **${a.ruleName}** | ${a.description} |\n`;
+    });
+    
+    report += `\n### 🔍 Evidence\n`;
+    alerts.forEach(a => {
+        report += `#### Rule: ${a.ruleName}\n`;
+        report += `**Snippet:**\n\`\`\`javascript\n${a.evidence}\n\`\`\`\n\n`;
+    });
+    
+    report += `\n---\n*Report generated automatically by Sentinel Security Core.*`;
+    return report;
+}
+
+/**
  * Helper to send navigation intents to the running UI via the backend.
  */
 async function postIntent(payload = { action: 'scan-all' }) {
@@ -49,6 +76,9 @@ function performManualScan(repoId, githubName) {
     const gh = require('../backend/lib/gh_bridge');
     const { scanFile } = require('../backend/scanner/index');
 
+    const isCI = process.env.GITHUB_ACTIONS === 'true';
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
     console.log(`🔍 Scanning open PRs for ${githubName}...`);
     const prs = gh.listPRs(githubName);
     let totalAlerts = 0;
@@ -63,11 +93,21 @@ function performManualScan(repoId, githubName) {
                 db.addScanLog(repoId, 'PR_THREAT', 10, `Threats in PR #${pr.number}`, results.alerts);
                 db.updateRepoStatus(repoId, 'INFECTED');
                 
+                // 1. Local Notification
                 safeNotify({
                     title: '🚨 Sentinel: Threat Detected!',
                     message: `PR #${pr.number} in ${githubName} looks dangerous.`,
                     sound: true
                 });
+
+                // 2. GitHub PR Reporting (Transparency)
+                const mdReport = generateMarkdownReport(githubName, pr.number, results.alerts);
+                gh.postPRComment(githubName, pr.number, mdReport);
+
+                // 3. GitHub Summary (Observability)
+                if (isCI && summaryPath) {
+                    fs.appendFileSync(summaryPath, mdReport + '\n\n');
+                }
             }
         }
     });
