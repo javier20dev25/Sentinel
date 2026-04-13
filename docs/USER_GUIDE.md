@@ -1,5 +1,10 @@
 # Sentinel User Guide
 
+## 🇪🇸 Resumen Ejecutivo (Spanish)
+La versión 3.0 de Sentinel incorpora una infraestructura de **Sandbox Dinámico** remota para la validación proactiva de dependencias. Esta funcionalidad permite ejecutar y auditar el proceso de instalación de paquetes en entornos aislados (GitHub Actions), proporcionando visibilidad sobre el comportamiento en tiempo de ejecución, como conexiones de red y modificaciones en archivos críticos, antes de su integración en el entorno local.
+
+---
+
 ## Introduction
 Sentinel is a proactive security suite designed to protect your GitHub repositories from within your local machine. This guide covers the core security modules and how to use the interactive dashboard effectively.
 
@@ -14,40 +19,40 @@ Upon the first launch of the **Sentinel Web Edition** or **Standard Edition**, y
 ---
 
 ## 🛡️ Sentinel Project Shield (SPS)
-**Project Shield** is the most advanced module of Sentinel. it performs deep static analysis and environment hardening.
+**Project Shield** is a core module that performs static analysis and environment hardening.
 
 ### Core Features:
-- **Environment Hardening**: Automatically runs `npm config set ignore-scripts true` for the linked project. This prevents malicious `postinstall` or `preinstall` scripts from executing during package installation.
-- **AST Leak Detection**: Scans your `package.json` for known-malicious dependency patterns and obfuscated scripts.
-- **Dependency Sandboxing**: Analyzes dependencies before they are allowed to interact with your local environment.
+- **Environment Hardening**: Automatically runs `npm config set ignore-scripts true` for the linked project to prevent malicious scripts from executing during installation.
+- **Dependency Audit**: Scans your `package.json` for known-malicious patterns and registry overrides.
+- **Dynamic Validation**: Leverages the Sandbox to analyze dependency behavior in a simulated environment.
 
 ---
 
 ## 🛡️ Asset Guard (SAG)
-**Asset Guard** proactively intercepts Git operations to prevent the leakage of sensitive data.
+**Asset Guard** intercepts Git operations to prevent the accidental leakage of sensitive files.
 
 ### How it works:
-1. **Selection**: You mark specific files or patterns as "Prohibited" (e.g., `.env`, `*.pem`, `service-account.json`).
-2. **Interception**: When you attempt a `git push` via the dashboard, Asset Guard checks your staged changes against the prohibited list.
-3. **Control**: If a violation is found, the push is **BLOCKED** immediately.
-4. **Override**: You can only force a push of these assets by entering your **Master Password**, ensuring that accidental leaks are impossible.
+1. **Selection**: Define specific files or patterns as "Prohibited" (e.g., `.env`, `*.pem`).
+2. **Interception**: Sentinel checks staged changes against the prohibited list before a `git push`.
+3. **Control**: Violations result in an immediate block of the Git operation.
+4. **Override**: Force a push by entering your **Master Password** only if the leakage is intentional.
 
 ---
 
 ## 📊 Global Audit Trail (SGA)
-The **Audit Trail** provides a 100% immutable record of every security event within Sentinel.
+The **Audit Trail** provides an immutable record of security events within the application.
 
-- **Event Integrity**: Every scan, threat detected, and git operation is logged with a high-precision timestamp.
-- **Traceability**: Logs are linked to specific Git commit hashes and GitHub user identities.
-- **Sanitization**: Sensitive data captured during analysis (like partial tokens) is automatically sanitized before being stored in the Audit Trail.
+- **Event Logging**: Every scan result and threat detected is logged with high-precision timestamps.
+- **Traceability**: Logs are linked to specific Git commit hashes and user identities.
+- **Data Integrity**: Sensitive data captured during audits (e.g., partial tokens) is sanitized before storage.
 
 ---
 
 ## 🔬 Scanning Engine
-Sentinel's engine operates in three modes:
+Sentinel's engine operates in three main modes:
 1. **Manual Scan**: Triggered via the UI for the entire repository.
-2. **PR Watchman**: Automatically fetches and analyzes incoming Pull Request diffs in memory.
-3. **Git Safe Staging**: Scans only the files you have currently staged in Git before you commit.
+2. **Dynamic Sandbox**: Behavioral analysis of the runtime environment during package installation.
+3. **Git Safe Staging**: Scans only the files currently staged in Git before a commit.
 
 > [!TIP]
-> Use the **Git Safe Staging** view in the dashboard to review exactly what you are about to push to GitHub.
+> Use the **Sandbox Monitor** tab in the dashboard to review historical simulations and behavioral signals detected by the Dynamic Sandbox engine.
