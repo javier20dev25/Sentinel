@@ -372,4 +372,35 @@ $ grep -rn "execSync(" src/ --include="*.js" --include="*.ts" --exclude-dir=node
 
 ---
 
-*This document will be updated as remediation progresses. Each fix will be logged with before/after code samples and verification results.*
+## Sentinel 3.0: Dynamic Sandbox Integration
+
+### Goal
+Close the gap on **dynamic evasion techniques** (WASM payloads, runtime network egress, post-install hooks) that static AST analysis cannot detect with 100% certainty.
+
+### Implementation Architecture
+Sentinel 3.0 introduces a **Remote Sandbox Orchestrator** that leverages GitHub Actions as a secure, ephemeral environment.
+
+1.  **Passive Mode Deployment**: Sentinel generates a `sentinel-sandbox.yml` template. The user adds this to their repository without granting Sentinel `write` permissions to the code.
+2.  **Telemetry Flow**:
+    *   **Net-Harden**: Monitors outbound connections during `npm install`.
+    *   **WASM Scan**: Recursively searches `node_modules` for binary files after hydration.
+    *   **Lockfile Diff**: Compares the lockfile before and after install to detect registry shifts or version pinning attacks.
+3.  **Risk SCoring Engine**: Telemetry is analyzed locally to produce a 0-10 risk score, which is then visualized in the **Sandbox Monitor Dashboard**.
+
+### Mitigated Evasion Vectors
+
+| Vector | Detection Mechanism | Severity |
+|--------|---------------------|----------|
+| **WASM Dropper** | Post-install `.wasm` file detection in `node_modules` | 🟠 HIGH |
+| **Shadow Registry** | `lockfile-diff` analysis detecting non-standard registry URLs | 🔴 CRITICAL |
+| **Silent C2 Connect** | `netstat`/`harden-runner` log analysis | 🔴 CRITICAL |
+| **Env Var Theft** | Scanning for `git` or `npm` secrets in outbound buffers | 🟠 HIGH |
+
+### Verification Summary
+*   **Unit Tests**: `tests/ci_sandbox.test.js` validates threat detection logic with mock telemetry.
+*   **CLI Verification**: `sntl sandbox trigger` provides real-time polling and feedback.
+*   **UI Verification**: `SandboxMonitor.tsx` allows developers to launch and inspect analysis visually.
+
+---
+
+*This document serves as the official security posture for Sentinel. Version 3.0 marks the transition from purely static defense to an active, dynamic security platform.*
