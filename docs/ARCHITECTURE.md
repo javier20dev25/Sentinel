@@ -126,16 +126,15 @@ Archivo de entrada
       │
       ▼
 ┌─────────────────────────────┐  Capa 7: CI Workflow Scanner
-│  GitHub Actions Rules       │  → registry override en CI, auto-publish,
-└─────────────────────────────┘     download-and-exec, token exposure
+│  GitHub Actions Rules       │  → Static audit of workflow files.
+└─────────────────────────────┘
       │
       ▼
-   Alertas consolidadas
+   Consolidated Alerts
       │
-      ▼ (async, on-demand)
-┌─────────────────────────────┐  Capa 8: Sandbox Dinámico (v3.0)
-│  GitHub Actions Sandbox     │  → Comportamiento real de instalación
-│  (Modo Pasivo)              │  → Lockfile diff, WASM, egress, ejecutables
+      ▼ (On-demand)
+┌─────────────────────────────┐  Capa 8: Dynamic Sandbox
+│  Behavioral Analysis Engine │  → Runtime audit in isolated containers.
 └─────────────────────────────┘
 ```
 
@@ -182,6 +181,14 @@ Usuario                    Sentinel CLI              GitHub Actions
   │                            │── analyzeTelemetry()      │
   │←── reporte de amenazas ────│                           │
 ```
+
+### 5.1 Telemetry Analysis Logic (`analyzeTelemetry`)
+The analysis engine processes the sandbox artifacts sequentially, searching for indicators of compromise (IOCs):
+
+1. **Lockfile Drift**: Compares `package-lock.json` before and after `npm install`. Any unexpected additions outside the main `npm install` cycle trigger a **HIGH** severity alert (Potential Phantom Dependency).
+2. **Network Egress Audit**: Using `netstat` and `Harden-Runner` logs, Sentinel identifies new TCP connections established during the build. Connections to non-registry domains (especially those in `threat_intel.js`) trigger **CRITICAL** alerts.
+3. **Binary Persistence**: Scans the environment for new `.wasm` modules or executable files created during installation. These are flagged as **MEDIUM** to **HIGH** depending on their entropy and location.
+4. **Environment Poisoning**: Checks `npm-env.txt` for registry overrides or suspicious `preinstall` configurations active in the runtime.
 
 ### `lib/ci_sandbox.js` — Funciones principales
 

@@ -195,6 +195,8 @@ program
         }
     });
 
+// ─── Command: Open ──────────────────────────────────────────────────────────
+
 program
     .command('open')
     .description('Open Sentinel UI and navigate to specific view')
@@ -256,6 +258,132 @@ program
         }
     }
     });
+
+// ─── Command: Sandbox (Sentinel 3.0) ────────────────────────────────────────
+
+const sandbox = program
+    .command('sandbox')
+    .description('Manage and monitor dynamic sandbox analysis in GitHub Actions');
+
+sandbox
+    .command('generate')
+    .description('Generate the sentinel-sandbox.yml workflow template')
+    .action(() => {
+        const ci = require('../backend/lib/ci_sandbox');
+        const result = ci.generateWorkflowTemplate();
+        if (result.success) {
+            console.log("\n--- SENTINEL SANDBOX WORKFLOW TEMPLATE ---");
+            console.log(result.workflowContent);
+            console.log("\n--- INSTRUCTIONS ---");
+            result.instructions.forEach(ins => console.log(ins));
+        } else {
+            console.error(`❌ Error: ${result.error}`);
+        }
+    });
+
+sandbox
+    .command('trigger <repo> [branch]')
+    .description('Trigger a dynamic sandbox analysis run')
+    .option('--async', 'Do not wait for completion (return runId immediately)')
+    .action(async (repo, branch, options) => {
+        const ci = require('../backend/lib/ci_sandbox');
+        const targetBranch = branch || 'main';
+        
+        console.log(`🚀 Triggering sandbox analysis for ${repo} on branch ${targetBranch}...`);
+        const result = await ci.triggerSandboxRun(repo, targetBranch);
+
+        if (!result.success) {
+            console.error(`❌ Failed to trigger: ${result.error}`);
+            return;
+        }
+
+        console.log(`✅ Run triggered! ID: ${result.runId}`);
+        console.log(`🔗 URL: ${result.url}`);
+
+        if (options.async) {
+            console.log("Exiting (async mode). Use 'sentinel sandbox status' to check progress.");
+            return;
+        }
+
+        // Wait for completion (default mode)
+        console.log("⏳ Waiting for analysis to complete (this may take a few minutes)...");
+        
+        let lastStatus = '';
+        const run = await ci.waitForSandboxRun(repo, result.runId, null, 900000, (s) => {
+            if (s.status !== lastStatus) {
+                console.log(`   [STATUS] ${s.status}${s.conclusion ? ` (${s.conclusion})` : ''}`);
+                lastStatus = s.status;
+            }
+        });
+
+        if (run.concluded && run.conclusion === 'success') {
+            console.log("✅ Analysis completed successfully. Fetching results...");
+            // Automatically analyze after successful completion
+            handleSandboxAnalysis(repo, result.runId);
+        } else {
+            console.error(`❌ Analysis ended with conclusion: ${run.conclusion || 'failed'}`);
+            if (run.timedOut) console.error("   Reason: Timeout reached.");
+        }
+    });
+
+sandbox
+    .command('status <repo> <runId>')
+    .description('Check the status of a sandbox run')
+    .action((repo, runId) => {
+        const ci = require('../backend/lib/ci_sandbox');
+        const status = ci.getSandboxRunStatus(repo, parseInt(runId));
+        if (status.error) {
+            console.error(`❌ Error: ${status.error}`);
+        } else {
+            console.log(`Run status: ${status.status}`);
+            if (status.conclusion) console.log(`Conclusion: ${status.conclusion}`);
+            console.log(`URL: ${status.url}`);
+        }
+    });
+
+sandbox
+    .command('analyze <repo> <runId>')
+    .description('Download and analyze telemetry from a completed run')
+    .action(async (repo, runId) => {
+        handleSandboxAnalysis(repo, parseInt(runId));
+    });
+
+async function handleSandboxAnalysis(repo, runId) {
+    const ci = require('../backend/lib/ci_sandbox');
+    console.log(`📥 Downloading artifacts for run #${runId}...`);
+    
+    const download = ci.downloadSandboxArtifacts(repo, runId);
+    if (!download.success) {
+        console.error(`❌ Download failed: ${download.error}`);
+        return;
+    }
+
+    console.log(`🔍 Analyzing telemetry...`);
+    const analysis = ci.analyzeTelemetry(download.tempDir, repo);
+    
+    if (analysis.threats.length === 0) {
+        console.log("\n✅ [SAFE] No malicious behavior detected in sandbox simulation.");
+    } else {
+        console.log(`\n🚨 FOUND ${analysis.threats.length} SUSPICIOUS BEHAVIORS IN SANDBOX:`);
+        analysis.threats.forEach(t => {
+            console.log(`\n[${t.severity}] ${t.type}`);
+            console.log(`Message: ${t.message}`);
+            console.log(`Evidence: ${t.evidence.substring(0, 150)}...`);
+        });
+        console.log(`\nRisk Score: ${analysis.riskScore.toFixed(1)}/10`);
+        
+        console.log("\n[RECOMMENDATION]");
+        if (analysis.riskScore >= 7) {
+            console.log("The analysis indicates a highly compromised installation environment.");
+            console.log("1. DO NOT install or merge this version.");
+            console.log("2. Verify the source registry in your .npmrc file.");
+        } else {
+            console.log("Proceed with caution. Audit the detected behaviors manually.");
+        }
+    }
+
+    ci.cleanupTempDir(download.tempDir);
+}
 
 function run(args = process.argv) {
     program.parse(args);
