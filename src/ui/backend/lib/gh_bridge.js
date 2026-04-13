@@ -397,6 +397,27 @@ class GitHubBridge {
             return null;
         }
     }
+    /**
+     * Posts a comment to a Pull Request.
+     * SECURITY: Validates all inputs to prevent command injection.
+     */
+    postPRComment(repoFullName, prNumber, body) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return false;
+        try {
+            execFileSync('gh', [
+                'pr', 'comment', String(prNumber),
+                '--repo', repoFullName,
+                '--body', body
+            ], {
+                encoding: 'utf-8',
+                timeout: 30000
+            });
+            return true;
+        } catch (e) {
+            console.error(`Error posting comment to PR #${prNumber}:`, sanitizeForLog(e.message));
+            return false;
+        }
+    }
 }
 
 module.exports = new GitHubBridge();
