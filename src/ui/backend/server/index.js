@@ -642,6 +642,253 @@ app.get('/', (req, res) => {
     `);
 });
 
+// ─── CI Sandbox API (Sentinel 3.0 — Modo Pasivo) ────────────────────────────
+
+const ciSandbox = require('../lib/ci_sandbox');
+
+/**
+ * GET /api/supply/sandbox/template
+ * Genera (en memoria) el archivo sentinel-sandbox.yml para que el usuario
+ * lo copie manualmente al repo. No requiere permisos especiales.
+ */
+app.get('/api/supply/sandbox/template', (req, res) => {
+    const result = ciSandbox.generateWorkflowTemplate();
+    res.json(result);
+});
+
+/**
+ * GET /api/supply/sandbox/check/:owner/:repo
+ * Verifica si sentinel-sandbox.yml ya está instalado en el repo.
+ */
+app.get('/api/supply/sandbox/check/:owner/:repo', (req, res) => {
+    try {
+        const { owner, repo } = req.params;
+        const ownerRepo = `${owner}/${repo}`;
+        if (!isValidOwnerRepo(ownerRepo)) {
+            return res.status(400).json({ error: 'Invalid repo format' });
+        }
+        const result = ciSandbox.checkWorkflowInstalled(ownerRepo);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/sandbox/trigger
+ * Body: { ownerRepo: string, branch?: string }
+ * Dispara un análisis sandbox en el repo (requiere workflow instalado).
+ */
+app.post('/api/supply/sandbox/trigger', async (req, res) => {
+    try {
+        const { ownerRepo, branch = 'main' } = req.body;
+        if (!ownerRepo || !isValidOwnerRepo(ownerRepo)) {
+            return res.status(400).json({ error: 'Missing or invalid ownerRepo' });
+        }
+        const result = await ciSandbox.triggerSandboxRun(ownerRepo, branch);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/supply/sandbox/status/:owner/:repo/:runId
+ * Devuelve el estado actual de un run de sandbox.
+ */
+app.get('/api/supply/sandbox/status/:owner/:repo/:runId', (req, res) => {
+    try {
+        const { owner, repo, runId } = req.params;
+        const ownerRepo = `${owner}/${repo}`;
+        if (!isValidOwnerRepo(ownerRepo) || isNaN(Number(runId))) {
+            return res.status(400).json({ error: 'Invalid parameters' });
+        }
+        const result = ciSandbox.getSandboxRunStatus(ownerRepo, parseInt(runId, 10));
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/sandbox/analyze
+ * Body: { ownerRepo: string, runId: number }
+ * Descarga artefactos del run completado y los analiza.
+ * Devuelve el reporte de amenazas completo.
+ */
+app.post('/api/supply/sandbox/analyze', async (req, res) => {
+    try {
+        const { ownerRepo, runId } = req.body;
+        if (!ownerRepo || !isValidOwnerRepo(ownerRepo) || !runId || isNaN(Number(runId))) {
+            return res.status(400).json({ error: 'Missing or invalid parameters' });
+        }
+
+        // 1. Verificar que el run completó
+        const status = ciSandbox.getSandboxRunStatus(ownerRepo, parseInt(runId, 10));
+        if (status.status !== 'completed') {
+            return res.status(409).json({
+                error: 'El run aún no ha completado.',
+                currentStatus: status.status,
+                url: status.url
+            });
+        }
+
+        // 2. Descargar artefactos
+        const download = ciSandbox.downloadSandboxArtifacts(ownerRepo, parseInt(runId, 10));
+        if (!download.success) {
+            return res.status(500).json({ error: download.error });
+        }
+
+        // 3. Analizar telemetría
+        const analysis = ciSandbox.analyzeTelemetry(download.tempDir, ownerRepo);
+
+        // 4. Persistir resultado en DB si hay amenazas
+        if (analysis.threats.length > 0) {
+            const [owner, repoName] = ownerRepo.split('/');
+            const repoRecord = db.getRepositories().find(
+                r => r.github_full_name === ownerRepo
+            );
+            if (repoRecord) {
+                db.addScanLog(
+                    repoRecord.id,
+                    'SANDBOX_ANALYSIS',
+                    Math.round(analysis.riskScore),
+                    `Sandbox detectó ${analysis.threats.length} amenaza(s): ${analysis.summary}`,
+                    analysis.threats
+                );
+            }
+        }
+
+        // 5. Limpiar archivos temporales
+        ciSandbox.cleanupTempDir(download.tempDir);
+
+        res.json({
+            ownerRepo,
+            runId: parseInt(runId, 10),
+            runConclusion: status.conclusion,
+            ...analysis
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Supply Chain Shield (Sentinel 2.0) ───────────────────────────────────────
+
+const { analyzeLockfile, analyzePnpmLockfile } = require('../scanner/lockfile_filter');
+const { analyzeNpmrc, analyzeYarnrcYml }       = require('../scanner/config_integrity');
+const { analyzeTransitiveDeps }                = require('../scanner/lifecycle_filter');
+
+/**
+ * POST /api/supply/scan-lockfile
+ * Body: { content: string, filename: string, packageJsonContent?: string }
+ * Runs the Lockfile Integrity Guardian on user-supplied content.
+ */
+app.post('/api/supply/scan-lockfile', (req, res) => {
+    try {
+        const { content, filename = 'package-lock.json', packageJsonContent = null } = req.body;
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Missing: content (string)' });
+        }
+        // Cap at 5 MB to prevent DoS
+        if (content.length > 5 * 1024 * 1024) {
+            return res.status(413).json({ error: 'Content too large (max 5 MB)' });
+        }
+
+        let alerts = [];
+        if (filename.match(/pnpm-lock\.yaml$/i)) {
+            alerts = analyzePnpmLockfile(content);
+        } else {
+            alerts = analyzeLockfile(content, packageJsonContent);
+        }
+
+        res.json({ filename, alertCount: alerts.length, alerts });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/scan-config
+ * Body: { content: string, filename: string }
+ * Runs the Config Integrity Monitor on .npmrc / .yarnrc content.
+ */
+app.post('/api/supply/scan-config', (req, res) => {
+    try {
+        const { content, filename = '.npmrc' } = req.body;
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Missing: content (string)' });
+        }
+        if (content.length > 512 * 1024) {
+            return res.status(413).json({ error: 'Content too large (max 512 KB)' });
+        }
+
+        let alerts = [];
+        if (filename.match(/\.yarnrc\.yml$/i)) {
+            alerts = analyzeYarnrcYml(content, filename);
+        } else {
+            alerts = analyzeNpmrc(content, filename);
+        }
+
+        res.json({ filename, alertCount: alerts.length, alerts });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/scan-transitive
+ * Body: { lockfileContent: string }
+ * Runs full transitive dependency analysis on a package-lock.json.
+ * Returns every suspicious package found at any depth.
+ */
+app.post('/api/supply/scan-transitive', (req, res) => {
+    try {
+        const { lockfileContent } = req.body;
+        if (!lockfileContent || typeof lockfileContent !== 'string') {
+            return res.status(400).json({ error: 'Missing: lockfileContent (string)' });
+        }
+        if (lockfileContent.length > 10 * 1024 * 1024) {
+            return res.status(413).json({ error: 'Lockfile too large (max 10 MB)' });
+        }
+
+        const alerts = analyzeTransitiveDeps(lockfileContent, null);
+        const byDepth = alerts.reduce((acc, a) => {
+            const d = a.depth ?? 0;
+            if (!acc[d]) acc[d] = [];
+            acc[d].push(a);
+            return acc;
+        }, {});
+
+        res.json({
+            alertCount: alerts.length,
+            maxDepth: Math.max(0, ...Object.keys(byDepth).map(Number)),
+            byDepth,
+            alerts
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/supply/logs
+ * Returns all SUPPLY_CHAIN_ALERT scan logs across all repos.
+ */
+app.get('/api/supply/logs', (req, res) => {
+    try {
+        const allLogs = db.getLogsByRepoFilter('all');
+        const supplyLogs = allLogs.filter(l =>
+            l.event_type === 'SUPPLY_CHAIN_ALERT' ||
+            l.event_type === 'LOCKFILE_ALERT' ||
+            l.event_type === 'CONFIG_ALERT'
+        );
+        res.json(supplyLogs);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
 // ─── System Shutdown ───
 app.post('/api/system/shutdown', (req, res) => {
     res.json({ success: true, message: 'Shutting down...' });
