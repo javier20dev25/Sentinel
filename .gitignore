@@ -94,3 +94,4 @@ release/
 out/
 temp/
 /tmp/
+test_output.txt
