@@ -30,6 +30,8 @@ const fsExplorer = require('../lib/fs_explorer');
 const gitHooks = require('../lib/git_hooks');
 const hardener = require('../lib/hardener_bridge');
 const polling = require('../services/polling');
+const orchestrator = require('../lib/orchestrator');
+const webhooks = require('../lib/webhooks');
 
 // ─── Remote UI Intents (SSE) ───
 let sseClients = [];
@@ -358,7 +360,8 @@ app.post('/api/repositories/:id/scan', (req, res) => {
                     const results = scanFile(`PR #${pr.number}.diff`, diff);
                     if (results.alerts.length > 0) {
                         threats += results.alerts.length;
-                        db.addScanLog(repoId, 'PR_SCAN', 8, `Threats in PR #${pr.number}: ${results.alerts[0].ruleName}`, results.alerts);
+                        const category = results.alerts.some(a => a.ruleName.includes('Secret')) ? 'SECRETS' : 'MALWARE';
+                        db.addScanLog(repoId, 'PR_SCAN', 8, `Threats in PR #${pr.number}: ${results.alerts[0].ruleName}`, results.alerts, 'STATIC', category);
                     }
                 }
             }
@@ -413,7 +416,8 @@ app.post('/api/repositories/scan-by-name', (req, res) => {
                         threats += scan.alerts.length;
                         scan.alerts.forEach(alert => {
                             details.push(`PR #${pr.number}: ${alert.ruleName}`);
-                            db.addScanLog(repoId, 'TERMINAL_PR_SCAN', 8, `Threat in PR #${pr.number}: ${alert.ruleName}`, scan.alerts);
+                            const category = alert.ruleName.includes('Secret') ? 'SECRETS' : 'MALWARE';
+                            db.addScanLog(repoId, 'TERMINAL_PR_SCAN', 8, `Threat in PR #${pr.number}: ${alert.ruleName}`, scan.alerts, 'STATIC', category);
                         });
                     }
                 }
@@ -626,20 +630,64 @@ app.get('/api/shield/prohibited/:repoId', (req, res) => {
 });
 
 // ─── System & UI Heartbeat ───
-app.get('/', (req, res) => {
-    // If accessed via browser, redirect to the Vite frontend
-    res.send(`
-        <html>
-            <head><title>Sentinel Redirect</title></head>
-            <body style="background:#0a0a0f;color:#00ff88;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
-                <div style="text-align:center;">
-                    <h2>🛡️ SENTINEL ENGINE</h2>
-                    <p>Redirecting to Dashboard...</p>
-                    <script>setTimeout(() => window.location.href = 'http://localhost:5173', 500);</script>
-                </div>
-            </body>
-        </html>
     `);
+});
+
+// ─── AI AGENT SIDECHART API (Sentinel 3.5) ───────────────────────────────────
+
+/**
+ * GET /api/briefing/:repoId
+ * Returns a machine-readable briefing for a specific tracked repository.
+ */
+app.get('/api/briefing/:repoId', async (req, res) => {
+    try {
+        const repo = db.getRepositoryById(parseInt(req.params.repoId));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+        
+        const audit = await orchestrator.auditRepo(repo.github_full_name);
+        const plan = await orchestrator.planHarden(repo.github_full_name);
+        const logs = db.getLogsByRepoFilter(repo.id).slice(0, 3);
+
+        res.json({
+            repo: repo.github_full_name,
+            score: audit.score,
+            grade: audit.grade,
+            threats: logs.map(l => ({ risk: l.risk_level, event: l.description })),
+            recommended_actions: plan.plan.slice(0, 3).map(p => ({ action: p.action, target: p.target })),
+            metadata: {
+                scanned_at: repo.last_scan_at,
+                status: repo.status
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/briefing/name/:owner/:repo
+ * Returns a briefing by repository full name.
+ */
+app.get('/api/briefing/name/:owner/:repo', async (req, res) => {
+    try {
+        const fullName = `${req.params.owner}/${req.params.repo}`;
+        const audit = await orchestrator.auditRepo(fullName);
+        const plan = await orchestrator.planHarden(fullName);
+        
+        const repo = db.getRepositoryByFullName(fullName);
+        const logs = repo ? db.getLogsByRepoFilter(repo.id).slice(0, 3) : [];
+
+        res.json({
+            repo: fullName,
+            score: audit.score,
+            grade: audit.grade,
+            threats: logs.map(l => ({ risk: l.risk_level, event: l.description })),
+            recommended_actions: plan.plan.slice(0, 3).map(p => ({ action: p.action, target: p.target })),
+            is_tracked: !!repo
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
 });
 
 // ─── CI Sandbox API (Sentinel 3.0 — Modo Pasivo) ────────────────────────────
@@ -754,7 +802,9 @@ app.post('/api/supply/sandbox/analyze', async (req, res) => {
                     'SANDBOX_ANALYSIS',
                     Math.round(analysis.riskScore),
                     `Sandbox detectó ${analysis.threats.length} amenaza(s): ${analysis.summary}`,
-                    analysis.threats
+                    analysis.threats,
+                    'DYNAMIC',
+                    'VULNERABILITIES'
                 );
             }
         }
@@ -887,6 +937,76 @@ app.get('/api/supply/logs', (req, res) => {
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
+});
+
+// ─── Sentinel 3.5: Remote Orchestration ──────────────────────────────────────
+
+/**
+ * GET /api/orchestrator/audit/:id
+ * Performs a security audit and returns the score.
+ */
+app.get('/api/orchestrator/audit/:id', async (req, res) => {
+    try {
+        const repo = db.getRepositoryById(parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const result = await orchestrator.auditRepo(repo.github_full_name);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/orchestrator/plan/:id
+ * Returns the hardening plan (preview).
+ */
+app.get('/api/orchestrator/plan/:id', async (req, res) => {
+    try {
+        const repo = db.getRepositoryById(parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const result = await orchestrator.planHarden(repo.github_full_name);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/orchestrator/execute/:id
+ * Applies the hardening plan. REQUIRES { consent: 'YES' } in body.
+ */
+app.post('/api/orchestrator/execute/:id', async (req, res) => {
+    try {
+        const { consent } = req.body;
+        if (consent !== 'YES') return res.status(403).json({ error: 'CONSENT_REQUIRED', message: 'User must accept security policy.' });
+
+        const repo = db.getRepositoryById(parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const result = await orchestrator.executeHarden(repo.github_full_name);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Sentinel 3.6: Webhooks ──────────────────────────────────────────────────
+
+/**
+ * POST /api/webhooks/github
+ * Receives webhook events from GitHub to trigger immediate local scans.
+ */
+app.post('/api/webhooks/github', express.json({type: 'application/json'}), async (req, res) => {
+    // If a secret is defined, verify signature
+    if (webhooks.secret && !webhooks.verifySignature(req)) {
+        return res.status(401).send('Invalid signature');
+    }
+    
+    // Process asynchronously so we respond quickly
+    webhooks.handleEvent(req).catch(e => console.error(e));
+    res.status(200).send('OK');
 });
 
 // ─── System Shutdown ───

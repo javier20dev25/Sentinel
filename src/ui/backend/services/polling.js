@@ -60,7 +60,7 @@ function checkAllRepos() {
                             
                             if (supplyChainAlerts.length > 0) {
                                 foundNewThreat = true;
-                                db.addScanLog(repo.id, 'SUPPLY_CHAIN_ALERT', 9, `Supply chain threat in PR #${pr.number} (${analysis.authorReputation.username})`, supplyChainAlerts);
+                                db.addScanLog(repo.id, 'SUPPLY_CHAIN_ALERT', 9, `Supply chain threat in PR #${pr.number} (${analysis.authorReputation.username})`, supplyChainAlerts, 'DYNAMIC', 'SUPPLY_CHAIN');
                                 db.updateRepoStatus(repo.id, 'INFECTED');
 
                                 safeNotify({
@@ -75,7 +75,8 @@ function checkAllRepos() {
                         const results = scanFile(`PR #${pr.number}.diff`, analysis.diff);
                         if (results.alerts.length > 0) {
                             foundNewThreat = true;
-                            db.addScanLog(repo.id, 'BACKGROUND_SCAN', 10, `Background alert for PR #${pr.number}`, results.alerts);
+                            const category = results.alerts.some(a => a.ruleName.includes('Secret')) ? 'SECRETS' : 'MALWARE';
+                            db.addScanLog(repo.id, 'BACKGROUND_SCAN', 10, `Background alert for PR #${pr.number}`, results.alerts, 'DYNAMIC', category);
                             db.updateRepoStatus(repo.id, 'INFECTED');
                         }
                     }

@@ -128,9 +128,16 @@ class SentinelDB {
 
         try {
             const columns = this.db.prepare("PRAGMA table_info(scan_logs)").all();
-            const hasPinned = columns.some(col => col.name === 'pinned');
-            if (!hasPinned) {
+            const colNames = columns.map(c => c.name);
+            
+            if (!colNames.includes('pinned')) {
                 this.db.exec('ALTER TABLE scan_logs ADD COLUMN pinned BOOLEAN DEFAULT 0');
+            }
+            if (!colNames.includes('category')) {
+                this.db.exec("ALTER TABLE scan_logs ADD COLUMN category TEXT DEFAULT 'STATIC'");
+            }
+            if (!colNames.includes('subcategory')) {
+                this.db.exec("ALTER TABLE scan_logs ADD COLUMN subcategory TEXT DEFAULT 'UNKNOWN'");
             }
         } catch (err) {}
     }
@@ -199,9 +206,9 @@ class SentinelDB {
     }
 
     // --- Scaling Logs ---
-    addScanLog(repoId, eventType, riskLevel, description, evidence) {
-        const stmt = this.db.prepare('INSERT INTO scan_logs (repo_id, event_type, risk_level, description, evidence_metadata) VALUES (?, ?, ?, ?, ?)');
-        return stmt.run(repoId, eventType, riskLevel, description, JSON.stringify(evidence));
+    addScanLog(repoId, eventType, riskLevel, description, evidence, category = 'STATIC', subcategory = 'UNKNOWN') {
+        const stmt = this.db.prepare('INSERT INTO scan_logs (repo_id, event_type, risk_level, description, evidence_metadata, category, subcategory) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        return stmt.run(repoId, eventType, riskLevel, description, JSON.stringify(evidence), category, subcategory);
     }
 
     getLogsByRepoFilter(repoId) {

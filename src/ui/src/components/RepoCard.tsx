@@ -17,6 +17,9 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
   const [termCmd, setTermCmd] = useState('');
 
   const [commits, setCommits] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditResult, setAuditResult] = useState<{ score: number, grade: string } | null>(null);
+  const [hardenLoading, setHardenLoading] = useState(false);
 
   useEffect(() => {
     const fetchCommits = async () => {
@@ -35,6 +38,39 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
     setTermCmd(cmd);
     setTermOpen(true);
     setShowMenu(false);
+  };
+
+  const performDeepAudit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAuditLoading(true);
+    try {
+      const { data } = await api.get(`/api/orchestrator/audit/${repo.id}`);
+      setAuditResult({ score: data.score, grade: data.grade });
+    } catch (err) {
+      console.error("Deep audit failed", err);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const performHarden = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("This will enable Secret Scanning and Dependabot Security Updates on this repository. Continue?")) return;
+    
+    setHardenLoading(true);
+    try {
+      const { data } = await api.post(`/api/orchestrator/execute/${repo.id}`, { consent: 'YES' });
+      if (data.success) {
+        alert("Hardening complete! Posture improved.");
+        // Refresh audit after hardening
+        const auditRes = await api.get(`/api/orchestrator/audit/${repo.id}`);
+        setAuditResult({ score: auditRes.data.score, grade: auditRes.data.grade });
+      }
+    } catch (err) {
+      console.error("Hardening failed", err);
+    } finally {
+      setHardenLoading(false);
+    }
   };
 
   const repoName = repo.github_full_name?.includes('/') ? repo.github_full_name.split('/')[1] : repo.github_full_name || 'Unknown Repo';
@@ -95,9 +131,38 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
               <h3 className="text-base font-bold text-white truncate">{repoName}</h3>
               <p className="text-[11px] text-zinc-600 font-medium truncate mt-0.5">{repo.github_full_name}</p>
             </div>
-            {repo.score !== undefined && (
+            {auditResult ? (
+              <ScoreRing score={auditResult.score} grade={auditResult.grade} />
+            ) : repo.score !== undefined ? (
               <ScoreRing score={repo.score} />
-            )}
+            ) : null}
+          </div>
+
+          {!auditResult && !auditLoading && (
+            <button 
+              onClick={performDeepAudit}
+              className="w-full mb-5 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-zinc-400 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
+            >
+              <Activity className="w-3.5 h-3.5" /> Run Global Security Audit
+            </button>
+          )}
+
+          {auditLoading && (
+            <div className="w-full mb-5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400 flex items-center justify-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing Repository...
+            </div>
+          )}
+
+          {auditResult && auditResult.score < 100 && (
+             <button 
+              onClick={performHarden}
+              disabled={hardenLoading}
+              className="w-full mb-5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
+            >
+              {hardenLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+              {hardenLoading ? 'Applying Protections...' : 'Auto-Harden Repository (Fix Vulnerabilities)'}
+            </button>
+          )}
           </div>
 
           {/* Aura Monitor Insights */}

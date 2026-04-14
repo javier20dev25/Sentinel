@@ -134,8 +134,10 @@ class ShieldBridge {
                     db.addScanLog(repoId, 'SUPPLY_CHAIN_AST_ALERT', 
                         threats[0].severity === 'CRITICAL' ? 10 : 7, 
                         `Malicious code pattern in node_modules: ${threats[0].message}`,
-                        { file: relativePath, detail: threats[0] }
+                        { file: relativePath, detail: threats[0] },
+                        'STATIC', 'SUPPLY_CHAIN'
                     );
+
                 }
             } catch (err) {
                 // Silent skip small/problematic files

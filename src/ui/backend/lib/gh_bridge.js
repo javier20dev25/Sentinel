@@ -418,6 +418,101 @@ class GitHubBridge {
             return false;
         }
     }
+
+    /**
+     * Gets full repository metadata including security and analysis settings.
+     * SECURITY: repoFullName validated.
+     */
+    getRepoSecurityMetadata(repoFullName) {
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}`,
+                '--jq', '{secret_scanning: .security_and_analysis.secret_scanning.status, dependabot: .security_and_analysis.dependabot_security_updates.status, visibility: .visibility, default_branch: .default_branch}'
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            return JSON.parse(output);
+        } catch (e) {
+            console.error(`Error getting security metadata for ${repoFullName}:`, sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
+    /**
+     * Gets branch protection rules for a specific branch.
+     * Returns null if no protection exists.
+     */
+    getBranchProtection(repoFullName, branch) {
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}/branches/${branch}/protection`
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            return JSON.parse(output);
+        } catch (e) {
+            // 404 means no protection
+            return null;
+        }
+    }
+
+    /**
+     * Enables security features (Secret Scanning / Dependabot).
+     */
+    async updateRepoSecurity(repoFullName, { secretScanning, dependabot }) {
+        if (!isValidOwnerRepo(repoFullName)) return { success: false };
+        try {
+            // Enable Secret Scanning
+            if (secretScanning !== undefined) {
+                execFileSync('gh', [
+                    'repo', 'edit', repoFullName,
+                    `--enable-secret-scanning=${secretScanning}`
+                ]);
+            }
+            
+            // Enable Dependabot via API (requires special headers/method)
+            if (dependabot !== undefined) {
+                const status = dependabot ? 'enabled' : 'disabled';
+                execFileSync('gh', [
+                    'api', '--method', 'PATCH', `repos/${repoFullName}`,
+                    '-F', `security_and_analysis[dependabot_security_updates][status]=${status}`
+                ]);
+            }
+            return { success: true };
+        } catch (e) {
+            console.error(`Error updating security for ${repoFullName}:`, sanitizeForLog(e.message));
+            return { success: false, error: e.message };
+        }
+    }
+
+    /**
+     * Applies Sentinel's "Standard" branch protection to main.
+     */
+    async updateBranchProtection(repoFullName, branch, protectionConfig) {
+        if (!isValidOwnerRepo(repoFullName)) return { success: false };
+        try {
+            // Convert config to a temporary JSON file for gh api --input
+            const fs = require('fs');
+            const tmpFile = path.join(process.cwd(), `tmp_protection_${Date.now()}.json`);
+            fs.writeFileSync(tmpFile, JSON.stringify(protectionConfig));
+
+            execFileSync('gh', [
+                'api', '--method', 'PUT', 
+                `repos/${repoFullName}/branches/${branch}/protection`,
+                '--input', tmpFile
+            ]);
+
+            fs.unlinkSync(tmpFile);
+            return { success: true };
+        } catch (e) {
+            console.error(`Error protecting branch ${branch} in ${repoFullName}:`, sanitizeForLog(e.message));
+            return { success: false, error: e.message };
+        }
+    }
 }
 
 module.exports = new GitHubBridge();

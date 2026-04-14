@@ -10,14 +10,28 @@ const fs = require('fs');
 let notifier = null;
 try { notifier = require('node-notifier'); } catch (_) {}
 function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
-
 // Detection logic for packaged vs development environment
 const isPackaged = (process.argv0 && process.argv0.toLowerCase().endsWith('sentinel.exe')) || 
                    process.execPath.toLowerCase().endsWith('sentinel.exe');
 
-// Fallback search for the executable relative to the CLI script (for unpacked/portable installs)
 const appExePath = isPackaged ? process.execPath : path.resolve(__dirname, '..', '..', '..', 'Sentinel.exe');
 const isPackagedFinal = isPackaged || fs.existsSync(appExePath);
+
+// Global State
+let isJSON = false;
+
+/**
+ * Standardized logger for Sentinel.
+ * Sends help/info to stderr if in JSON mode, keeping stdout clean for data.
+ */
+function log(msg, type = 'info') {
+    if (isJSON) {
+        process.stderr.write(`[Sentinel] ${msg}\n`);
+    } else {
+        const icons = { info: 'ℹ️', error: '❌', success: '✅', system: '🛡️', warning: '⚠️' };
+        console.log(`${icons[type] || ''} ${msg}`);
+    }
+}
 
 /**
  * Generates a professional Markdown report for GitHub visibility.
@@ -79,16 +93,16 @@ function performManualScan(repoId, githubName) {
     const isCI = process.env.GITHUB_ACTIONS === 'true';
     const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
-    console.log(`🔍 Scanning for threats in ${githubName}...`);
+    log(`Scanning for threats in ${githubName}...`, 'system');
     let totalAlerts = 0;
     
     // Attempt 1: Fetch and scan PRs via API
     const prs = gh.listPRs(githubName);
     
     if (prs.length > 0) {
-        console.log(`🔎 Found ${prs.length} open PR(s) to analyze via API.`);
+        log(`Found ${prs.length} open PR(s) to analyze via API.`, 'info');
         prs.forEach(pr => {
-            console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
+            log(`Checking PR #${pr.number}: ${pr.title}`, 'info');
             const diff = gh.getPRDiff(githubName, pr.number);
             if (diff) {
                 const results = scanFile(`PR #${pr.number}.diff`, diff);
@@ -99,7 +113,7 @@ function performManualScan(repoId, githubName) {
         });
     } else if (isCI) {
         // Attempt 2: CI Fallback - Scan all local JS files in the workspace
-        console.log("⚠️ [Sentinel CI] No PRs detected via API. Performing deep local scan of workspace...");
+        log("[Sentinel CI] No PRs detected via API. Performing deep local scan of workspace...", 'warning');
         const glob = require('glob');
         const files = glob.sync('**/*.{js,ts,jsx,tsx}', { 
             ignore: ['node_modules/**', 'dist/**', 'build/**'] 
@@ -116,7 +130,8 @@ function performManualScan(repoId, githubName) {
 
     function processResults(results, sourceName, prNumber = null) {
         totalAlerts += results.alerts.length;
-        db.addScanLog(repoId, 'THREAT_DETECTED', 10, `Threats in ${sourceName}`, results.alerts);
+        const category = results.alerts.some(a => a.ruleName.includes('Secret')) ? 'SECRETS' : 'MALWARE';
+        db.addScanLog(repoId, 'THREAT_DETECTED', 10, `Threats in ${sourceName}`, results.alerts, 'STATIC', category);
         db.updateRepoStatus(repoId, 'INFECTED');
         
         // Local Notification (ignored in CI)
@@ -143,42 +158,208 @@ function performManualScan(repoId, githubName) {
 
     if (totalAlerts === 0) {
         db.updateRepoStatus(repoId, 'SAFE');
-        console.log("   ✅ No threats found.");
+        log("No threats found.", 'success');
+        if (isJSON) console.log(JSON.stringify({ status: 'SAFE', alerts: 0, githubName }));
+        process.exit(0);
     } else {
-        console.log(`   🚨 Found ${totalAlerts} potential threats!`);
+        log(`Found ${totalAlerts} potential threats!`, 'error');
+        if (isJSON) console.log(JSON.stringify({ status: 'INFECTED', alerts: totalAlerts, githubName }));
         // In CI, if we find threats, we should fail the job to block the merge effectively
         if (isCI) {
-            console.error("❌ Blocking build due to security threats.");
+            log("Blocking build due to security threats.", 'error');
             process.exit(1);
         }
+        process.exit(1);
     }
+}
+
+/**
+ * REPO ORCHESTRATION HELPERS
+ */
+async function performRepoAudit(githubName) {
+    const orchestrator = require('../backend/lib/orchestrator');
+    
+    if (!isJSON) {
+        console.log(`\n🛡️ Sentinel: Global Security Audit for ${githubName}`);
+        console.log(`────────────────────────────────────────────────────────────`);
+    }
+
+    const audit = await orchestrator.auditRepo(githubName);
+    if (audit.error) {
+        log(`Error: ${audit.error}`, 'error');
+        if (isJSON) console.log(JSON.stringify({ error: audit.error }));
+        process.exit(2);
+    }
+
+    if (isJSON) {
+        console.log(JSON.stringify(audit));
+        process.exit(audit.score >= 80 ? 0 : 1);
+    }
+
+    console.log(`Security Score: ${audit.score}/100 [Grade: ${audit.grade}]`);
+    console.log(`────────────────────────────────────────────────────────────`);
+    
+    audit.checks.forEach(c => {
+        const icon = c.status ? '✅' : '❌';
+        console.log(`${icon} ${c.name.padEnd(35)} [${c.status ? 'OK' : 'MISSING'}]`);
+    });
+
+    console.log(`────────────────────────────────────────────────────────────`);
+    if (audit.score < 80) {
+        console.log(`⚠️ Recommendation: Run 'sentinel repo-harden --target ${githubName} --preview'`);
+    } else {
+        console.log(`✅ Status: Repository is well protected.`);
+    }
+    console.log();
+}
+
+async function performRepoHarden(githubName, options) {
+    const orchestrator = require('../backend/lib/orchestrator');
+    const readline = require('readline');
+
+    if (options.preview) {
+        const plan = await orchestrator.planHarden(githubName);
+        console.log(`\n🛡️ Sentinel Hardening Plan for ${githubName}`);
+        console.log(`────────────────────────────────────────────────────────────`);
+        if (plan.plan.length === 0) {
+            console.log("✅ Everything is already up to Sentinel Standards.");
+            return;
+        }
+
+        console.table(plan.plan.map(p => ({
+            Action: p.action,
+            Feature: p.target,
+            Benefit: p.impact
+        })));
+
+        console.log(`────────────────────────────────────────────────────────────`);
+        console.log(`Total Score Improvement: +${plan.audit.checks.filter(c => !c.status).reduce((a, b) => a + b.points, 0)} points`);
+        console.log(`\nTo apply, run: sentinel repo-harden --target ${githubName} --apply`);
+        return;
+    }
+
+    if (options.apply) {
+        // SAFEGUARD: Consent Flow
+        console.log(`\n⚠️  SENTINEL SECURITY ORCHESTRATOR ⚠️`);
+        console.log(`──────────────────────────────────`);
+        console.log(`Target: ${githubName}`);
+        console.log(`Action: Apply Sentinel Security Standard v1.0`);
+        console.log(`Risk: Critical infrastructure change. This modifies repository settings.`);
+        console.log(`──────────────────────────────────`);
+        
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        
+        const answer = await new Promise(resolve => {
+            rl.question(`\nDo you accept the security policy and want to proceed? (Type 'YES' to confirm): `, resolve);
+        });
+        rl.close();
+
+        if (answer !== 'YES') {
+            console.log("❌ Operation aborted by user.");
+            return;
+        }
+
+        console.log(`🚀 Hardening ${githubName}...`);
+        const result = await orchestrator.executeHarden(githubName);
+        
+        if (result.success) {
+            console.log(`\n✅ SUCCESS: ${githubName} is now protected by Sentinel!`);
+            result.results.forEach(r => {
+                console.log(`   - ${r.step}: OK`);
+            });
+        } else {
+            console.error(`\n❌ FAILED: Some hardening steps could not be completed.`);
+        }
+    } else {
+        console.log("Usage: sentinel repo-harden --target <repo> [--preview|--apply]");
+    }
+}
+
+/**
+ * AI AGENT BRIEFING
+ * Optimized for Token usage (<350 tokens) and actionable intelligence.
+ */
+async function performBriefing(githubName, options) {
+    const orchestrator = require('../backend/lib/orchestrator');
+    const db = require('../backend/lib/db');
+    
+    log(`Generating security briefing for ${githubName}...`, 'system');
+    
+    const audit = await orchestrator.auditRepo(githubName);
+    const plan = await orchestrator.planHarden(githubName);
+    const repo = db.getRepositoryByFullName(githubName);
+    const logs = repo ? db.getLogsByRepoFilter(repo.id).slice(0, 3) : [];
+
+    const briefing = {
+        repo: githubName,
+        score: audit.score,
+        grade: audit.grade,
+        top_threats: logs.map(l => ({ level: l.risk_level, msg: l.description })),
+        actions: plan.plan.slice(0, 3).map(p => ({ action: p.action, target: p.target }))
+    };
+
+    if (options.format === 'json' || isJSON) {
+        console.log(JSON.stringify(briefing));
+        process.exit(0);
+    }
+
+    // Markdown Briefing (Token Optimized)
+    let md = `### 🛡️ Sentinel Briefing: ${githubName}\n`;
+    md += `**Security Posture:** ${audit.score}/100 [Grade ${audit.grade}]\n\n`;
+    
+    if (logs.length > 0) {
+        md += `**Active Threats:**\n` + logs.map(l => `- [Lvl ${l.risk_level}] ${l.description}`).join('\n') + `\n\n`;
+    } else {
+        md += `**Active Threats:** None detected.\n\n`;
+    }
+
+    if (plan.plan.length > 0) {
+        md += `**Recommended Actions:**\n` + plan.plan.slice(0, 3).map(p => `- ${p.action} ${p.target}`).join('\n') + `\n\n`;
+    }
+    
+    md += `*Protocol: exit 0 (healthy), 1 (threats), 2 (error). Status: ${audit.score >= 80 ? 'OK' : 'DEBT'}*`;
+    
+    console.log(md);
+    process.exit(audit.score >= 80 ? 0 : 1);
 }
 
 // ─── CLI COMMAND DEFINITIONS ───
 
 program
     .version('1.0.0')
-    .description('Sentinel Security CLI');
+    .description('Sentinel Security CLI')
+    .option('--json', 'Output machine-readable JSON to stdout')
+    .hook('preAction', (thisCommand) => {
+        if (thisCommand.opts().json || program.opts().json) {
+            isJSON = true;
+        }
+    });
 
 program
     .command('link <path> <github_full_name>')
     .description('Link a local project to Sentinel')
-    .action((localPath, githubName) => {
+    .action(async (localPath, githubName) => {
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
         const fullPath = path.resolve(localPath);
-        console.log(`Linking repository at ${fullPath}...`);
+        
+        log(`Linking repository at ${fullPath}...`, 'system');
         
         const info = gh.getRepoInfoLocal(fullPath);
         if (!info) {
-            console.error("❌ Could not identify GitHub repository. Make sure 'gh' is authenticated and you are inside a git repo.");
-            return;
+            log("Could not identify GitHub repository. Make sure 'gh' is authenticated and you are inside a git repo.", 'error');
+            if (isJSON) console.log(JSON.stringify({ error: 'repo_not_identified' }));
+            process.exit(2);
         }
 
         const repoId = db.addRepository(fullPath, info.fullName);
-        console.log(`✅ Success! Linked to ${info.fullName}`);
+        log(`Success! Linked to ${info.fullName}`, 'success');
         
-        performManualScan(repoId, info.fullName);
+        if (isJSON) {
+            console.log(JSON.stringify({ success: true, id: repoId, fullName: info.fullName }));
+        }
+        
+        await performManualScan(repoId, info.fullName);
     });
 
 program
@@ -187,37 +368,73 @@ program
     .action(() => {
         const db = require('../backend/lib/db');
         const repos = db.getRepositories();
-        console.table(repos.map(r => ({
-            ID: r.id,
-            Name: r.github_full_name,
-            Status: r.status,
-            LastScan: r.last_scan_at
-        })));
+        
+        if (isJSON) {
+            console.log(JSON.stringify(repos));
+        } else {
+            console.table(repos.map(r => ({
+                ID: r.id,
+                Name: r.github_full_name,
+                Status: r.status,
+                LastScan: r.last_scan_at
+            })));
+        }
+        process.exit(0);
     });
 
 program
     .command('scan')
     .description('Scan all linked repositories now')
-    .action(() => {
+    .action(async () => {
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
         let repos = db.getRepositories();
         
         // CI RESILIENCE: If running in GitHub Actions and no repos are linked, auto-link current dir
         if (repos.length === 0 && process.env.GITHUB_ACTIONS === 'true') {
-            console.log("🛡️ [Sentinel CI] No linked repositories found. Auto-linking current workspace...");
+            log("[Sentinel CI] No linked repositories found. Auto-linking current workspace...", 'warning');
             const info = gh.getRepoInfoLocal(process.cwd());
             if (info) {
                 const repoId = db.addRepository(process.cwd(), info.fullName);
                 repos = [db.getRepositoryById(repoId)];
             } else {
-                console.error("❌ [Sentinel CI] Could not identify GitHub repository from current workspace.");
+                log("[Sentinel CI] Could not identify GitHub repository from current workspace.", 'error');
+                if (isJSON) console.log(JSON.stringify({ error: 'ci_link_failed' }));
+                process.exit(2);
             }
         }
 
-        repos.forEach(repo => {
-            performManualScan(repo.id, repo.github_full_name);
-        });
+        for (const repo of repos) {
+            await performManualScan(repo.id, repo.github_full_name);
+        }
+        process.exit(0);
+    });
+
+program
+    .command('repo-audit')
+    .description('Full security audit (Score) for a repository')
+    .requiredOption('--target <repo>', 'Full owner/repo name')
+    .action(async (options) => {
+        await performRepoAudit(options.target);
+    });
+
+program
+    .command('repo-harden')
+    .description('Apply Sentinel Security Standards to a repository')
+    .requiredOption('--target <repo>', 'Full owner/repo name')
+    .option('--preview', 'Preview changes before applying')
+    .option('--apply', 'Apply changes (requires confirmation)')
+    .action(async (options) => {
+        await performRepoHarden(options.target, options);
+    });
+
+program
+    .command('briefing')
+    .description('Get a token-optimized security briefing for an AI agent context')
+    .requiredOption('--target <repo>', 'Full owner/repo name')
+    .option('--format <format>', 'Output format (markdown|json)', 'markdown')
+    .action(async (options) => {
+        await performBriefing(options.target, options);
     });
 
 program
@@ -421,11 +638,18 @@ sandbox
         const ci = require('../backend/lib/ci_sandbox');
         const status = ci.getSandboxRunStatus(repo, parseInt(runId));
         if (status.error) {
-            console.error(`❌ Error: ${status.error}`);
+            log(`Error: ${status.error}`, 'error');
+            if (isJSON) console.log(JSON.stringify({ error: status.error }));
+            process.exit(2);
         } else {
-            console.log(`Run status: ${status.status}`);
-            if (status.conclusion) console.log(`Conclusion: ${status.conclusion}`);
-            console.log(`URL: ${status.url}`);
+            if (isJSON) {
+                console.log(JSON.stringify(status));
+            } else {
+                console.log(`Run status: ${status.status}`);
+                if (status.conclusion) console.log(`Conclusion: ${status.conclusion}`);
+                console.log(`URL: ${status.url}`);
+            }
+            process.exit(0);
         }
     });
 

@@ -193,7 +193,12 @@ export const ThreatLog: React.FC<ThreatLogProps> = ({ repos }) => {
                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border ${
                                  isCritical ? 'text-red-400 border-red-500/20 bg-red-500/5' : 'text-amber-400 border-amber-500/20 bg-amber-500/5'
                                }`}>Risk {log.risk_level}</span>
-                               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{log.event_type}</span>
+                               {log.category && (
+                                    <span className="text-[10px] text-indigo-400 font-black uppercase tracking-widest border border-indigo-500/20 bg-indigo-500/5 px-2 py-0.5 rounded-lg">
+                                        {log.category} {log.subcategory && log.subcategory !== 'UNKNOWN' && `• ${log.subcategory}`}
+                                    </span>
+                               )}
+                               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{log.event_type}</span>
                              </div>
                              <span className="text-[10px] text-zinc-600 font-mono">{new Date(log.created_at).toLocaleTimeString()}</span>
                           </div>
