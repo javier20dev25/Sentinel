@@ -1,7 +1,7 @@
 {
   "name": "sentinel-ui",
   "version": "1.0.0",
-  "description": "Sentinel - GitHub Repository Sentinel with powerful local UI",
+  "description": "Sentinel: Advanced local DevSecOps guardian for GitHub with AI threat intelligence and secure CI sandboxing.",
   "main": "electron/main.js",
   "repository": {
     "type": "git",

@@ -1,7 +1,7 @@
 {
   "name": "sentinel",
   "version": "1.0.0",
-  "description": "Local security guardian for GitHub repositories",
+  "description": "Sentinel: Advanced local DevSecOps guardian for GitHub with AI threat intelligence and secure CI sandboxing.",
   "main": "index.js",
   "bin": {
     "sentinel": "src/ui/cli/index.js"
