@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GitBranch, ShieldCheck, ShieldAlert, Clock, Scan, MoreVertical, Terminal as TermIcon, Shield, BugOff, Activity } from 'lucide-react';
+import { GitBranch, ShieldCheck, ShieldAlert, Clock, Scan, MoreVertical, Terminal as TermIcon, Shield, BugOff, Activity, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { SentinelTerminal } from './SentinelTerminal';
 import { ScoreRing } from './ScoreRing';
@@ -163,8 +163,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
               {hardenLoading ? 'Applying Protections...' : 'Auto-Harden Repository (Fix Vulnerabilities)'}
             </button>
           )}
-          </div>
-
+          
           {/* Aura Monitor Insights */}
           <div className="mb-5 space-y-3">
             <div className="flex items-center justify-between p-2.5 rounded-2xl bg-blue-500/5 border border-blue-500/10 hover:bg-blue-500/10 transition-colors cursor-help">
