@@ -1,0 +1,43 @@
+name: Sentinel Self-Security Scan
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+jobs:
+  security-scan:
+    name: "Sentinel Static analysis"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: src/ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: src/ui
+
+      - name: Link Sentinel CLI
+        run: npm link
+        working-directory: .
+
+      - name: Run Sentinel Scan
+        run: sentinel scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # El comando 'scan' en modo headless emitirá logs de errores si encuentra amenazas
