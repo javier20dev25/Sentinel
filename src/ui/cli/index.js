@@ -79,44 +79,78 @@ function performManualScan(repoId, githubName) {
     const isCI = process.env.GITHUB_ACTIONS === 'true';
     const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
-    console.log(`🔍 Scanning open PRs for ${githubName}...`);
-    const prs = gh.listPRs(githubName);
+    console.log(`🔍 Scanning for threats in ${githubName}...`);
     let totalAlerts = 0;
-
-    prs.forEach(pr => {
-        console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
-        const diff = gh.getPRDiff(githubName, pr.number);
-        if (diff) {
-            const results = scanFile(`PR #${pr.number}.diff`, diff);
-            if (results.alerts.length > 0) {
-                totalAlerts += results.alerts.length;
-                db.addScanLog(repoId, 'PR_THREAT', 10, `Threats in PR #${pr.number}`, results.alerts);
-                db.updateRepoStatus(repoId, 'INFECTED');
-                
-                // 1. Local Notification
-                safeNotify({
-                    title: '🚨 Sentinel: Threat Detected!',
-                    message: `PR #${pr.number} in ${githubName} looks dangerous.`,
-                    sound: true
-                });
-
-                // 2. GitHub PR Reporting (Transparency)
-                const mdReport = generateMarkdownReport(githubName, pr.number, results.alerts);
-                gh.postPRComment(githubName, pr.number, mdReport);
-
-                // 3. GitHub Summary (Observability)
-                if (isCI && summaryPath) {
-                    fs.appendFileSync(summaryPath, mdReport + '\n\n');
+    
+    // Attempt 1: Fetch and scan PRs via API
+    const prs = gh.listPRs(githubName);
+    
+    if (prs.length > 0) {
+        console.log(`🔎 Found ${prs.length} open PR(s) to analyze via API.`);
+        prs.forEach(pr => {
+            console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
+            const diff = gh.getPRDiff(githubName, pr.number);
+            if (diff) {
+                const results = scanFile(`PR #${pr.number}.diff`, diff);
+                if (results.alerts.length > 0) {
+                    processResults(results, `PR #${pr.number}`, pr.number);
                 }
             }
+        });
+    } else if (isCI) {
+        // Attempt 2: CI Fallback - Scan all local JS files in the workspace
+        console.log("⚠️ [Sentinel CI] No PRs detected via API. Performing deep local scan of workspace...");
+        const glob = require('glob');
+        const files = glob.sync('**/*.{js,ts,jsx,tsx}', { 
+            ignore: ['node_modules/**', 'dist/**', 'build/**'] 
+        });
+        
+        files.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+            const results = scanFile(file, content);
+            if (results.alerts.length > 0) {
+                processResults(results, file);
+            }
+        });
+    }
+
+    function processResults(results, sourceName, prNumber = null) {
+        totalAlerts += results.alerts.length;
+        db.addScanLog(repoId, 'THREAT_DETECTED', 10, `Threats in ${sourceName}`, results.alerts);
+        db.updateRepoStatus(repoId, 'INFECTED');
+        
+        // Local Notification (ignored in CI)
+        safeNotify({
+            title: '🚨 Sentinel: Threat Detected!',
+            message: `${sourceName} looks dangerous.`,
+            sound: true
+        });
+
+        // PR Reporting (if we have a PR number)
+        if (prNumber) {
+            const mdReport = generateMarkdownReport(githubName, prNumber, results.alerts);
+            gh.postPRComment(githubName, prNumber, mdReport);
         }
-    });
+
+        // CI Step Summary reporting
+        if (isCI && summaryPath) {
+            const mdSummary = `### 🚨 Threat Evidence in \`${sourceName}\`\n` + 
+                            results.alerts.map(a => `- **[${a.riskLevel}/10] ${a.ruleName}**: ${a.description}`).join('\n') + 
+                            `\n\n\`\`\`javascript\n${results.alerts[0].evidence}\n\`\`\`\n`;
+            fs.appendFileSync(summaryPath, mdSummary + '\n\n');
+        }
+    }
 
     if (totalAlerts === 0) {
         db.updateRepoStatus(repoId, 'SAFE');
         console.log("   ✅ No threats found.");
     } else {
         console.log(`   🚨 Found ${totalAlerts} potential threats!`);
+        // In CI, if we find threats, we should fail the job to block the merge effectively
+        if (isCI) {
+            console.error("❌ Blocking build due to security threats.");
+            process.exit(1);
+        }
     }
 }
 

