@@ -319,11 +319,13 @@ class GitHubBridge {
             return null;
         }
         try {
-            return JSON.parse(execFileSync('gh', ['repo', 'view', '--json', 'fullName'], {
+            const output = execFileSync('gh', ['repo', 'view', '--json', 'nameWithOwner'], {
                 cwd: localPath,
                 encoding: 'utf-8',
                 timeout: 10000
-            }));
+            });
+            const info = JSON.parse(output);
+            return { fullName: info.nameWithOwner };
         } catch {
             return null;
         }
