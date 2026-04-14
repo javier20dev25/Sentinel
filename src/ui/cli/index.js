@@ -166,7 +166,21 @@ program
     .description('Scan all linked repositories now')
     .action(() => {
         const db = require('../backend/lib/db');
-        const repos = db.getRepositories();
+        const gh = require('../backend/lib/gh_bridge');
+        let repos = db.getRepositories();
+        
+        // CI RESILIENCE: If running in GitHub Actions and no repos are linked, auto-link current dir
+        if (repos.length === 0 && process.env.GITHUB_ACTIONS === 'true') {
+            console.log("🛡️ [Sentinel CI] No linked repositories found. Auto-linking current workspace...");
+            const info = gh.getRepoInfoLocal(process.cwd());
+            if (info) {
+                const repoId = db.addRepository(process.cwd(), info.fullName);
+                repos = [db.getRepositoryById(repoId)];
+            } else {
+                console.error("❌ [Sentinel CI] Could not identify GitHub repository from current workspace.");
+            }
+        }
+
         repos.forEach(repo => {
             performManualScan(repo.id, repo.github_full_name);
         });
