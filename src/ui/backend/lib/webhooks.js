@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const db = require('./db');
 const orchestrator = require('./orchestrator');
 const gh = require('./gh_bridge');
-const { scanFile } = require('../../scanner/index');
+const { scanFile } = require('../scanner/index');
 
 class WebhookHandler {
 
