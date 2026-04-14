@@ -69,6 +69,20 @@ npm run sentinel
 
 ---
 
+## Sentinel CI Sandbox: Dynamic Runtime Analysis
+
+Sentinel 3.0 introduces a state-of-the-art **Hybrid Analysis** engine. While most tools stop at static code scanning, Sentinel provides a secure way to analyze the *behavior* of your code and dependencies:
+
+*   **Isolated Execution**: Leverages GitHub Actions as a secure, ephemeral container to simulate installation and build processes (`npm install`, `npm build`).
+*   **Behavioral Telemetry**: Monitors the sandbox environment for high-risk indicators:
+    *   **Network Guard**: Detects unauthorized connections to Command & Control (C2) domains during installation.
+    *   **WASM Detection**: Identifies hidden WebAssembly binaries often used to obfuscate malicious payloads.
+    *   **Lockfile Integrity**: Alerts on "Lockfile Poisoning" where dependencies are silently redirected to compromised registries.
+    *   **Post-Install Hook Monitoring**: Scrutinizes `preinstall` and `postinstall` scripts for suspicious system-level access.
+*   **Risk Scoring**: Combines static AST results with dynamic behavioral telemetry to provide a unified **Sentinel Risk Score (1-10)**.
+
+---
+
 ## Technical Stack
 
 * **Frontend**: React.js + Vite + Framer Motion (Premium UI)
