@@ -1,6 +1,6 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
 
-**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md)**
+**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md) | [Changelog](CHANGELOG.md)**
 
 ## 🇪🇸 Resumen Ejecutivo (Spanish)
 Sentinel 3.0 integra una infraestructura de **Sandbox Dinámico** basada en GitHub Actions para el análisis de comportamiento en tiempo de ejecución. Esta funcionalidad permite identificar amenazas que evaden el análisis estático, tales como la ejecución de binarios WebAssembly (WASM), conexiones de red no autorizadas a dominios de comando y control (C2), y alteraciones en la integridad de los archivos de bloqueo (lockfiles) durante el proceso de instalación.
@@ -60,8 +60,9 @@ npm run sentinel
 
 ## Key Features
 
-* **Real-time Scanning**: Constant monitoring for secrets, vulnerabilities, and misconfigurations in local and remote paths.
 * **Interactive Security Dashboard**: Manage all your linked repositories and security status from a sleek, professional interface.
+* **Intelligence Categorization**: Advanced threat classification (Static/Dynamic) and granular subcategories for precise risk assessment.
+* **Sentinel Smart Webhooks**: Near-instant GitHub event ingestion for real-time protection without aggressive polling.
 * **Built-in CLI**: Run security audits, manage links, and trigger scans directly from your terminal.
 * **Hardened Command Execution**: Uses strict whitelisting and direct argument arrays to prevent shell injection (CWE-78).
 * **GitHub Auth Integration**: Secure OAuth flow via the official GitHub CLI for repository access.
@@ -99,6 +100,7 @@ Sentinel is a solo-developer project that thrives on high-quality community feed
 
 **Code of Conduct**: All participants are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 **Security Reports**: Use [GitHub Security Advisories](https://github.com/javier20dev25/Sentinel/security/advisories/new) to report vulnerabilities privately.
+**License**: This project is licensed under the [MIT License](LICENSE).
 
 ---
 
