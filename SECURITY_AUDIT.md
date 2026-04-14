@@ -275,6 +275,34 @@
 
 ---
 
+## 🟢 Acceptable Risks / False Positives (To Dismiss in GitHub UI)
+
+### VULN-R01 — glib: `VariantStrIter` Iterator/DoubleEndedIterator Inconsistency
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `glib` (Rust) |
+| **Location** | `src/ui/src-tauri/Cargo.lock` |
+| **GHSA** | #39 |
+| **Severity** | 🟡 Moderate |
+| **Type** | Transitive (via `tauri` -> `wry` -> `webkit2gtk`) |
+| **Description** | Inconsistency between Iterators in `glib::VariantStrIter` could lead to undefined behavior when modifying internal pointers. |
+| **Analysis** | **False Positive for Sentinel.** Sentinel targets Windows, whereas `glib` and `webkit2gtk` are Linux-only dependencies in Tauri's tree. This code is never compiled into the Windows `.exe`, making exploitation impossible. |
+| **Status** | 🟢 **Dismiss in UI** (Ignored pending upstream Tauri bump) |
+
+### VULN-R02 — rand: ThreadRng Unreliable with Custom Logger
+| Field | Detail |
+| :--- | :--- |
+| **Package** | `rand` (Rust) |
+| **Location** | `src/ui/src-tauri/Cargo.lock` |
+| **GHSA** | #40 |
+| **Severity** | 🟡 Moderate |
+| **Type** | Transitive (Build-time via `phf_generator`) |
+| **Description** | Undefined behavior in `ThreadRng` when a custom logger accessing the RNG intersects with thread seeding. |
+| **Analysis** | **Acceptable Risk.** This older version of `rand` is pulled exclusively during *build time* by `phf_generator` to generate code hashes. It is not compiled into the final Sentinel binary, and our build environment does not inject malicious loggers to trigger the memory corruption. |
+| **Status** | 🟢 **Dismiss in UI** (Ignored pending upstream Tauri bump) |
+
+---
+
 ## 📋 Remediation Summary
 
 | Category | Strategy | Timeline |
