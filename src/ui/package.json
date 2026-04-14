@@ -84,6 +84,7 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "framer-motion": "^12.38.0",
+    "glob": "^15.1.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.7.0",
