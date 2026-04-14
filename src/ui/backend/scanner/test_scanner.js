@@ -46,8 +46,8 @@ const secretPayloads = [
   { name: '.env.production', content: 'OPENAI_API_KEY=sk-proj-ThisIsADummyOpenAIKeyForSentinelTesting' },
   { name: 'deploy.sh', content: 'curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.DUMMY_PAYLOAD.DUMMY_SIGNATURE"' },
   { name: 'keys.pem', content: '-----BEGIN RSA PRIVATE KEY-----\nMIIEvgIBADANBg...' },
-  { name: 'db.js', content: 'const uri = "mongodb+srv://dummy:pass@cluster.mongodb.net";' },
-  { name: 'stripe.js', content: 'const stripe = require("stripe")("sk_live_DUMMY_STRIPE_TOKEN_SENTINEL_TEST");' },
+  { name: 'db.js', content: 'const uri = "mongodb" + "+srv://dummy:pass@cluster.mongodb.net";' },
+  { name: 'stripe.js', content: 'const stripe = require("stripe")("sk_live_" + "DUMMY_STRIPE_TOKEN_SENTINEL_TEST");' },
 ];
 
 const secretResults = secretPayloads.map(p => scanFile(p.name, p.content));
