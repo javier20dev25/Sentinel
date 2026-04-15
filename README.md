@@ -3,7 +3,20 @@
 **[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md) | [Changelog](CHANGELOG.md)**
 
 ## 🇪🇸 Resumen Ejecutivo (Spanish)
-Sentinel 3.0 integra una infraestructura de **Sandbox Dinámico** basada en GitHub Actions para el análisis de comportamiento en tiempo de ejecución. Esta funcionalidad permite identificar amenazas que evaden el análisis estático, tales como la ejecución de binarios WebAssembly (WASM), conexiones de red no autorizadas a dominios de comando y control (C2), y alteraciones en la integridad de los archivos de bloqueo (lockfiles) durante el proceso de instalación.
+Sentinel 3.0 integra una infraestructura de **Sandbox Dinámico** basada en GitHub Actions para el análisis de comportamiento en tiempo de ejecución. Esta funcionalidad permite identificar amenazas que evaden el análisis estático.
+
+### 🧪 Capacidades del CI Sandbox (Análisis Dinámico)
+A diferencia de otras herramientas que se limitan al análisis de código estático, Sentinel ofrece una forma segura de analizar el *comportamiento* real de tus dependencias:
+*   **Ejecución Aislada**: Utiliza GitHub Actions como un contenedor seguro y efímero para simular procesos de instalación y construcción (`npm install`, `npm build`).
+*   **Telemetría de Comportamiento**: Monitorea el entorno en busca de indicadores de alto riesgo:
+    *   **Red (Network Guard)**: Detecta conexiones no autorizadas a dominios de Comando y Control (C2).
+    *   **Detección de WASM**: Identifica binarios WebAssembly ocultos usados para camuflar malware.
+    *   **Integridad del Lockfile**: Alerta sobre el "Envenenamiento de Lockfiles" donde se redirigen dependencias a registros comprometidos.
+    *   **Hooks de Instalación**: Escudriña scripts `preinstall` y `postinstall` en busca de accesos sospechosos al sistema.
+*   **Puntuación de Riesgo**: Combina los resultados estáticos de AST con la telemetría dinámica para generar un **Sentinel Risk Score (1-10)** unificado.
+
+---
+
 
 ---
 
