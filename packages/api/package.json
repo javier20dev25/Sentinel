@@ -1,0 +1,22 @@
+{
+  "name": "@sentinel/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Secure Express API and webhook management for Sentinel.",
+  "main": "server/index.js",
+  "dependencies": {
+    "axios": "^1.15.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-notifier": "^10.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "scripts": {
+    "dev": "nodemon server/index.js",
+    "start": "node server/index.js"
+  }
+}

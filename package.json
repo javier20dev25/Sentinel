@@ -1,44 +1,28 @@
 {
-  "name": "sentinel",
+  "name": "sentinel-monorepo",
   "version": "1.0.0",
+  "private": true,
   "description": "Sentinel: Advanced local DevSecOps guardian for GitHub with AI threat intelligence and secure CI sandboxing.",
-  "main": "index.js",
-  "bin": {
-    "sentinel": "src/ui/cli/index.js"
-  },
+  "workspaces": [
+    "packages/*",
+    "samples/*"
+  ],
   "scripts": {
-    "scan": "node src/scanner/index.js",
-    "dashboard": "node src/server/index.js",
-    "service": "node src/services/polling.js",
-    "ui": "cd src/ui && npx tauri dev",
-    "start": "node src/start.js",
-    "sentinel-link": "node src/cli/index.js link",
-    "sentinel-list": "node src/cli/index.js list",
-    "sentinel-scan": "node src/cli/index.js scan",
+    "core:test": "npm test -w packages/core",
+    "api:dev": "npm run dev -w packages/api",
+    "ui:dev": "npm run dev -w packages/ui",
+    "desktop:dev": "npm run dev -w packages/desktop",
+    "cli": "node packages/cli/index.js",
+    "start": "node packages/api/server/index.js",
     "test": "jest --config jest.config.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Sentinel Team",
   "license": "MIT",
-  "dependencies": {
-    "acorn": "8.16.0",
-    "acorn-walk": "8.3.5",
-    "better-sqlite3": "^12.8.0",
-    "commander": "^14.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "node-notifier": "^10.0.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.10.1",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.1.2",
     "jest": "^30.3.0",
-    "typescript": "^5.0.0",
-    "vite": "^8.0.8"
+    "typescript": "^5.0.0"
   }
 }
+

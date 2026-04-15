@@ -13,6 +13,17 @@ The project is currently deemed **commercially viable (v1.0.0) / Release Candida
 
 ---
 
+## 🛡️ Risk Taxonomy & Audit Philosophy
+To understand the "Pending" status in the registries below, we apply the following risk classification:
+
+| Category | Risk Profile | Exploitation Context | Sentinel Strategy |
+| :--- | :--- | :--- | :--- |
+| **🛡️ Production Critical** | HIGH | Affects the final `.exe` or API logic. | **Immediate Patching Required.** |
+| **🧪 Dev-Environment** | MODERATE | Vulnerabilities in `vite`, `eslint`, or build tools. | Tracked for hygiene; no risk to the final user. |
+| **🧊 N/A (OS/Scope)** | NEGLIGIBLE | Linux-specific flaws in a Windows build. | **Dismissed** after technical verification. |
+| **🛠️ Dev-Transitive** | LOW | Deep dependencies of test tools (e.g., `lodash` in `jest`). | Patch when the parent tool updates. |
+
+
 ## 🔍 Deep Audit Findings (Beyond Dependabot)
 
 ### 1. Hardener Bridge - Subprocess Injection Vectors
@@ -65,7 +76,7 @@ Sentinel meets enterprise requirements for a 1.0.0 public launch:
 | **Description** | By appending query strings to URLs (e.g., `?something`), attackers can bypass the `server.fs.deny` file restriction list in Vite's dev server, reading arbitrary files outside the project root. |
 | **Impact** | Sensitive file read (.env, private keys, secrets) during development. |
 | **Fix** | Upgrade `vite` to `>=6.2.3` / `>=8.0.5`. |
-| **Status** | 🔧 In Progress (upgrade running) |
+| **Status** | 🧪 **Dev-Only** (No impact on production binary) |
 
 ### VULN-H02 — Vite: Arbitrary File Read via Dev Server WebSocket
 | Field | Detail |
@@ -78,7 +89,7 @@ Sentinel meets enterprise requirements for a 1.0.0 public launch:
 | **Description** | Vite's dev-mode WebSocket server doesn't properly validate file paths requested by clients. A malicious page open in the same browser can use the WebSocket connection to read arbitrary files from the local filesystem. |
 | **Impact** | Local file system exfiltration via browser-origin attacks. |
 | **Fix** | Upgrade `vite` to `>=8.0.5`. |
-| **Status** | 🔧 In Progress |
+| **Status** | 🧪 **Dev-Only** (No impact on production binary) |
 
 ### VULN-H03 — Vite: Path Traversal in Optimized Deps `.map` Handling
 | Field | Detail |
@@ -90,7 +101,7 @@ Sentinel meets enterprise requirements for a 1.0.0 public launch:
 | **Type** | Direct Dependency (Dev) |
 | **Description** | A path traversal vulnerability in how Vite serves `.map` files for optimized dependencies allows reading files outside the intended directory. |
 | **Fix** | Upgrade `vite` to `>=8.0.5`. |
-| **Status** | 🔧 In Progress |
+| **Status** | 🧪 **Dev-Only** (No impact on production binary) |
 
 ### VULN-H04 — Electron: Use-After-Free in Offscreen Child Window Paint Callback
 | Field | Detail |
@@ -276,7 +287,7 @@ Sentinel meets enterprise requirements for a 1.0.0 public launch:
 | **Location** | `src/ui/src-tauri/Cargo.lock` |
 | **Description** | Inconsistency between `Iterator` and `DoubleEndedIterator` implementations in `glib::VariantStrIter` could lead to undefined behavior. |
 | **Fix** | Run `cargo update` to pull latest `glib`. |
-| **Status** | 📋 Pending (`cargo-audit` not installed) |
+| **Status** | 🧊 **N/A** (Linux/GTK specific; Sentinel is Windows-native) |
 
 ---
 

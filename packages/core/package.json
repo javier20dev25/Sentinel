@@ -1,0 +1,15 @@
+{
+  "name": "@sentinel/core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Core scanning engine and security logic for Sentinel.",
+  "main": "index.js",
+  "dependencies": {
+    "acorn": "^8.12.0",
+    "acorn-walk": "^8.3.0",
+    "better-sqlite3": "^12.8.0",
+    "chalk": "^4.1.2",
+    "glob": "^13.0.6",
+    "js-yaml": "^4.1.0"
+  }
+}

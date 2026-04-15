@@ -1,0 +1,18 @@
+{
+  "name": "@sentinel/cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sentinel command-line interface for scanning and management.",
+  "main": "index.js",
+  "bin": {
+    "sentinel": "./index.js",
+    "sntl": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^14.0.3"
+  }
+}
