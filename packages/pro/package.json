@@ -1,0 +1,13 @@
+{
+  "name": "@sentinel/pro",
+  "version": "4.0.0-alpha",
+  "private": true,
+  "description": "Sentinel Pro — commercial feature layer with licensing, cloud sync, and advanced threat intelligence.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "node-machine-id": "^1.1.12"
+  }
+}
