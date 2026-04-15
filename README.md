@@ -2,7 +2,12 @@
 > **Proactive Supply-Chain Evasion Detection & Zero-Trust Behavioral Guard for the Modern Developer.**
 
 
-**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Testing Guide](docs/TESTING_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md) | [Changelog](CHANGELOG.md)**
+**[Official Site](https://javier20dev25.github.io/Sentinel/) | [User Guide](docs/USER_GUIDE.md) | [CLI Reference](docs/CLI_REFERENCE.md) | [🤖 AI Agent Guide](docs/AI_AGENT_GUIDE.md) | [Sandbox Guide](docs/SANDBOX_GUIDE.md) | [Architecture](docs/ARCHITECTURE.md) | [Policies](docs/POLICIES.md) | [Changelog](CHANGELOG.md) | [💙 Acknowledgements](ACKNOWLEDGEMENTS.md)**
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-💙_Support_Sentinel-EA4AAA?style=flat-square&logo=githubsponsors)](https://github.com/sponsors/javier20dev25)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support_via_Ko--fi-FF5E5B?style=flat-square&logo=kofi)](https://ko-fi.com/sentinel_security)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-☕_Donate-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/sentinelsecurity)
+
 
 ## 🇪🇸 Resumen Ejecutivo (Spanish)
 Sentinel 3.0 integra una infraestructura de **Sandbox Dinámico** basada en GitHub Actions para el análisis de comportamiento en tiempo de ejecución. Esta funcionalidad permite identificar amenazas que evaden el análisis estático.
