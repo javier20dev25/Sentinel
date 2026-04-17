@@ -199,7 +199,14 @@ program
             return;
         }
 
-        const repoId = db.addRepository(fullPath, info.fullName);
+        let repoId = db.addRepository(fullPath, info.fullName);
+        
+        // Update path if it changed
+        const existing = db.getRepositoryById(repoId);
+        if (existing.local_path !== fullPath) {
+            db.updateRepoPath(repoId, fullPath);
+        }
+
         if (!program.opts().json) console.log(`✅ Success! Linked to ${info.fullName}`);
         
         if (program.opts().json) respondAgent(true, { id: repoId, fullName: info.fullName });
@@ -638,6 +645,99 @@ program
             } else {
                 console.log('\n✓ No critical threats. Proceed with caution.\n');
             }
+        }
+    });
+
+// ─── sentinel protected [add/list/remove] ───
+program
+    .command('protected')
+    .description('Manage protected files and folders for the current repository')
+    .argument('[action]', 'Action to perform (add, list, remove)', 'list')
+    .argument('[target]', 'Path to add or ID to remove')
+    .action((action, target) => {
+        const db = require('../backend/lib/db');
+        const cwd = process.cwd();
+        const repos = db.getRepositories();
+        const repo = repos.find(r => r.local_path && path.resolve(r.local_path) === path.resolve(cwd));
+
+        if (!repo) {
+            if (program.opts().json) respondAgent(false, null, 'No linked repository found for the current directory.');
+            console.error('❌ No linked repository found for the current directory. Link it first: sentinel link . <repo>');
+            process.exit(1);
+        }
+
+        if (action === 'add') {
+            if (!target) {
+                console.error('❌ Usage: sentinel protected add <path>');
+                process.exit(1);
+            }
+            const fullPath = path.relative(repo.local_path, path.resolve(target)).replace(/\\/g, '/');
+            const id = db.addProtectedFile(repo.id, fullPath);
+            if (program.opts().json) respondAgent(true, { id, path: fullPath });
+            console.log(`✅ Path protected: ${fullPath} (ID: ${id})`);
+        } else if (action === 'remove') {
+            if (!target) {
+                console.error('❌ Usage: sentinel protected remove <id>');
+                process.exit(1);
+            }
+            const success = db.removeProtectedFile(parseInt(target));
+            if (program.opts().json) respondAgent(success, { id: target });
+            if (success) console.log(`✅ Removed protection for ID: ${target}`);
+            else console.error(`❌ Could not find a protected file with ID: ${target}`);
+        } else {
+            // Default: List
+            const files = db.getProtectedFiles(repo.id);
+            if (program.opts().json) respondAgent(true, files);
+            
+            console.log(`\n🛡️  Protected Files for: ${repo.github_full_name}\n`);
+            if (files.length === 0) {
+                console.log('   (No files protected yet)');
+            } else {
+                files.forEach(f => console.log(`   [ID: ${f.id}] ${f.file_path}`));
+            }
+            console.log('');
+        }
+    });
+
+// ─── sentinel hook-install ───
+program
+    .command('hook-install')
+    .description('Install the Sentinel Security Skill (Pre-push Git Hook)')
+    .action(() => {
+        const cwd = process.cwd();
+        const gitDir = path.join(cwd, '.git');
+        
+        if (!fs.existsSync(gitDir)) {
+            if (program.opts().json) respondAgent(false, null, 'Not a git repository.');
+            console.error('❌ This directory is not a git repository. Execute inside a repo.');
+            process.exit(1);
+        }
+
+        const hooksDir = path.join(gitDir, 'hooks');
+        if (!fs.existsSync(hooksDir)) fs.mkdirSync(hooksDir, { recursive: true });
+
+        const hookPath = path.join(hooksDir, 'pre-push');
+        const hookContent = `#!/bin/sh
+# Sentinel Security Hook
+# Prevents sensitive leaks and malicious code from leaving your machine.
+
+node "${path.resolve(__dirname, 'index.js')}" hook pre-push
+if [ $? -ne 0 ]; then
+  echo "🚨 [Sentinel] Push blocked by security policy."
+  exit 1
+fi
+`;
+
+        try {
+            fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+            if (program.opts().json) respondAgent(true, { installed: true, hook: 'pre-push' });
+            console.log('\n✅ Sentinel Security Skill installed successfully!');
+            console.log('   Git hook: .git/hooks/pre-push');
+            console.log('\n🛡️  Your outbound commits are now protected.');
+        } catch (e) {
+            if (program.opts().json) respondAgent(false, null, e.message);
+            console.error('❌ Failed to install git hook:', e.message);
+            process.exit(1);
         }
     });
 

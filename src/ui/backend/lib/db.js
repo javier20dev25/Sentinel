@@ -171,7 +171,6 @@ class SentinelDB {
         `).all(repoId);
     }
 
-    // --- Repositories ---
     addRepository(localPath, githubName) {
         if (githubName) {
             const existing = this.db.prepare('SELECT id FROM repositories WHERE github_full_name = ?').get(githubName);
@@ -181,6 +180,11 @@ class SentinelDB {
         const stmt = this.db.prepare('INSERT OR IGNORE INTO repositories (local_path, github_full_name) VALUES (?, ?)');
         const info = stmt.run(pathVal, githubName);
         return info.lastInsertRowid;
+    }
+
+    updateRepoPath(repoId, localPath) {
+        const stmt = this.db.prepare('UPDATE repositories SET local_path = ? WHERE id = ?');
+        return stmt.run(localPath, repoId).changes > 0;
     }
 
     deleteRepository(repoId) {
