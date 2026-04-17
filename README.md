@@ -122,16 +122,23 @@ When using the `--json` flag, Sentinel always returns a consistent object struct
 | `sentinel scan --json` | Full audit of all repos | `sentinel scan --json` |
 | `sentinel status --json` | Get high-level security state | `sentinel status --json` |
 
-### Handling Protected Files
-As an AI Agent, if you encounter a **Protected File violation**, Sentinel will block the commit by default. To handle this gracefully:
-1.  **Use `--exclude-protected`**: This will automatically run `git reset HEAD <file>` on the sensitive files, allowing your "clean" code to be committed while leaving protected data out.
-2.  **Verify via JSON**: Check `data.isClean` and `data.criticalCount` in the JSON response of the `analyze` command.
+### Installing Security Skills (Git Hooks)
+AI Agents can "self-harden" their environment by installing the Sentinel pre-push gate. This ensures that any malicious code or accidental leak is blocked before it leaves the local machine.
 
-Example implementation for an Agent:
-```bash
-# Analyze local changes and safely exclude any user-protected leaks
-sentinel analyze --local --exclude-protected --json
-```
+**The "Agentic Skill" Protocol:**
+1.  **Link the Repo**: `sentinel link . <owner/repo>`
+2.  **Protect Folders**: `sentinel protected add secrets/ --json`
+3.  **Install the Skill**: `sentinel hook-install --json`
+
+Once installed, Sentinel will automatically audit every `git push`. If a threat is found, the push will be structuraly blocked.
+
+### CLI Reference for Agents
+| Command | Purpose | Example |
+| :--- | :--- | :--- |
+| `sentinel protected add <path>` | Mark a folder as sensitive | `sentinel protected add config/` |
+| `sentinel protected list` | Get all protected paths | `sentinel protected list --json` |
+| `sentinel hook-install` | Enable automated push blocking | `sentinel hook-install --json` |
+| `sentinel analyze --local` | Manual pre-commit check | `sentinel analyze --local --json` |
 
 ---
 
