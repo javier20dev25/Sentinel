@@ -425,6 +425,66 @@ program
         }
     });
 
+// ─── sentinel packs load <file> ───
+program
+    .command('packs')
+    .description('Manage Config Packs for the current repository')
+    .argument('<action>', 'Action to perform (e.g. load)')
+    .argument('[file]', 'Path to the config pack file')
+    .action((action, file) => {
+        if (action !== 'load' || !file) {
+            console.error('❌ Usage: sentinel packs load <file>');
+            process.exit(1);
+        }
+
+        const db = require('../backend/lib/db');
+        const fs = require('fs');
+        const path = require('path');
+        const crypto = require('crypto');
+
+        const cwd = process.cwd();
+        const repos = db.getRepositories();
+        const repo = repos.find(r => r.local_path && path.resolve(r.local_path) === path.resolve(cwd));
+
+        if (!repo) {
+            console.error('❌ No linked repository found for the current directory.');
+            process.exit(1);
+        }
+
+        try {
+            const packContent = fs.readFileSync(path.resolve(file), 'utf8');
+            const packData = JSON.parse(packContent);
+
+            let isOfficial = false;
+            if (packData._signature) {
+                try {
+                    const SENTINEL_LAB_PUB_KEY = "MCowBQYDK2VwAyEAi43t85W8oYdD+F570RkG2q4Oa0R1OEvnmb89N2B43rU=";
+                    const dataToSign = {
+                        metadata: packData.metadata,
+                        config: packData.config
+                    };
+                    const payloadBuffer = Buffer.from(JSON.stringify(dataToSign));
+                    const pubKey = crypto.createPublicKey({ key: Buffer.from(SENTINEL_LAB_PUB_KEY, 'base64'), format: 'der', type: 'spki' });
+                    const isValid = crypto.verify(null, payloadBuffer, pubKey, Buffer.from(packData._signature, 'base64'));
+                    if (isValid) isOfficial = true;
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            console.log('\n📦 Loading Config Pack...');
+            console.log(`   Name: ${packData.metadata?.name || 'Unknown'}`);
+            console.log(`   Official: ${isOfficial ? '✅ Yes' : '❌ No'}`);
+
+            db.installPack(repo.id, packData, isOfficial);
+            console.log('\n✅ Pack successfully loaded into the repository config!');
+
+        } catch (e) {
+            console.error('❌ Error loading pack:', e.message);
+            process.exit(1);
+        }
+    });
+
 // ─── sentinel analyze --local ───
 program
     .command('analyze')
