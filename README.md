@@ -76,6 +76,32 @@ Sentinel was built with a "Security-First" approach:
 
 ---
 
+## 🤖 Guide for AI Agents (CLI Automation)
+
+If you are an AI agent, CI/CD runner, or an automator looking to use Sentinel from the terminal, Sentinel provides a robust CLI to run headless repository checks.
+
+### Pre-Pull / Commit Analysis (`sentinel analyze --local`)
+When trying to push code to a repository, first run:
+```bash
+sentinel analyze --local
+```
+**Blockers:**
+- If Critical Threats (riskLevel >= 8) are found, the CLI will block with `exit code 1`.
+- If the agent inadvertently modified a **Protected File** (e.g. personal documents or local `.env` files marked by the user via the UI), the CLI will also throw an error and halt execution to prevent a data leak.
+
+**How to resolve Protected File Blocks:**
+As an AI Agent, if you encounter a Protected File violation, you must respect the user's local security. Use the provided flags to bypass cleanly:
+- `--exclude-protected`: Sentinel will automatically execute `git reset HEAD <file>` on the protected files, unstaging them safely, and allowing the rest of the commit to proceed without the leak.
+- `--force`: DANGEROUS. Only use this if you have explicit user permission. It bypasses the Protected File check completely.
+
+Example usage:
+```bash
+# Recommended for AI Agents:
+sentinel analyze --local --exclude-protected
+```
+
+---
+
 ## 🤝 Calling All Developers & White Hats!
 
 Sentinel is a community-driven project built to secure the open-source ecosystem. **We need YOUR help to make it better!**

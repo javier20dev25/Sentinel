@@ -11,6 +11,7 @@ interface Alert {
   ruleName?: string;
   riskLevel?: number;
   description?: string;
+  file?: string;
 }
 
 interface SandboxResultModalProps {
@@ -29,12 +30,20 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
   const [phase, setPhase] = useState<'scanning' | 'result' | 'commit'>('scanning');
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [pushBlocked, setPushBlocked] = useState(false);
+  const [protectedBlocked, setProtectedBlocked] = useState(false);
+  const [bypassedProtection, setBypassedProtection] = useState(false);
+  const [excludedFiles, setExcludedFiles] = useState<string[]>([]);
+  
   const [message, setMessage] = useState('');
   const [commitMsg, setCommitMsg] = useState('');
   const [signoff, setSignoff] = useState(false);
   const [commitLoading, setCommitLoading] = useState(false);
   const [commitDone, setCommitDone] = useState<{ success: boolean; pushed: boolean } | null>(null);
   const [termOpen, setTermOpen] = useState(false);
+  
+  const hasCriticalScans = alerts.some(a => a.riskLevel && a.riskLevel >= 8 && a.ruleName !== 'Protected File Violation');
+  const actualPushBlocked = pushBlocked && (hasCriticalScans || (!protectedBlocked || bypassedProtection));
+
   const setStep = (i: number, s: StepStatus) =>
     setStepStatuses(prev => prev.map((v, idx) => idx === i ? s : v));
 
@@ -44,6 +53,9 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
       setPhase('scanning');
       setAlerts([]);
       setPushBlocked(false);
+      setProtectedBlocked(false);
+      setBypassedProtection(false);
+      setExcludedFiles([]);
       setMessage('');
       setCommitMsg('');
       setCommitDone(null);
@@ -62,6 +74,7 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
         const { data } = await axios.post(`http://localhost:3001/api/repositories/${repoId}/analyze-local`);
         setAlerts(data.alerts || []);
         setPushBlocked(data.pushBlocked || false);
+        setProtectedBlocked(data.protectedFilesBlocked || false);
         setMessage(data.message || '');
         setStep(1, data.pushBlocked ? 'error' : 'success');
       } catch (err: any) {
@@ -99,7 +112,8 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
       const { data } = await axios.post(`http://localhost:3001/api/repositories/${repoId}/commit`, {
         message: commitMsg.trim(),
         push: true,
-        signoff
+        signoff,
+        excludedFiles
       });
       setCommitDone({ success: true, pushed: data.pushed });
     } catch (err: any) {
@@ -158,13 +172,13 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
               <>
                 {/* Status Banner */}
                 <div className={`rounded-xl px-4 py-3 border flex items-start gap-3 ${
-                  pushBlocked
+                  actualPushBlocked
                     ? 'bg-red-500/10 border-red-500/20 text-red-300'
                     : alerts.length > 0
                       ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
                       : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
                 }`}>
-                  {pushBlocked ? <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" /> :
+                  {actualPushBlocked ? <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" /> :
                     alerts.length > 0 ? <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> :
                     <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />}
                   <p className="text-[12px] font-medium leading-relaxed">{message || 'Scan complete.'}</p>
@@ -174,17 +188,53 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
                 {alerts.length > 0 && (
                   <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                     {alerts.map((alert, i) => (
-                      <div key={i} className="text-[11px] text-red-300/80 px-3 py-2 rounded-xl bg-red-500/5 border border-red-500/10 leading-relaxed">
-                        <span className="font-bold text-red-400">[{alert.ruleName || 'ALERT'}]</span>{' '}
+                      <div key={i} className={`text-[11px] px-3 py-2 rounded-xl border leading-relaxed ${alert.ruleName === 'Protected File Violation' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-red-500/5 border-red-500/10 text-red-300/80'}`}>
+                        <span className={`font-bold ${alert.ruleName === 'Protected File Violation' ? 'text-amber-400' : 'text-red-400'}`}>[{alert.ruleName || 'ALERT'}]</span>{' '}
                         {alert.description || 'Potential threat detected.'}
                       </div>
                     ))}
                   </div>
                 )}
 
+                {/* Protected Files Intervention */}
+                {protectedBlocked && !bypassedProtection && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mt-2">
+                    <p className="text-[12px] font-bold text-amber-400 mb-2">
+                      ⚠️ Archivo protegido detectado: {alerts.find(a => a.ruleName === 'Protected File Violation')?.file || 'Archivo sensible'}
+                     </p>
+                    <p className="text-[11px] text-amber-400/80 mb-4">
+                      Este archivo fue marcado manualmente como sensible.<br/>
+                      ¿Qué deseas hacer?
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => {
+                           const files = alerts.filter(a => a.ruleName === 'Protected File Violation' && a.file).map(a => a.file as string);
+                           setExcludedFiles(files);
+                           setBypassedProtection(true);
+                        }}
+                        className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 py-2 rounded-lg text-[11px] font-bold transition-colors"
+                      >
+                        Excluir del commit (Recomendado)
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm('¿Estás SEGURO de subir este archivo protegido? Esto ignorará tu configuración de seguridad local.')) {
+                            setExcludedFiles([]);
+                            setBypassedProtection(true);
+                          }
+                        }}
+                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 py-2 rounded-lg text-[11px] font-bold transition-colors"
+                      >
+                        Subir de todos modos
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Commit Section */}
-                {!pushBlocked && !commitDone && (
-                  <div className="space-y-3 pt-2 border-t border-white/5">
+                {!actualPushBlocked && !commitDone && (
+                  <div className="space-y-3 pt-2 border-t border-white/5 mt-2">
                     <p className="text-[11px] text-zinc-500 font-medium">Optional: Commit & Push</p>
                     <input
                       type="text"
@@ -239,8 +289,8 @@ export const SandboxResultModal: React.FC<SandboxResultModalProps> = ({
                 )}
 
                 {/* Push Blocked — only close/fix */}
-                {pushBlocked && (
-                  <div className="flex justify-end">
+                {actualPushBlocked && (!protectedBlocked || bypassedProtection) && (
+                  <div className="flex justify-end mt-4">
                     <button
                       onClick={onClose}
                       className="px-4 py-1.5 rounded-xl text-[11px] font-bold text-zinc-400 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"

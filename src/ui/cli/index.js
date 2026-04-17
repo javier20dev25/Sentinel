@@ -293,12 +293,65 @@ program
     .command('analyze')
     .description('Analyze local changes before committing')
     .option('--local', 'Scan staged and unstaged git diff for threats')
+    .option('--exclude-protected', 'Automatically unstage (git reset HEAD) any protected files before scanning/committing')
+    .option('--force', 'Bypass protected files block')
     .action(async (options) => {
         const gh = require('../backend/lib/gh_bridge');
+        const db = require('../backend/lib/db');
         const { scanFile } = require('../backend/scanner/index');
+        const { execFileSync } = require('child_process');
+        const path = require('path');
         const cwd = process.cwd();
 
         console.log('\n🔍 Sentinel: Analyzing local changes...\n');
+
+        // --- Protected Files Interception ---
+        const repos = db.getRepositories();
+        // Match repo by local path. Use path.resolve for safety.
+        const repo = repos.find(r => r.local_path && path.resolve(r.local_path) === path.resolve(cwd));
+        
+        let protectedBlocked = false;
+        if (repo) {
+            try {
+                const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
+                const changedFiles = statusOutput.split('\n').filter(l => l.trim().length > 0).map(l => l.substring(3).trim());
+                const protectedList = db.getProtectedFiles(repo.id).map(p => path.normalize(p.file_path));
+                
+                const violations = [];
+                for (const file of changedFiles) {
+                    const normFile = path.normalize(file);
+                    const isProtected = protectedList.some(p => normFile === p || normFile.startsWith(p + path.sep));
+                    if (isProtected) violations.push(file);
+                }
+
+                if (violations.length > 0) {
+                    console.log(`\n⚠️  PROTECTED FILES DETECTED:`);
+                    violations.forEach(v => console.log(`   - ${v}`));
+                    
+                    if (options.excludeProtected) {
+                        console.log('\n✅ --exclude-protected flag passed. Unstaging protected files...');
+                        violations.forEach(v => {
+                            try {
+                                execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000 });
+                                console.log(`   Unstaged: ${v}`);
+                            } catch (e) {
+                                console.log(`   Failed to unstage: ${v}`);
+                            }
+                        });
+                    } else if (!options.force) {
+                        console.log('\n🚫 BLOCKED: You are attempting to commit protected files.');
+                        console.log('   Use the Sentinel UI to manage this, OR use one of these flags:');
+                        console.log('   --exclude-protected   (Removes them from the commit automatically)');
+                        console.log('   --force               (Bypasses this block and scans/commits anyway)\n');
+                        process.exit(1);
+                    } else {
+                        console.log('\n⚠️  --force flag passed. Bypassing protected files block...\n');
+                    }
+                }
+            } catch (e) {
+                // Ignore git errors if not a git repo
+            }
+        }
 
         const diff = gh.getLocalDiff(cwd);
         if (!diff) {

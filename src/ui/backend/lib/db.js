@@ -112,6 +112,27 @@ class SentinelDB {
                 auto_scan_pr BOOLEAN DEFAULT 1,
                 FOREIGN KEY(repo_id) REFERENCES repositories(id)
             );
+
+            CREATE TABLE IF NOT EXISTS repo_packs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                repo_id INTEGER,
+                name TEXT,
+                version TEXT,
+                author TEXT,
+                is_official BOOLEAN DEFAULT 0,
+                config_json TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                installed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(repo_id) REFERENCES repositories(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS protected_files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                repo_id INTEGER,
+                file_path TEXT,
+                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(repo_id) REFERENCES repositories(id)
+            );
         `);
 
         // Migration: Add pinned column to scan_logs if it doesn't exist
@@ -213,6 +234,8 @@ class SentinelDB {
 
     deleteRepository(repoId) {
         // First delete dependent records
+        this.db.prepare('DELETE FROM protected_files WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM repo_packs WHERE repo_id = ?').run(repoId);
         this.db.prepare('DELETE FROM security_config WHERE repo_id = ?').run(repoId);
         this.db.prepare('DELETE FROM scan_logs WHERE repo_id = ?').run(repoId);
         
@@ -229,6 +252,91 @@ class SentinelDB {
     setSandboxVersion(repoId, version) {
         const stmt = this.db.prepare('UPDATE repositories SET sandbox_version = ? WHERE id = ?');
         return stmt.run(version, repoId).changes > 0;
+    }
+
+    // --- Config Packs (Phase 13) ---
+    installPack(repoId, packData, isOfficial) {
+        const stmt = this.db.prepare(`
+            INSERT INTO repo_packs (repo_id, name, version, author, is_official, config_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const info = stmt.run(
+            repoId, 
+            packData.metadata.name || 'Unknown Pack', 
+            packData.metadata.version || '1.0.0', 
+            packData.metadata.author || 'Unknown', 
+            isOfficial ? 1 : 0, 
+            JSON.stringify(packData.config || {})
+        );
+        return info.lastInsertRowid;
+    }
+
+    getRepoPacks(repoId) {
+        return this.db.prepare('SELECT id, repo_id, name, version, author, is_official, is_active, installed_at FROM repo_packs WHERE repo_id = ? ORDER BY installed_at DESC').all(repoId);
+    }
+
+    togglePack(packId, active) {
+        const stmt = this.db.prepare('UPDATE repo_packs SET is_active = ? WHERE id = ?');
+        return stmt.run(active ? 1 : 0, packId).changes > 0;
+    }
+
+    deletePack(packId) {
+        const stmt = this.db.prepare('DELETE FROM repo_packs WHERE id = ?');
+        return stmt.run(packId).changes > 0;
+    }
+
+    getEffectiveConfig(repoId) {
+        // 1. Get base config (or defaults if missing)
+        const baseConfigStmt = this.db.prepare('SELECT strict_mode, ignore_scripts, auto_scan_pr FROM security_config WHERE repo_id = ?').get(repoId);
+        
+        // Defaults if base is missing
+        let effective = baseConfigStmt ? {
+            strict_mode: !!baseConfigStmt.strict_mode,
+            ignore_scripts: !!baseConfigStmt.ignore_scripts,
+            auto_scan_pr: !!baseConfigStmt.auto_scan_pr
+        } : {
+            strict_mode: false,
+            ignore_scripts: true,
+            auto_scan_pr: true
+        };
+
+        // 2. Get active packs, ordered by ASC so the latest one overrides
+        const activePacks = this.db.prepare('SELECT config_json FROM repo_packs WHERE repo_id = ? AND is_active = 1 ORDER BY installed_at ASC').all(repoId);
+        
+        for (const pack of activePacks) {
+            try {
+                const config = JSON.parse(pack.config_json);
+                effective = { ...effective, ...config }; // Merge!
+            } catch (e) {
+                console.error('[DB] Failed to parse pack config:', e);
+            }
+        }
+        
+        return effective;
+    }
+
+    resetPacks(repoId) {
+        const stmt = this.db.prepare('DELETE FROM repo_packs WHERE repo_id = ?');
+        return stmt.run(repoId).changes > 0;
+    }
+
+    // --- Protected Files (Phase 14) ---
+    getProtectedFiles(repoId) {
+        return this.db.prepare('SELECT * FROM protected_files WHERE repo_id = ? ORDER BY added_at DESC').all(repoId);
+    }
+
+    addProtectedFile(repoId, filePath) {
+        // Evitar duplicados
+        const exists = this.db.prepare('SELECT id FROM protected_files WHERE repo_id = ? AND file_path = ?').get(repoId, filePath);
+        if (exists) return exists.id;
+
+        const stmt = this.db.prepare('INSERT INTO protected_files (repo_id, file_path) VALUES (?, ?)');
+        return stmt.run(repoId, filePath).lastInsertRowid;
+    }
+
+    removeProtectedFile(id) {
+        const stmt = this.db.prepare('DELETE FROM protected_files WHERE id = ?');
+        return stmt.run(id).changes > 0;
     }
 }
 
