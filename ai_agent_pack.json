@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "name": "AI Developer Fundamentals",
+    "version": "1.0.0",
+    "author": "Sentinel Lab",
+    "description": "Configuracion recomendada para bots y agentes de IA iterando sobre repositorios."
+  },
+  "config": {
+    "auto_sandbox": true,
+    "block_unicode_homoglyphs": true,
+    "ignore_scripts": false
+  },
+  "_signature": "fzdMLaUYq0GLVHAg5Dlvyrma2zOYe7dnDPvLf8SYZsw2cBmwqUUIwNxQodIHSH+PXXTn2fhkuimAcUzP1W4OBw=="
+}
