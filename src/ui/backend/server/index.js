@@ -705,6 +705,169 @@ app.post('/api/ui/intent', (req, res) => {
     res.json({ success: true, clientsNotified: sseClients.length });
 });
 
+// ─── Sandbox ───
+
+/**
+ * GET /api/repositories/:id/sandbox/status
+ * Returns sandbox installation state + latest GHA run info.
+ */
+app.get('/api/repositories/:id/sandbox/status', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const installed = repo.local_path ? gh.checkSandboxInstalled(repo.local_path) : { installed: false };
+        const latestRun = isValidOwnerRepo(repo.github_full_name) ? gh.getLatestSandboxRun(repo.github_full_name) : null;
+
+        res.json({
+            installed: installed.installed,
+            version: installed.version || null,
+            consent: !!repo.sandbox_consent,
+            run: latestRun || null
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/sandbox/sync
+ * mode: 'manual' → returns template content for user to copy.
+ * mode: 'auto'   → pushes template via git (requires prior consent stored in DB).
+ */
+app.post('/api/repositories/:id/sandbox/sync', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const { mode, consented } = req.body;
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        if (mode === 'manual') {
+            // Safe path: just return the template text
+            const content = gh.getSandboxTemplateContent();
+            const workflowPath = '.github/workflows/sentinel-sandbox.yml';
+            return res.json({ content, path: workflowPath });
+        }
+
+        if (mode === 'auto') {
+            if (!consented) {
+                return res.status(403).json({
+                    error: 'Consent required. Set consented: true to proceed.',
+                    requires: ['contents:write on the repository', 'git push access via gh CLI']
+                });
+            }
+
+            if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+                return res.status(400).json({ error: 'Repository has no linked local path. Use manual mode.' });
+            }
+
+            // Store consent before pushing
+            db.setSandboxConsent(repoId, true);
+
+            const result = gh.pushSandboxConfig(repo.local_path);
+            if (result.success) {
+                db.setSandboxVersion(repoId, '1.0');
+                return res.json({ success: true, path: result.path });
+            }
+            return res.status(500).json({ success: false, error: result.error });
+        }
+
+        res.status(400).json({ error: 'Unknown mode. Use "manual" or "auto".' });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/analyze-local
+ * Scans local unstaged/staged diff through the scanner.
+ * Returns alerts + pushBlocked flag if critical threats found.
+ */
+app.post('/api/repositories/:id/analyze-local', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+            return res.status(400).json({ error: 'No local path linked. Link a local directory first.' });
+        }
+
+        const diff = gh.getLocalDiff(repo.local_path);
+        if (!diff) {
+            return res.json({ alerts: [], pushBlocked: false, message: 'No local changes detected.' });
+        }
+
+        const results = scanFile('local.diff', diff);
+        const criticalAlerts = results.alerts.filter(a => (a.riskLevel || a.severity || 0) >= 8);
+        const pushBlocked = criticalAlerts.length > 0;
+
+        if (pushBlocked) {
+            db.addScanLog(repoId, 'LOCAL_DIFF_SCAN', 9,
+                `Pre-commit scan blocked: ${criticalAlerts[0].ruleName || 'Critical threat'}`,
+                results.alerts
+            );
+        }
+
+        res.json({
+            alerts: results.alerts,
+            pushBlocked,
+            linesScanned: diff.split('\n').length,
+            message: pushBlocked
+                ? `🔴 Push blocked: ${criticalAlerts.length} critical threat(s) detected.`
+                : results.alerts.length > 0
+                    ? `⚠️ ${results.alerts.length} low/medium finding(s). Review before committing.`
+                    : '✅ No threats detected. Safe to commit.'
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/commit
+ * Commits (and optionally pushes) local changes.
+ * SECURITY: execFileSync with array args, no shell.
+ */
+app.post('/api/repositories/:id/commit', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const { message, push, signoff } = req.body;
+        if (!message || typeof message !== 'string' || message.trim().length < 3) {
+            return res.status(400).json({ error: 'Commit message required (min 3 chars).' });
+        }
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+        if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+            return res.status(400).json({ error: 'No local path linked.' });
+        }
+
+        const commitArgs = ['commit', '-m', message.trim()];
+        if (signoff) commitArgs.push('--signoff');
+
+        execFileSync('git', ['add', '-A'], { cwd: repo.local_path, timeout: 10000 });
+        execFileSync('git', commitArgs, { cwd: repo.local_path, timeout: 10000 });
+
+        if (push) {
+            execFileSync('git', ['push'], { cwd: repo.local_path, timeout: 30000 });
+        }
+
+        res.json({ success: true, pushed: !!push });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`📡 Sentinel API running on http://localhost:${PORT}`);
 });

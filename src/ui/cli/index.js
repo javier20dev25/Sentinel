@@ -180,7 +180,7 @@ program
                 detached: true, 
                 stdio: 'ignore',
                 windowsHide: true,
-                shell: true 
+                shell: false 
             });
 
             uiProcess.unref();
@@ -208,6 +208,153 @@ program
             process.exit(1);
         }
     }
+    });
+
+// ─── sentinel sandbox --sync [--auto] ───
+program
+    .command('sandbox')
+    .description('Manage the Sentinel Sandbox Guardian for linked repositories')
+    .option('--sync', 'Install or update the sandbox workflow in the linked repo')
+    .option('--auto', 'Auto-install via git push (requires contents:write). Default: manual copy mode')
+    .option('--status', 'Show sandbox status for all linked repos')
+    .action(async (options) => {
+        const db = require('../backend/lib/db');
+        const gh = require('../backend/lib/gh_bridge');
+        const fs = require('fs');
+
+        if (options.status || (!options.sync && !options.auto)) {
+            // Show status table
+            const repos = db.getRepositories();
+            if (repos.length === 0) {
+                console.log('No repositories linked. Use: sentinel link <path> <owner/repo>');
+                return;
+            }
+            console.log('\n🛡️  Sentinel Sandbox Status\n');
+            repos.forEach(repo => {
+                const installed = repo.local_path ? gh.checkSandboxInstalled(repo.local_path) : { installed: false };
+                const run = gh.getLatestSandboxRun(repo.github_full_name);
+                const statusIcon = !installed.installed ? '⚪ Not configured' :
+                    !run ? '🟡 Installed, no runs yet' :
+                    run.conclusion === 'success' ? '🟢 Clean' :
+                    run.conclusion === 'failure' ? '🔴 Threat detected' : '🔵 Running';
+                console.log(`  ${repo.github_full_name}`);
+                console.log(`  └─ ${statusIcon}${run?.html_url ? `  → ${run.html_url}` : ''}`);
+                console.log('');
+            });
+            return;
+        }
+
+        if (options.sync) {
+            const repos = db.getRepositories().filter(r => r.local_path);
+            if (repos.length === 0) {
+                console.error('❌ No repositories with a local path found. Link one first: sentinel link <path> <owner/repo>');
+                process.exit(1);
+            }
+
+            // Use the first repo (or could add --repo option in future)
+            const repo = repos[0];
+            console.log(`\n🛡️  Installing Sandbox Guardian for: ${repo.github_full_name}`);
+
+            if (options.auto) {
+                console.log('⚠️  Auto mode: This will commit and push to your repository.');
+                console.log('   Requires: git push access + gh CLI with contents:write\n');
+                const result = gh.pushSandboxConfig(repo.local_path);
+                if (result.success) {
+                    db.setSandboxConsent(repo.id, true);
+                    db.setSandboxVersion(repo.id, '1.0');
+                    console.log('✅ Sandbox workflow installed and pushed!');
+                    console.log(`   File: ${result.path}`);
+                } else {
+                    console.error('❌ Auto-install failed:', result.error);
+                    console.log('   Try manual mode (without --auto) instead.');
+                    process.exit(1);
+                }
+            } else {
+                // Manual mode: show the path and content
+                const templateContent = gh.getSandboxTemplateContent();
+                const destPath = path.join(repo.local_path, '.github', 'workflows', 'sentinel-sandbox.yml');
+                const outputFile = path.join(process.cwd(), 'sentinel-sandbox.yml');
+                fs.writeFileSync(outputFile, templateContent, 'utf-8');
+
+                console.log('✅ Template saved to your current directory:');
+                console.log(`   ${outputFile}\n`);
+                console.log('📋 Next steps:');
+                console.log(`   1. Copy it to: ${destPath}`);
+                console.log('   2. git add .github/workflows/sentinel-sandbox.yml');
+                console.log('   3. git commit -m "chore: add Sentinel sandbox workflow"');
+                console.log('   4. git push');
+                console.log('\nOr use --auto to let Sentinel do it automatically.\n');
+            }
+        }
+    });
+
+// ─── sentinel analyze --local ───
+program
+    .command('analyze')
+    .description('Analyze local changes before committing')
+    .option('--local', 'Scan staged and unstaged git diff for threats')
+    .action(async (options) => {
+        const gh = require('../backend/lib/gh_bridge');
+        const { scanFile } = require('../backend/scanner/index');
+        const cwd = process.cwd();
+
+        console.log('\n🔍 Sentinel: Analyzing local changes...\n');
+
+        const diff = gh.getLocalDiff(cwd);
+        if (!diff) {
+            console.log('✅ No local changes detected. Working tree is clean.');
+            return;
+        }
+
+        const linesCount = diff.split('\n').length;
+        console.log(`   Scanning ${linesCount} diff lines...`);
+
+        const results = scanFile('local.diff', diff);
+        const criticals = results.alerts.filter(a => (a.riskLevel || 0) >= 8);
+        const warnings  = results.alerts.filter(a => (a.riskLevel || 0) >= 4 && (a.riskLevel || 0) < 8);
+
+        if (results.alerts.length === 0) {
+            console.log('✅ No threats detected. Safe to commit.\n');
+        } else {
+            if (criticals.length > 0) {
+                console.log(`🔴 BLOCKED: ${criticals.length} critical threat(s) detected!\n`);
+                criticals.forEach(a => {
+                    console.log(`   [CRITICAL] ${a.ruleName || 'THREAT'}: ${a.description || 'No description'}`);
+                });
+            }
+            if (warnings.length > 0) {
+                console.log(`\n⚠️  ${warnings.length} warning(s):\n`);
+                warnings.forEach(a => {
+                    console.log(`   [WARN] ${a.ruleName || 'FINDING'}: ${a.description || 'No description'}`);
+                });
+            }
+            if (criticals.length > 0) {
+                console.log('\n❌ Push is NOT recommended until critical issues are resolved.');
+                process.exit(1);
+            } else {
+                console.log('\n✓ No critical threats. Proceed with caution.\n');
+            }
+        }
+    });
+
+// ─── sentinel status ───
+program
+    .command('status')
+    .description('Show security status of all linked repositories')
+    .action(() => {
+        const db = require('../backend/lib/db');
+        const repos = db.getRepositories();
+        if (repos.length === 0) {
+            console.log('No repositories linked yet. Use: sentinel link <path> <owner/repo>');
+            return;
+        }
+        console.log('\n🛡️  Sentinel — Repository Status\n');
+        repos.forEach(repo => {
+            const icon = repo.status === 'SAFE' ? '🟢' : repo.status === 'INFECTED' ? '🔴' : '🟡';
+            console.log(`  ${icon} ${repo.github_full_name}`);
+            console.log(`     Status: ${repo.status}  |  Last scan: ${repo.last_scan_at || 'Never'}`);
+            console.log('');
+        });
     });
 
 function run(args = process.argv) {
