@@ -21,16 +21,56 @@ const crypto = require('crypto');
 const yaml = require('js-yaml');
 const db = require('../lib/db');
 const gh = require('../lib/gh_bridge');
-const { scanFile } = require('../scanner/index');
-const hardener = require('../services/hardener');
+const git = require('../lib/git_bridge');
+const { 
+    isValidOwnerRepo, isValidHardenerKey, getWhitelistedCommand, 
+    sanitizeForLog, isValidLocalPath, isValidGitPath 
+} = require('../lib/sanitizer');
+const { scanFile, scanDirectory, analyzeLifecycleScripts } = require('../scanner/index');
+const shield = require('../lib/shield_bridge');
+const fsExplorer = require('../lib/fs_explorer');
 const gitHooks = require('../lib/git_hooks');
-const { isValidOwnerRepo, isValidHardenerKey, getWhitelistedCommand, sanitizeForLog, isValidLocalPath } = require('../lib/sanitizer');
+const hardener = require('../lib/hardener_bridge');
+const polling = require('../services/polling');
+
+// ─── Remote UI Intents (SSE) ───
+let sseClients = [];
+
+function emitSse(intent) {
+    sseClients.forEach(client => {
+        try {
+            client.write(`data: ${JSON.stringify(intent)}\n\n`);
+        } catch (e) {
+            console.error("SSE Write failed", e);
+        }
+    });
+}
+
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // Ed25519 Public Key for Oficial Sentinel Lab Packs
 const SENTINEL_LAB_PUB_KEY = "MCowBQYDK2VwAyEA2wvghIjoNvPuAQ3fEeFVbcLbpNigUR4DJJy24Q6JlB0=";
 
 const app = express();
 const PORT = 3001;
+
+// Ensure SSE endpoint is registered early
+app.get(['/api/ui/stream', '/api/shield/logs'], (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write(`data: {"connected": true}\n\n`);
+    sseClients.push(res);
+    req.on('close', () => { sseClients = sseClients.filter(c => c !== res); });
+});
+
+app.post('/api/ui/intent', (req, res) => {
+    emitSse(req.body);
+    res.json({ success: true, clientsNotified: sseClients.length });
+});
+
+const JWT_SECRET = process.env.JWT_SECRET || 'sentinel-local-dev-secret-key-1234';
 
 app.use(cors());
 app.use(express.json());
@@ -46,15 +86,93 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Local APP Authentication ───
+app.get('/api/auth/local/status', (req, res) => {
+    const hash = db.getSystemConfig('master_hash');
+    res.json({ setupRequired: !hash });
+});
+
+app.post('/api/auth/local/setup', async (req, res) => {
+    try {
+        const { password } = req.body;
+        if (!password || password.length < 4) return res.status(400).json({ error: 'Password too short' });
+        
+        const existingHash = db.getSystemConfig('master_hash');
+        if (existingHash) return res.status(403).json({ error: 'Setup already completed' });
+
+        const hash = await bcrypt.hash(password, 10);
+        db.setSystemConfig('master_hash', hash);
+        
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.post('/api/auth/local/login', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const hash = db.getSystemConfig('master_hash');
+        if (!hash) return res.status(400).json({ error: 'Setup required first' });
+
+        const match = await bcrypt.compare(password, hash);
+        if (!match) return res.status(401).json({ error: 'Invalid password' });
+
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// Middleware to protect subsequent API routes
+const requireLocalAuth = (req, res, next) => {
+    if (req.path.startsWith('/api/auth/local') || req.path === '/api/ui/stream') return next();
+    
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: Token missing' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    try {
+        jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
+    }
+};
+
+app.use('/api', requireLocalAuth);
+
+// ─── Settings Management ───
+app.get('/api/settings', (req, res) => {
+    const config = {
+        ai_provider: db.getSystemConfig('ai_provider') || 'openai',
+        ai_model: db.getSystemConfig('ai_model') || 'gpt-4o-mini',
+        has_key: !!db.getSystemConfig('ai_key')
+    };
+    res.json(config);
+});
+
+app.post('/api/settings', (req, res) => {
+    const { ai_provider, ai_key, ai_model } = req.body;
+    if (ai_provider) db.setSystemConfig('ai_provider', ai_provider);
+    if (ai_key) db.setSystemConfig('ai_key', ai_key);
+    if (ai_model) db.setSystemConfig('ai_model', ai_model);
+    res.json({ success: true });
+});
+
 // ─── System Requirements ───
 
 /** Check if all required tools are installed */
 app.get('/api/system/check', (req, res) => {
     try {
-        const git = gh.isGitInstalled();
+        const gitStatus = gh.isGitInstalled();
         const ghCli = gh.isGHInstalled();
         res.json({
-            git: { installed: git.installed, version: git.version || null },
+            git: { installed: gitStatus.installed, version: gitStatus.version || null },
             gh: { installed: ghCli.installed, version: ghCli.version || null },
         });
     } catch (e) {
@@ -72,10 +190,8 @@ app.get('/api/system/stats', (req, res) => {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
-    const loadAvg = os.loadavg()[0]; // 1 minute load average
+    const loadAvg = os.loadavg()[0];
     const cpus = os.cpus().length;
-    
-    // Process specific Node usage
     const processMem = process.memoryUsage();
 
     res.json({
@@ -88,7 +204,7 @@ app.get('/api/system/stats', (req, res) => {
             cpus
         },
         process: {
-            rss: processMem.rss, // Resident set size
+            rss: processMem.rss,
             heapTotal: processMem.heapTotal,
             heapUsed: processMem.heapUsed
         },
@@ -96,196 +212,39 @@ app.get('/api/system/stats', (req, res) => {
     });
 });
 
-/** Auto-install GitHub CLI 
- * SECURITY: Delegated to gh_bridge.installGH() which uses execFileSync with static args.
- */
+/** Auto-install GitHub CLI */
 app.post('/api/system/install-gh', async (req, res) => {
     const result = await gh.installGH();
     res.json(result);
 });
 
-// ─── System Security Hardener ───
+// ─── GitHub Interop ───
 
-/** Get current state of security switches */
-app.get('/api/hardener/status', (req, res) => {
-    const status = hardener.getSwitchesStatus();
-    status.globalGitHooks = gitHooks.isInstalled();
-    res.json(status);
-});
-
-/** Toggle a security switch 
- * SECURITY: `key` is validated against a whitelist. `enable` is coerced to boolean.
- */
-app.post('/api/hardener/switch', (req, res) => {
-    const { key, enable } = req.body;
-    const safeEnable = !!enable; // Force boolean
-
-    if (key === 'secretScanning') {
-        const result = hardener.setSecretScanning(safeEnable);
-        return res.json(result);
-    }
-    if (key === 'npmIgnoreScripts') {
-        const result = hardener.setNpmIgnoreScripts(safeEnable);
-        return res.json(result);
-    }
-    if (key === 'globalGitHooks') {
-        let result;
-        if (safeEnable) {
-            result = gitHooks.install();
-        } else {
-            result = gitHooks.uninstall();
-        }
-        return res.json({ success: result.success, enabled: safeEnable, error: result.error });
-    }
-    res.status(400).json({ success: false, error: 'Unknown switch key' });
-});
-
-// ─── Safe Remediations (Strict Whitelist Map) ───
-
-/**
- * SECURITY CRITICAL ENDPOINT
- * 
- * Accepts a command string from the frontend (suggested by AI) and executes it
- * ONLY if it exactly matches an entry in the whitelist map.
- * 
- * Previous vulnerability: regex-based matching with shell:true allowed bypass.
- * Fix: Strict lookup in ALLOWED_FIX_COMMANDS map + execFileSync without shell.
- * 
- * Audit: VULN-003 remediated.
- */
-app.post('/api/action/fix', (req, res) => {
-    const { command } = req.body;
-
-    if (!command || typeof command !== 'string') {
-        return res.status(400).json({
-            success: false,
-            error: 'Missing or invalid command parameter.'
-        });
-    }
-
-    // Look up the command in the strict whitelist
-    const safeCommand = getWhitelistedCommand(command);
-    
-    if (!safeCommand) {
-        console.warn(`[SECURITY] Blocked non-whitelisted command: ${sanitizeForLog(command)}`);
-        return res.status(403).json({ 
-            success: false, 
-            error: `Sentinel blocked execution. The command "${sanitizeForLog(command)}" is not in the safety whitelist. Only pre-approved remediation commands can be executed.`
-        });
-    }
-
-    try {
-        // Execute using array args — NO SHELL
-        execFileSync(safeCommand.cmd, safeCommand.args, {
-            encoding: 'utf-8',
-            timeout: 15000
-            // NOTE: shell is NOT set (defaults to false)
-        });
-        console.log(`[FIX] Executed whitelisted command: ${safeCommand.cmd} ${safeCommand.args.join(' ')}`);
-        res.json({ success: true, message: `Successfully executed: ${safeCommand.description}` });
-    } catch (e) {
-        res.status(500).json({ success: false, error: sanitizeForLog(e.message) || 'Execution failed' });
-    }
-});
-
-// ─── Authentication ───
-
-/** Check if user is authenticated with GitHub */
 app.get('/api/auth/status', (req, res) => {
     try {
-        const ghCli = gh.isGHInstalled();
-        if (!ghCli.installed) {
-            return res.json({ authenticated: false, reason: 'gh_not_installed' });
+        const ghInstalled = gh.isGHInstalled().installed;
+        if (!ghInstalled) {
+             return res.json({ authenticated: false, installed: false });
         }
-        const auth = gh.checkAuth();
-        res.json(auth);
+        res.json({ ...gh.checkAuth(), installed: true });
     } catch (e) {
-        console.error("❌ Auth status check failed:", e.message);
-        res.status(500).json({ 
-            authenticated: false, 
-            error: 'auth_check_internal_error',
-            message: e.message,
-            stack: e.stack
-        });
+        res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-/** Start GitHub login flow */
 app.post('/api/auth/login', async (req, res) => {
-    const result = await gh.login();
-    res.json(result);
+    try {
+        const result = await gh.login();
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
 });
 
-// ─── GitHub Repos (Remote) ───
-
-/** List all repos from user's GitHub account */
 app.get('/api/github/repos', (req, res) => {
     try {
         const repos = gh.listUserRepos(200);
-        res.json(repos);
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-
-// ─── Trusted Contributors ───
-app.get('/api/trusted', (req, res) => {
-    try {
-        res.json(db.getTrustedContributors());
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-app.post('/api/trusted', (req, res) => {
-    try {
-        const { username } = req.body;
-        if (!username || typeof username !== 'string') {
-            return res.status(400).json({ error: 'Username required' });
-        }
-        // Validate GitHub username format
-        if (!/^[a-zA-Z0-9-]{1,39}$/.test(username.trim())) {
-            return res.status(400).json({ error: 'Invalid GitHub username format' });
-        }
-        const success = db.addTrustedContributor(username.trim());
-        res.json({ success });
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-app.delete('/api/trusted/:username', (req, res) => {
-    try {
-        const username = req.params.username;
-        // Validate before using
-        if (!/^[a-zA-Z0-9-]{1,39}$/.test(username)) {
-            return res.status(400).json({ error: 'Invalid username format' });
-        }
-        const success = db.removeTrustedContributor(username);
-        res.json({ success });
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-/**
- * Get collaborator suggestions from GitHub events.
- * SECURITY: Previously used execSync with shell pipes (`| sort -u | head -n 10`).
- * Now uses execFileSync with --jq flag and filters in JS instead.
- */
-app.get('/api/github/collaborators', (req, res) => {
-    try {
-        const output = execFileSync('gh', [
-            'api', 'user/events',
-            '--jq', '.[].actor.login'
-        ], {
-            encoding: 'utf-8',
-            timeout: 15000
-        });
-        // Do sorting/dedup in JS instead of shell pipes
-        const cols = [...new Set(output.split('\n').filter(Boolean))].slice(0, 10);
-        res.json(cols);
+        res.json({ repos });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
@@ -293,7 +252,6 @@ app.get('/api/github/collaborators', (req, res) => {
 
 // ─── Monitored Repositories (Local DB) ───
 
-/** Get all monitored repositories with their logs */
 app.get('/api/repositories', (req, res) => {
     try {
         const repos = db.getRepositories();
@@ -311,406 +269,639 @@ app.get('/api/repositories', (req, res) => {
             const mediumThreats = logs.filter(l => l.risk_level > 4 && l.risk_level <= 7 && !l.pinned);
             const activePacks = db.getRepoPacks(repo.id).filter(p => p.is_active);
             
-            // Penalties
             if (!isHardenerActive) score -= 15;
             if (!gHooksActive) score -= 15;
             if (isStrictMode) score += 5; // Reward
             
             const lastScan = new Date(repo.last_scan_at || 0);
             const hoursSinceScan = (Date.now() - lastScan.getTime()) / (1000 * 60 * 60);
-            
             if (hoursSinceScan > 48) score -= 10;
             
             score -= (criticalThreats.length * 30);
             score -= (mediumThreats.length * 10);
-            
-            // Clamp
             score = Math.max(0, Math.min(100, score));
             
             return { ...repo, score, logs, effectiveConfig, activePacks: activePacks.length };
         });
         res.json(reposWithLogs);
     } catch (e) {
-        console.error("❌ Failed to list repositories:", e.message);
-        res.status(500).json({ 
-            error: 'list_repositories_failed', 
-            message: e.message,
-            stack: e.stack 
-        });
+        res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-/** Link a new repository by GitHub full name (e.g. "owner/repo") 
- * SECURITY: Uses isValidOwnerRepo from sanitizer.js.
- */
 app.post('/api/repositories', (req, res) => {
     const { fullName } = req.body;
     if (!fullName || !isValidOwnerRepo(fullName)) {
-        return res.status(400).json({ error: 'Invalid or missing fullName. Must be format "owner/repo"' });
+        return res.status(400).json({ error: 'Invalid repository name' });
     }
-
     try {
         const id = db.addRepository('', fullName);
-        if (!id) {
-            return res.status(409).json({ error: 'Repository already linked.' });
-        }
-        res.status(201).json({ id, github_full_name: fullName, status: 'SAFE' });
+        res.status(201).json({ id, github_full_name: fullName });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-/** Link multiple repos at once 
- * SECURITY: Each repo name validated via isValidOwnerRepo.
- */
 app.post('/api/repositories/bulk', (req, res) => {
     const { repos } = req.body;
-    if (!repos || !Array.isArray(repos)) return res.status(400).json({ error: 'Missing array: repos' });
-
-    for (const r of repos) {
-        if (!r || !isValidOwnerRepo(r)) {
-            return res.status(400).json({ error: `Invalid format in repo: ${sanitizeForLog(String(r))}` });
-        }
+    if (!Array.isArray(repos) || repos.length === 0) {
+        return res.status(400).json({ error: 'repos must be a non-empty array of fullName strings' });
     }
-
     try {
-        const results = repos.map(fullName => {
+        const results = [];
+        for (const fullName of repos) {
+            if (!isValidOwnerRepo(fullName)) {
+                console.warn(`[BULK] Skipping invalid repo name: ${sanitizeForLog(String(fullName))}`);
+                continue;
+            }
             const id = db.addRepository('', fullName);
-            return { fullName, id, linked: !!id };
-        });
-        res.status(201).json(results);
+            results.push({ id, github_full_name: fullName });
+        }
+        res.status(201).json({ linked: results.length, repos: results });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-/** Forget a linked repository
- * SECURITY: Checks if id is a valid integer.
- */
 app.delete('/api/repositories/:id', (req, res) => {
-    const { id } = req.params;
-    if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ error: 'Invalid repository ID.' });
-    }
-
     try {
-        const success = db.deleteRepository(Number(id));
-        if (success) {
-            res.status(200).json({ success: true, message: 'Repository forgotten.' });
-        } else {
-            res.status(404).json({ error: 'Repository not found.' });
-        }
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-/** Trigger an immediate scan of a specific repo */
-/** Recursive helper to scan a directory */
-function scanDirectory(dir, repoId, maxFiles = 1000) {
-    let threats = 0;
-    let filesScanned = 0;
-    
-    function walk(currentDir) {
-        if (filesScanned >= maxFiles) return;
-        
-        try {
-            const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-            for (const entry of entries) {
-                const fullPath = path.join(currentDir, entry.name);
-                
-                // Skip common noise/large dirs
-                if (entry.isDirectory()) {
-                    if (['node_modules', '.git', 'dist', 'build', '.next', 'out'].includes(entry.name)) continue;
-                    walk(fullPath);
-                } else if (entry.isFile()) {
-                    // Skip large binary files or common non-code formats
-                    const ext = path.extname(entry.name).toLowerCase();
-                    if (['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip', '.exe', '.dll', '.bin'].includes(ext)) continue;
-                    
-                    const stats = fs.statSync(fullPath);
-                    if (stats.size > 1024 * 1024 * 2) continue; // Skip files > 2MB
-                    
-                    const content = fs.readFileSync(fullPath, 'utf8');
-                    const results = scanFile(entry.name, content);
-                    filesScanned++;
-                    
-                    if (results.alerts.length > 0) {
-                        threats += results.alerts.length;
-                        db.addScanLog(repoId, 'LOCAL_SCAN', 9, `Threat detected in ${entry.name}: ${results.alerts[0].ruleName}`, results.alerts);
-                    }
-                }
-            }
-        } catch (e) {
-            console.error(`Error walking ${currentDir}:`, e.message);
-        }
-    }
-    
-    walk(dir);
-    return { threats, filesScanned };
-}
-
-/** Trigger scan by repo name (convenience for terminal) */
-app.post('/api/repositories/scan-by-name', (req, res) => {
-    try {
-        const { fullName } = req.body;
-        const repo = db.getRepositories().find(r => r.github_full_name === fullName);
-        if (!repo) return res.status(404).json({ error: 'Repository not found' });
-        
-        // Redirect to ID-based scan logic (internal call or refactor)
-        // For now, just repeat the logic or call the same function if I had one.
-        // I'll just redirect the request internally or use req.params simulation.
-        req.params.id = repo.id.toString();
-        // Since it's the same app, I'll just find the route handler and call it, 
-        // but it's simpler to just wrap the logic in a function. 
-        // I'll just paste the logic here for simplicity in this file.
-        
-        // --- REUSED SCAN LOGIC ---
-        let threats = 0;
-        let prsScanned = 0;
-        let filesScanned = 0;
-        let threatDetails = [];
-
-        if (repo.local_path && isValidLocalPath(repo.local_path) && fs.existsSync(repo.local_path)) {
-            const localResults = scanDirectory(repo.local_path, repo.id);
-            threats += localResults.threats;
-            filesScanned = localResults.filesScanned;
-            // Since scanDirectory doesn't return details easily without changing it deeply,
-            // we will query the DB for the newly added logs if threats > 0.
-        }
-
-        if (isValidOwnerRepo(repo.github_full_name)) {
-            try {
-                const prs = gh.listPRs(repo.github_full_name);
-                prsScanned = prs.length;
-                for (const pr of prs) {
-                    const diff = gh.getPRDiff(repo.github_full_name, pr.number);
-                    if (diff) {
-                        const results = scanFile(`PR #${pr.number}.diff`, diff);
-                        if (results.alerts.length > 0) {
-                            threats += results.alerts.length;
-                            db.addScanLog(repo.id, 'PR_SCAN', 8, `Threats in PR #${pr.number}: ${results.alerts[0].ruleName}`, results.alerts);
-                        }
-                    }
-                }
-            } catch (err) {}
-        }
-
-        if (threats > 0) {
-            db.updateRepoStatus(repo.id, 'INFECTED');
-            // Fetch latest logs to create details array
-            const latestLogs = db.getLogsByRepoFilter(repo.id).slice(0, 3);
-            threatDetails = latestLogs.map(l => l.description);
-        } else {
-            db.updateRepoStatus(repo.id, 'SAFE');
-        }
-
-        res.json({ prs_scanned: prsScanned, files_scanned: filesScanned, threats_found: threats, details: threatDetails });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// Helper for the ID-based endpoint
-app.post('/api/repositories/:id/scan', (req, res) => {
-    try {
-        const repoId = parseInt(req.params.id, 10);
-        if (isNaN(repoId) || repoId <= 0) {
-            return res.status(400).json({ error: 'Invalid repository ID' });
-        }
-
-        const repo = db.getRepositories().find(r => r.id === repoId);
-        if (!repo) return res.status(404).json({ error: 'Repository not found' });
-
-        let threats = 0;
-        let prsScanned = 0;
-        let filesScanned = 0;
-
-        // 1. Scan Local Directory (if linked)
-        if (repo.local_path && isValidLocalPath(repo.local_path) && fs.existsSync(repo.local_path)) {
-            console.log(`[SCAN] Starting local scan for: ${repo.local_path}`);
-            const localResults = scanDirectory(repo.local_path, repo.id);
-            threats += localResults.threats;
-            filesScanned = localResults.filesScanned;
-        }
-
-        // 2. Scan Pull Requests (Remote)
-        if (isValidOwnerRepo(repo.github_full_name)) {
-            try {
-                const prs = gh.listPRs(repo.github_full_name);
-                prsScanned = prs.length;
-
-                for (const pr of prs) {
-                    const diff = gh.getPRDiff(repo.github_full_name, pr.number);
-                    if (diff) {
-                        const results = scanFile(`PR #${pr.number}.diff`, diff);
-                        
-                        // --- Supply Chain / Social Engineering Check ---
-                        if (pr.author && pr.author.login) {
-                            const createdAt = gh.getUserCreatedAt(pr.author.login);
-                            if (createdAt) {
-                                const ageInDays = (new Date() - createdAt) / (1000 * 60 * 60 * 24);
-                                if (ageInDays < 7) {
-                                    results.alerts.push({
-                                        ruleName: 'Fresh Account Attack Vector',
-                                        category: 'social-engineering',
-                                        riskLevel: 8,
-                                        description: `PR author '@${sanitizeForLog(pr.author.login)}' created their account only ${Math.floor(ageInDays)} days ago.`,
-                                        line: `Author: @${sanitizeForLog(pr.author.login)}`
-                                    });
-                                }
-                            }
-                        }
-
-                        if (results.alerts.length > 0) {
-                            threats += results.alerts.length;
-                            db.addScanLog(repo.id, 'PR_SCAN', 8, `Threats in PR #${pr.number}: ${results.alerts[0].ruleName}`, results.alerts);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("GH Scan failed:", err.message);
-                // Continue if only GH fails but local might have worked
-            }
-        }
-
-        if (threats > 0) {
-            db.updateRepoStatus(repo.id, 'INFECTED');
-        } else {
-            db.updateRepoStatus(repo.id, 'SAFE');
-        }
-
-        res.json({ 
-            prs_scanned: prsScanned, 
-            files_scanned: filesScanned,
-            threats_found: threats,
-            status: threats > 0 ? 'INFECTED' : 'SAFE'
-        });
-    } catch (e) {
-        console.error("Scan endpoint error:", e);
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-/** Get logs for a repo (with optional pinned filter) */
-app.get('/api/repositories/:id/logs', (req, res) => {
-    try {
-        const repoId = req.params.id === 'all' ? 'all' : parseInt(req.params.id, 10);
-        const showPinned = req.query.pinned === 'true';
-        
-        const logs = showPinned 
-            ? db.getPinnedLogs(repoId)
-            : db.getLogsByRepoFilter(repoId);
-            
-        res.json(logs);
-    } catch (e) {
-        res.status(500).json({ error: sanitizeForLog(e.message) });
-    }
-});
-
-/** Toggle Pin status of a log */
-app.put('/api/logs/:id/pin', (req, res) => {
-    try {
-        const logId = parseInt(req.params.id, 10);
-        const { pinned } = req.body;
-        
-        if (isNaN(logId) || typeof pinned !== 'boolean') {
-            return res.status(400).json({ error: 'Invalid parameters' });
-        }
-        
-        const success = db.togglePin(logId, pinned);
+        const success = db.deleteRepository(parseInt(req.params.id));
         res.json({ success });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-// ─── Security Controls (Process Manager) State ───
-let processStates;
-try {
-  processStates = {
-    'poller': { active: true, freq: 'Every 15 mins', lastRun: Date.now() - 1000 * 60 * 12 },
-    'pre-push': { active: gitHooks.isInstalled(), freq: 'On Push', lastRun: Date.now() - 1000 * 60 * 60 * 2 },
-    'hardener': { active: true, freq: 'Always Active', lastRun: Date.now() - 1000 * 60 * 5 }
-  };
-} catch (e) {
-  console.warn('[SERVER] processStates init fallback:', e.message);
-  processStates = {
-    'poller': { active: true, freq: 'Every 15 mins', lastRun: Date.now() },
-    'pre-push': { active: false, freq: 'On Push', lastRun: 0 },
-    'hardener': { active: true, freq: 'Always Active', lastRun: Date.now() }
-  };
-}
-
-// Mock background heartbeat for Poller
-setInterval(() => {
-    if (processStates['poller'].active) {
-        processStates['poller'].lastRun = Date.now();
-    }
-}, 60 * 60 * 1000);
-
-/** Get Security Processes Status */
-app.get('/api/system/processes', (req, res) => {
-    // Dynamic refresh of real states
-    processStates['pre-push'].active = gitHooks.isInstalled();
-    res.json(processStates);
-});
-
-/** Toggle a Security Process */
-app.post('/api/system/processes', (req, res) => {
+/** Trigger an immediate scan of a specific repo */
+app.post('/api/repositories/:id/scan', (req, res) => {
     try {
-        const { id, active, freq } = req.body;
-        if (!processStates.hasOwnProperty(id)) {
-            return res.status(404).json({ error: 'Unknown process format' });
+        const repoId = parseInt(req.params.id);
+        const repo = db.getRepositoryById(repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        let threats = 0;
+        let prsScanned = 0;
+        let filesScanned = 0;
+        let currentStatus = 100;
+
+        const emitLog = (msg, type = 'info') => {
+            emitSse({ action: 'scan-log', repoId, log: { message: msg, type }, confidenceScore: currentStatus });
+        };
+
+        emitLog(`Starting scan for ${repo.github_full_name}...`, 'system');
+
+        // Local Scan
+        if (repo.local_path && fs.existsSync(repo.local_path)) {
+            const results = scanDirectory(repo.local_path, repoId);
+            threats += results.threats;
+            filesScanned += results.filesScanned;
         }
 
-        // Apply Real Actions for known daemons
-        if (id === 'pre-push') {
-            if (active) gitHooks.install();
-            else gitHooks.uninstall();
-            processStates[id].lastRun = Date.now();
-        } else if (id === 'hardener') {
-            // Apply npm global config based on hardener
-            const cmd = active ? 'npm config set ignore-scripts true' : 'npm config set ignore-scripts false';
-            const whitelist = getWhitelistedCommand(cmd);
-            if (whitelist) {
-                execFileSync(whitelist.cmd, whitelist.args, { encoding: 'utf-8', timeout: 5000 });
+        // Remote Scan (PRs)
+        try {
+            const prs = gh.listPRs(repo.github_full_name);
+            prsScanned = prs.length;
+            for (const pr of prs) {
+                const diff = gh.getPRDiff(repo.github_full_name, pr.number);
+                if (diff) {
+                    const results = scanFile(`PR #${pr.number}.diff`, diff);
+                    if (results.alerts.length > 0) {
+                        threats += results.alerts.length;
+                        db.addScanLog(repoId, 'PR_SCAN', 8, `Threats in PR #${pr.number}: ${results.alerts[0].ruleName}`, results.alerts);
+                    }
+                }
             }
-            processStates[id].lastRun = Date.now();
-        } else if (id === 'poller' && freq) {
-            processStates[id].freq = freq; // Update frequency setting
+        } catch (err) {}
+
+        if (threats > 0) {
+            db.updateRepoStatus(repoId, 'INFECTED');
+            emitLog(`Scan complete. ${threats} threats found!`, 'error');
+        } else {
+            db.updateRepoStatus(repoId, 'SAFE');
+            emitLog(`Scan complete. Repository is clean.`, 'success');
         }
-        
-        processStates[id].active = active;
-        res.json({ success: true, process: processStates[id] });
+
+        res.json({ prs_scanned: prsScanned, files_scanned: filesScanned, threats_found: threats });
     } catch (e) {
         res.status(500).json({ error: sanitizeForLog(e.message) });
     }
 });
 
-// ─── Remote UI Intents (SSE) ───
-let sseClients = [];
+/** Fast-scan by repo name - used by clinical terminal or CLI simulations */
+app.post('/api/repositories/scan-by-name', (req, res) => {
+    try {
+        const { fullName } = req.body;
+        if (!fullName) return res.status(400).json({ error: 'Repository name required' });
 
-app.get('/api/ui/stream', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    
-    // Send initial connection dummy event
-    res.write(`data: {"connected": true}\n\n`);
-    
-    sseClients.push(res);
-    req.on('close', () => {
-        sseClients = sseClients.filter(c => c !== res);
+        const repo = db.getRepositoryByFullName(fullName);
+        if (!repo) return res.status(404).json({ error: 'Repository not yet linked to Sentinel' });
+
+        const repoId = repo.id;
+        let threats = 0;
+        let prsScanned = 0;
+        let filesScanned = 0;
+        let details = [];
+
+        // Scan local if exists
+        if (repo.local_path && fs.existsSync(repo.local_path)) {
+            const results = scanDirectory(repo.local_path, repoId);
+            threats += results.threats;
+            filesScanned += results.filesScanned;
+            details.push(...results.details);
+        }
+
+        // Scan remote PRs
+        try {
+            const prs = gh.listPRs(repo.github_full_name);
+            prsScanned = prs.length;
+            for (const pr of prs) {
+                const diff = gh.getPRDiff(repo.github_full_name, pr.number);
+                if (diff) {
+                    const scan = scanFile(`PR #${pr.number}.diff`, diff);
+                    if (scan.alerts.length > 0) {
+                        threats += scan.alerts.length;
+                        scan.alerts.forEach(alert => {
+                            details.push(`PR #${pr.number}: ${alert.ruleName}`);
+                            db.addScanLog(repoId, 'TERMINAL_PR_SCAN', 8, `Threat in PR #${pr.number}: ${alert.ruleName}`, scan.alerts);
+                        });
+                    }
+                }
+            }
+        } catch (err) {}
+
+        // Update status for the dashboard
+        if (threats > 0) {
+            db.updateRepoStatus(repoId, 'INFECTED');
+        } else {
+            db.updateRepoStatus(repoId, 'SAFE');
+        }
+
+        res.json({ 
+            prs_scanned: prsScanned, 
+            files_scanned: filesScanned, 
+            threats_found: threats,
+            details: details.slice(0, 10) // Limit details sent to terminal
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Add a repository by GitHub URL (Aura Intelligence) */
+app.post('/api/repositories/add-url', (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'GitHub URL required' });
+
+        // Basic parsing: github.com/owner/repo
+        const match = url.match(/github\.com\/([^\/]+\/[^\/\s?#.]+)/i);
+        if (!match) return res.status(400).json({ error: 'Invalid GitHub repository URL' });
+
+        const fullName = match[1];
+        const metadata = gh.getRepoMetadata(fullName);
+        if (!metadata) return res.status(404).json({ error: 'Repository not found or private (check gh auth)' });
+
+        // Add to DB
+        const repoId = db.addRepository(null, fullName); // local_path is null for remote-only repos
+        res.json({ id: repoId, fullName: fullName, metadata });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Remote Dependency Audit (Aura Permissions) */
+app.get('/api/repositories/:id/audit', (req, res) => {
+    try {
+        const repo = db.getRepositories().find(r => r.id === parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const packageJson = gh.getRemoteFileContent(repo.github_full_name, 'package.json');
+        if (!packageJson) {
+            return res.json({ 
+                dependencies: 0,
+                list: [],
+                rootAlerts: [],
+                noPackageJson: true
+            });
+        }
+
+        const pkg = JSON.parse(packageJson);
+        const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+        
+        // Audit root lifecycle scripts
+        const rootAlerts = analyzeLifecycleScripts(packageJson);
+
+        res.json({ 
+            dependencies: Object.keys(deps).length,
+            list: Object.keys(deps),
+            rootAlerts 
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Commit History (Aura Monitor) */
+app.get('/api/repositories/:id/commits', (req, res) => {
+    try {
+        const repo = db.getRepositories().find(r => r.id === parseInt(req.params.id));
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const commits = gh.getCommits(repo.github_full_name, 10);
+        res.json({ commits });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Global Audit Trail (SGA) ───
+app.get('/api/audit/logs', (req, res) => {
+    try {
+        const { repoId } = req.query;
+        res.json(db.getAuditLogs(repoId || 'all'));
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── System Security Management ───
+app.get('/api/system/processes', (req, res) => {
+    res.json({
+        'pre-push': { active: gitHooks.isInstalled(), freq: 'On Push' },
+        'hardener': { active: hardener.getSwitchesStatus().npmIgnoreScripts, freq: 'Always' },
+        'poller': { active: polling.isActive(), freq: '5 mins', lastRun: polling.getLastRun() }
     });
 });
 
-app.post('/api/ui/intent', (req, res) => {
-    const intent = req.body;
-    sseClients.forEach(client => {
-        client.write(`data: ${JSON.stringify(intent)}\n\n`);
+app.post('/api/system/processes', (req, res) => {
+    const { id, active } = req.body;
+    let resultState = { active, freq: 'Unknown' };
+
+    if (id === 'pre-push') {
+        active ? gitHooks.install() : gitHooks.uninstall();
+        resultState.freq = 'On Push';
+    } else if (id === 'hardener') {
+        hardener.setNpmIgnoreScripts(active);
+        resultState.freq = 'Always';
+    } else if (id === 'poller') {
+        active ? polling.start() : polling.stop();
+        resultState.freq = '5 mins';
+        resultState.lastRun = polling.getLastRun();
+    }
+    
+    res.json({ success: true, process: resultState });
+});
+
+// ─── Git Safe Staging ───
+app.get('/api/git/staged', (req, res) => {
+    const { repoId } = req.query;
+    const repo = db.getRepositoryById(repoId);
+    if (!repo || !repo.local_path) return res.status(404).json({ error: 'Local path missing' });
+    try {
+        const files = git.getStagedFiles(repo.local_path).map(file => {
+            const content = git.getStagedContent(repo.local_path, file);
+            const scan = scanFile(file, content);
+            return { path: file, riskLevel: scan.alerts.length > 0 ? 8 : 0, alerts: scan.alerts };
+        });
+        res.json({ files });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.post('/api/git/unstage', (req, res) => {
+    const { repoId, filePath } = req.body;
+    const repo = db.getRepositoryById(repoId);
+    git.unstageFile(repo.local_path, filePath);
+    res.json({ success: true });
+});
+
+app.post('/api/git/push', async (req, res) => {
+    const { repoId, override, password } = req.body;
+    const repo = db.getRepositoryById(repoId);
+    if (!repo) return res.status(404).json({ error: 'Repo not found' });
+
+    const staged = git.getStagedFiles(repo.local_path);
+    const prohibited = db.db.prepare('SELECT path FROM prohibited_assets WHERE repo_id = ? AND prohibited = 1').all(repoId).map(r => r.path);
+    const violating = staged.filter(s => prohibited.some(p => s.includes(p)));
+
+    if (violating.length > 0 && !override) {
+        db.addAuditLog(repoId, 'PUSH', `Blocked push: prohibited assets detected`, repo.github_full_name);
+        return res.status(403).json({ error: 'PROHIBITED_ASSETS_DETECTED', files: violating });
+    }
+
+    if (override) {
+        const match = await bcrypt.compare(password, db.getSystemConfig('master_hash'));
+        if (!match) return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    const result = git.push(repo.local_path);
+    if (result.success) {
+        db.addAuditLog(repoId, 'PUSH', `Successful push${override ? ' (FORCED)' : ''}`, repo.github_full_name, result.hash);
+        res.json(result);
+    } else {
+        res.status(500).json({ error: result.error });
+    }
+});
+
+// ─── Project Shield & Asset Guard ───
+app.post('/api/shield/harden', async (req, res) => {
+    const result = await shield.hardenProject(req.body.repoId);
+    res.json(result);
+});
+
+app.post('/api/shield/safe-install', async (req, res) => {
+    const { repoId } = req.body;
+    const threats = await shield.safeInstall(repoId, (msg) => {
+        emitSse({ action: 'shield-log', message: msg, repoId: parseInt(repoId) });
     });
-    res.json({ success: true, clientsNotified: sseClients.length });
+    res.json({ success: true, threats });
+});
+
+app.get('/api/shield/structure/:repoId', (req, res) => {
+    const repo = db.getRepositoryById(req.params.repoId);
+    res.json(fsExplorer.getStructure(repo.local_path));
+});
+
+app.post('/api/shield/prohibited', (req, res) => {
+    const { repoId, path, prohibited } = req.body;
+    db.db.prepare('INSERT INTO prohibited_assets (repo_id, path, prohibited) VALUES (?, ?, ?) ON CONFLICT(repo_id, path) DO UPDATE SET prohibited = excluded.prohibited').run(repoId, path, prohibited ? 1 : 0);
+    res.json({ success: true });
+});
+
+app.get('/api/shield/prohibited/:repoId', (req, res) => {
+    const rows = db.db.prepare('SELECT * FROM prohibited_assets WHERE repo_id = ? AND prohibited = 1').all(req.params.repoId);
+    res.json(rows);
+});
+
+// ─── System & UI Heartbeat ───
+app.get('/', (req, res) => {
+    // If accessed via browser, redirect to the Vite frontend
+    res.send(`
+        <html>
+            <head><title>Sentinel Redirect</title></head>
+            <body style="background:#0a0a0f;color:#00ff88;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+                <div style="text-align:center;">
+                    <h2>🛡️ SENTINEL ENGINE</h2>
+                    <p>Redirecting to Dashboard...</p>
+                    <script>setTimeout(() => window.location.href = 'http://localhost:5173', 500);</script>
+                </div>
+            </body>
+        </html>
+    `);
+});
+
+// ─── CI Sandbox API (Sentinel 3.0 — Modo Pasivo) ────────────────────────────
+
+const ciSandbox = require('../lib/ci_sandbox');
+
+/**
+ * GET /api/supply/sandbox/template
+ * Genera (en memoria) el archivo sentinel-sandbox.yml para que el usuario
+ * lo copie manualmente al repo. No requiere permisos especiales.
+ */
+app.get('/api/supply/sandbox/template', (req, res) => {
+    const result = ciSandbox.generateWorkflowTemplate();
+    res.json(result);
+});
+
+/**
+ * GET /api/supply/sandbox/check/:owner/:repo
+ * Verifica si sentinel-sandbox.yml ya está instalado en el repo.
+ */
+app.get('/api/supply/sandbox/check/:owner/:repo', (req, res) => {
+    try {
+        const { owner, repo } = req.params;
+        const ownerRepo = `${owner}/${repo}`;
+        if (!isValidOwnerRepo(ownerRepo)) {
+            return res.status(400).json({ error: 'Invalid repo format' });
+        }
+        const result = ciSandbox.checkWorkflowInstalled(ownerRepo);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/sandbox/trigger
+ * Body: { ownerRepo: string, branch?: string }
+ * Dispara un análisis sandbox en el repo (requiere workflow instalado).
+ */
+app.post('/api/supply/sandbox/trigger', async (req, res) => {
+    try {
+        const { ownerRepo, branch = 'main' } = req.body;
+        if (!ownerRepo || !isValidOwnerRepo(ownerRepo)) {
+            return res.status(400).json({ error: 'Missing or invalid ownerRepo' });
+        }
+        const result = await ciSandbox.triggerSandboxRun(ownerRepo, branch);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/supply/sandbox/status/:owner/:repo/:runId
+ * Devuelve el estado actual de un run de sandbox.
+ */
+app.get('/api/supply/sandbox/status/:owner/:repo/:runId', (req, res) => {
+    try {
+        const { owner, repo, runId } = req.params;
+        const ownerRepo = `${owner}/${repo}`;
+        if (!isValidOwnerRepo(ownerRepo) || isNaN(Number(runId))) {
+            return res.status(400).json({ error: 'Invalid parameters' });
+        }
+        const result = ciSandbox.getSandboxRunStatus(ownerRepo, parseInt(runId, 10));
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/sandbox/analyze
+ * Body: { ownerRepo: string, runId: number }
+ * Descarga artefactos del run completado y los analiza.
+ * Devuelve el reporte de amenazas completo.
+ */
+app.post('/api/supply/sandbox/analyze', async (req, res) => {
+    try {
+        const { ownerRepo, runId } = req.body;
+        if (!ownerRepo || !isValidOwnerRepo(ownerRepo) || !runId || isNaN(Number(runId))) {
+            return res.status(400).json({ error: 'Missing or invalid parameters' });
+        }
+
+        // 1. Verificar que el run completó
+        const status = ciSandbox.getSandboxRunStatus(ownerRepo, parseInt(runId, 10));
+        if (status.status !== 'completed') {
+            return res.status(409).json({
+                error: 'El run aún no ha completado.',
+                currentStatus: status.status,
+                url: status.url
+            });
+        }
+
+        // 2. Descargar artefactos
+        const download = ciSandbox.downloadSandboxArtifacts(ownerRepo, parseInt(runId, 10));
+        if (!download.success) {
+            return res.status(500).json({ error: download.error });
+        }
+
+        // 3. Analizar telemetría
+        const analysis = ciSandbox.analyzeTelemetry(download.tempDir, ownerRepo);
+
+        // 4. Persistir resultado en DB si hay amenazas
+        if (analysis.threats.length > 0) {
+            const [owner, repoName] = ownerRepo.split('/');
+            const repoRecord = db.getRepositories().find(
+                r => r.github_full_name === ownerRepo
+            );
+            if (repoRecord) {
+                db.addScanLog(
+                    repoRecord.id,
+                    'SANDBOX_ANALYSIS',
+                    Math.round(analysis.riskScore),
+                    `Sandbox detectó ${analysis.threats.length} amenaza(s): ${analysis.summary}`,
+                    analysis.threats
+                );
+            }
+        }
+
+        // 5. Limpiar archivos temporales
+        ciSandbox.cleanupTempDir(download.tempDir);
+
+        res.json({
+            ownerRepo,
+            runId: parseInt(runId, 10),
+            runConclusion: status.conclusion,
+            ...analysis
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Supply Chain Shield (Sentinel 2.0) ───────────────────────────────────────
+
+const { analyzeLockfile, analyzePnpmLockfile } = require('../scanner/lockfile_filter');
+const { analyzeNpmrc, analyzeYarnrcYml }       = require('../scanner/config_integrity');
+const { analyzeTransitiveDeps }                = require('../scanner/lifecycle_filter');
+
+/**
+ * POST /api/supply/scan-lockfile
+ * Body: { content: string, filename: string, packageJsonContent?: string }
+ * Runs the Lockfile Integrity Guardian on user-supplied content.
+ */
+app.post('/api/supply/scan-lockfile', (req, res) => {
+    try {
+        const { content, filename = 'package-lock.json', packageJsonContent = null } = req.body;
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Missing: content (string)' });
+        }
+        // Cap at 5 MB to prevent DoS
+        if (content.length > 5 * 1024 * 1024) {
+            return res.status(413).json({ error: 'Content too large (max 5 MB)' });
+        }
+
+        let alerts = [];
+        if (filename.match(/pnpm-lock\.yaml$/i)) {
+            alerts = analyzePnpmLockfile(content);
+        } else {
+            alerts = analyzeLockfile(content, packageJsonContent);
+        }
+
+        res.json({ filename, alertCount: alerts.length, alerts });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/scan-config
+ * Body: { content: string, filename: string }
+ * Runs the Config Integrity Monitor on .npmrc / .yarnrc content.
+ */
+app.post('/api/supply/scan-config', (req, res) => {
+    try {
+        const { content, filename = '.npmrc' } = req.body;
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Missing: content (string)' });
+        }
+        if (content.length > 512 * 1024) {
+            return res.status(413).json({ error: 'Content too large (max 512 KB)' });
+        }
+
+        let alerts = [];
+        if (filename.match(/\.yarnrc\.yml$/i)) {
+            alerts = analyzeYarnrcYml(content, filename);
+        } else {
+            alerts = analyzeNpmrc(content, filename);
+        }
+
+        res.json({ filename, alertCount: alerts.length, alerts });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/supply/scan-transitive
+ * Body: { lockfileContent: string }
+ * Runs full transitive dependency analysis on a package-lock.json.
+ * Returns every suspicious package found at any depth.
+ */
+app.post('/api/supply/scan-transitive', (req, res) => {
+    try {
+        const { lockfileContent } = req.body;
+        if (!lockfileContent || typeof lockfileContent !== 'string') {
+            return res.status(400).json({ error: 'Missing: lockfileContent (string)' });
+        }
+        if (lockfileContent.length > 10 * 1024 * 1024) {
+            return res.status(413).json({ error: 'Lockfile too large (max 10 MB)' });
+        }
+
+        const alerts = analyzeTransitiveDeps(lockfileContent, null);
+        const byDepth = alerts.reduce((acc, a) => {
+            const d = a.depth ?? 0;
+            if (!acc[d]) acc[d] = [];
+            acc[d].push(a);
+            return acc;
+        }, {});
+
+        res.json({
+            alertCount: alerts.length,
+            maxDepth: Math.max(0, ...Object.keys(byDepth).map(Number)),
+            byDepth,
+            alerts
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * GET /api/supply/logs
+ * Returns all SUPPLY_CHAIN_ALERT scan logs across all repos.
+ */
+app.get('/api/supply/logs', (req, res) => {
+    try {
+        const allLogs = db.getLogsByRepoFilter('all');
+        const supplyLogs = allLogs.filter(l =>
+            l.event_type === 'SUPPLY_CHAIN_ALERT' ||
+            l.event_type === 'LOCKFILE_ALERT' ||
+            l.event_type === 'CONFIG_ALERT'
+        );
+        res.json(supplyLogs);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── System Shutdown ───
+app.post('/api/system/shutdown', (req, res) => {
+    res.json({ success: true, message: 'Shutting down...' });
+    setTimeout(() => process.exit(0), 1000);
 });
 
 // ─── Sandbox ───
@@ -1162,5 +1353,5 @@ app.delete('/api/repositories/:id/protected', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`📡 Sentinel API running on http://localhost:${PORT}`);
+    console.log(`🛡️ Sentinel API Heartbeat [OK] at port ${PORT}`);
 });

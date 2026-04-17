@@ -3,8 +3,6 @@
  * Handles persistence for repositories, scan logs, and configurations.
  * 
  * RESILIENCE: Handles ASAR unpacked path resolution for native modules.
- * better-sqlite3 contains native .node addons that cannot load from
- * inside an ASAR archive.
  */
 
 let Database;
@@ -35,23 +33,15 @@ const os = require('os');
 function getDataDir() {
     let userDataPath;
     try {
-        // If running inside Electron main/renderer with app available
         const electron = require('electron');
         const app = electron.app || (electron.remote && electron.remote.app);
-        
         if (app && typeof app.getPath === 'function') {
             userDataPath = app.getPath('userData');
-            console.log(`[DB] Electron app.getPath('userData') found: ${userDataPath}`);
         }
-    } catch (e) {
-        console.warn(`[DB] Electron context check failed: ${e.message}`);
-    }
+    } catch (e) {}
 
-    // Fallback logic
     if (!userDataPath) {
-        // Standalone Node / CLI / Dev
         userDataPath = path.join(os.homedir(), '.sentinel');
-        console.log(`[DB] Using standalone fallback path: ${userDataPath}`);
     }
 
     if (!fs.existsSync(userDataPath)) {
@@ -62,13 +52,11 @@ function getDataDir() {
 
 const dataDir = getDataDir();
 const DB_PATH = path.resolve(dataDir, 'sentinel.db');
-console.log(`[DB] Initializing database at: ${DB_PATH}`);
 
 class SentinelDB {
     constructor() {
         try {
             this.db = new Database(DB_PATH);
-            console.log(`[DB] Database connection established.`);
             this.init();
         } catch (err) {
             console.error(`[DB] FAILED TO OPEN DATABASE: ${err.message}`);
@@ -77,7 +65,6 @@ class SentinelDB {
     }
 
     init() {
-        // Create tables if they don't exist
         this.db.exec(`
             CREATE TABLE IF NOT EXISTS repositories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,7 +122,6 @@ class SentinelDB {
             );
         `);
 
-        // Migration: Add pinned column to scan_logs if it doesn't exist
         try {
             const columns = this.db.prepare("PRAGMA table_info(scan_logs)").all();
             const hasPinned = columns.some(col => col.name === 'pinned');
@@ -161,33 +147,73 @@ class SentinelDB {
         }
     }
 
+    // --- Audit Logs ---
+    addAuditLog(repoId, eventType, description, target, commitHash = null) {
+        const stmt = this.db.prepare('INSERT INTO audit_logs (repo_id, event_type, description, target, commit_hash) VALUES (?, ?, ?, ?, ?)');
+        return stmt.run(repoId, eventType, description, target, commitHash);
+    }
+
+    getAuditLogs(repoId = 'all') {
+        if (repoId === 'all') {
+            return this.db.prepare(`
+                SELECT a.*, r.github_full_name 
+                FROM audit_logs a 
+                LEFT JOIN repositories r ON a.repo_id = r.id 
+                ORDER BY a.created_at DESC
+            `).all();
+        }
+        return this.db.prepare(`
+            SELECT a.*, r.github_full_name 
+            FROM audit_logs a 
+            LEFT JOIN repositories r ON a.repo_id = r.id 
+            WHERE a.repo_id = ? 
+            ORDER BY a.created_at DESC
+        `).all(repoId);
+    }
+
+    // --- Repositories ---
     addRepository(localPath, githubName) {
         if (githubName) {
             const existing = this.db.prepare('SELECT id FROM repositories WHERE github_full_name = ?').get(githubName);
             if (existing) return existing.id;
         }
-        if (localPath) {
-            const existing = this.db.prepare('SELECT id FROM repositories WHERE local_path = ?').get(localPath);
-            if (existing) return existing.id;
-        }
         const pathVal = localPath || null;
-        const stmt = this.db.prepare('INSERT INTO repositories (local_path, github_full_name) VALUES (?, ?)');
+        const stmt = this.db.prepare('INSERT OR IGNORE INTO repositories (local_path, github_full_name) VALUES (?, ?)');
         const info = stmt.run(pathVal, githubName);
         return info.lastInsertRowid;
+    }
+
+    deleteRepository(repoId) {
+        this.db.prepare('DELETE FROM security_config WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM scan_logs WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM prohibited_assets WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM audit_logs WHERE repo_id = ?').run(repoId);
+        const stmt = this.db.prepare('DELETE FROM repositories WHERE id = ?');
+        const info = stmt.run(repoId);
+        return info.changes > 0;
     }
 
     getRepositories() {
         return this.db.prepare('SELECT * FROM repositories').all();
     }
 
-    addScanLog(repoId, eventType, riskLevel, description, evidence) {
-        const stmt = this.db.prepare('INSERT INTO scan_logs (repo_id, event_type, risk_level, description, evidence_metadata) VALUES (?, ?, ?, ?, ?)');
-        return stmt.run(repoId, eventType, riskLevel, description, JSON.stringify(evidence));
+    getRepositoryById(id) {
+        return this.db.prepare('SELECT * FROM repositories WHERE id = ?').get(id);
+    }
+
+    getRepositoryByFullName(fullName) {
+        return this.db.prepare('SELECT * FROM repositories WHERE github_full_name = ?').get(fullName);
     }
 
     updateRepoStatus(repoId, status) {
         const stmt = this.db.prepare('UPDATE repositories SET status = ?, last_scan_at = CURRENT_TIMESTAMP WHERE id = ?');
         return stmt.run(status, repoId);
+    }
+
+    // --- Scaling Logs ---
+    addScanLog(repoId, eventType, riskLevel, description, evidence) {
+        const stmt = this.db.prepare('INSERT INTO scan_logs (repo_id, event_type, risk_level, description, evidence_metadata) VALUES (?, ?, ?, ?, ?)');
+        return stmt.run(repoId, eventType, riskLevel, description, JSON.stringify(evidence));
     }
 
     getLogsByRepoFilter(repoId) {
@@ -227,9 +253,11 @@ class SentinelDB {
         return info.changes > 0;
     }
 
-    isTrusted(username) {
-        const stmt = this.db.prepare('SELECT 1 FROM trusted_contributors WHERE username = ?');
-        return stmt.get(username) !== undefined;
+    // --- System Config ---
+    getSystemConfig(key) {
+        const stmt = this.db.prepare('SELECT value FROM system_config WHERE key = ?');
+        const row = stmt.get(key);
+        return row ? row.value : null;
     }
 
     deleteRepository(repoId) {

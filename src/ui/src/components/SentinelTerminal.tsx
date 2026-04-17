@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal as TermIcon, X, Copy, Check } from 'lucide-react';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 interface SentinelTerminalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export const SentinelTerminal: React.FC<SentinelTerminalProps> = ({ isOpen, onCl
           // Find repo ID from repo list (passed via props or assumed global - let's assume we need repoId)
           // For simplicity, we'll try to find the repo by name or just use a placeholder if we didn't pass ID.
           // Better: pass repoId in props.
-          const { data } = await axios.post(`http://localhost:3001/api/repositories/scan-by-name`, { fullName: repoName });
+          const { data } = await api.post('/api/repositories/scan-by-name', { fullName: repoName });
           
           setLogs(prev => [...prev, 
             { id: counter++, text: `Scan complete: ${data.files_scanned} files, ${data.prs_scanned} PRs checked.`, type: 'success' as const, time: getTime() },

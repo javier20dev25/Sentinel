@@ -95,3 +95,4 @@ build-cache/
 out/
 temp/
 /tmp/
+test_output.txt

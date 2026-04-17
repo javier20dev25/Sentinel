@@ -11,6 +11,7 @@ import { SandboxResultModal } from './SandboxResultModal';
 import { PackLoaderModal } from './PackLoaderModal';
 import { ProtectedFilesModal } from './ProtectedFilesModal';
 import { ScoreRing } from './ScoreRing';
+import { DependencyAudit } from './DependencyAudit';
 
 interface RepoCardProps { repo: any; }
 
@@ -18,7 +19,6 @@ type SandboxStatus = 'NOT_CONFIGURED' | 'ACTIVE_SAFE' | 'ACTIVE_THREAT' | 'ACTIV
 
 const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
   const isSafe = repo.status === 'SAFE';
-  const [scanning, setScanning] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   // Terminal State
@@ -202,7 +202,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                         e.stopPropagation();
                         if (confirm(`Are you sure you want to forget this repository? Local logs will be erased.`)) {
                           try {
-                            await axios.delete(`http://localhost:3001/api/repositories/${repo.id}`);
+                            await api.delete(`/api/repositories/${repo.id}`);
                             window.location.reload();
                           } catch (err) { }
                         }
@@ -270,7 +270,24 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 </div>
               ))}
             </div>
-          )}
+            
+            {latestCommit && (
+              <div className="flex gap-2.5">
+                <div className="w-[1px] bg-blue-500/20 translate-x-1.5 mt-2 mb-2" />
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase">Recent Activity</p>
+                  <p className="text-[10px] text-zinc-300 font-bold leading-tight line-clamp-1">
+                    {latestCommit.commit.message}
+                  </p>
+                  <p className="text-[8px] text-zinc-600 font-medium">
+                    by {latestCommit.commit.author.name} • {new Date(latestCommit.commit.author.date).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DependencyAudit repoId={repo.id} />
+          </div>
 
           {/* Footer actions */}
           <div className="flex items-center justify-between pt-4 border-t border-white/[0.04] gap-2">

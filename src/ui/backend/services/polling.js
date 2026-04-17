@@ -8,7 +8,7 @@
 
 const db = require('../lib/db');
 const gh = require('../lib/gh_bridge');
-const { scanFile } = require('../scanner/index');
+const { scanFile, analyzeLifecycleScripts } = require('../scanner/index');
 
 // Lazy-load node-notifier to prevent crash if binaries are inaccessible
 let notifier = null;
@@ -28,7 +28,13 @@ function safeNotify(options) {
 
 const POLLING_INTERVAL = 60 * 60 * 1000; // 1 hour
 
+let pollingInterval = null;
+let lastRunTime = null;
+let isPollingActive = false;
+
 function checkAllRepos() {
+    isPollingActive = true;
+    lastRunTime = Date.now();
     console.log(`[${new Date().toISOString()}] Starting background scan...`);
     const repos = db.getRepositories();
     
@@ -40,19 +46,37 @@ function checkAllRepos() {
                 let foundNewThreat = false;
 
                 for (const pr of prs) {
-                    const diff = gh.getPRDiff(repo.github_full_name, pr.number);
-                    if (diff) {
-                        const results = scanFile(`PR #${pr.number}.diff`, diff);
+                    // Phase 2: Advanced Supply Chain Analysis
+                    const analysis = await gh.analyzePRContent(repo.github_full_name, pr.number, pr.author?.login || pr.author);
+                    
+                    if (analysis.hasSensitiveChanges) {
+                        console.log(`[SUPPLY-CHAIN] Sensitive changes in PR #${pr.number} by ${pr.author?.login || pr.author}`);
+                        const pkgContent = gh.getRemoteFileContent(repo.github_full_name, 'package.json');
+                        
+                        if (pkgContent) {
+                            const results = scanFile('package.json', pkgContent);
+                            // Attach author metadata for deeper scoring
+                            const supplyChainAlerts = analyzeLifecycleScripts(pkgContent, analysis.authorReputation);
+                            
+                            if (supplyChainAlerts.length > 0) {
+                                foundNewThreat = true;
+                                db.addScanLog(repo.id, 'SUPPLY_CHAIN_ALERT', 9, `Supply chain threat in PR #${pr.number} (${analysis.authorReputation.username})`, supplyChainAlerts);
+                                db.updateRepoStatus(repo.id, 'INFECTED');
+
+                                safeNotify({
+                                    title: '🚨 Sentinel: Supply Chain Alert',
+                                    message: `Malicious script in ${repo.github_full_name} PR #${pr.number} by @${analysis.authorReputation.username}`,
+                                    sound: true
+                                });
+                            }
+                        }
+                    } else if (analysis.diff) {
+                        // Standard diff scan for non-package.json files
+                        const results = scanFile(`PR #${pr.number}.diff`, analysis.diff);
                         if (results.alerts.length > 0) {
                             foundNewThreat = true;
                             db.addScanLog(repo.id, 'BACKGROUND_SCAN', 10, `Background alert for PR #${pr.number}`, results.alerts);
                             db.updateRepoStatus(repo.id, 'INFECTED');
-
-                            safeNotify({
-                                title: '🕵️ Sentinel: Background Alert',
-                                message: `Suspicious activity detected in ${repo.github_full_name} (PR #${pr.number})`,
-                                sound: true
-                            });
                         }
                     }
                     // Small breathing room between PRs
@@ -71,10 +95,39 @@ function checkAllRepos() {
     })();
 }
 
-// Start polling - DEFERRED to avoid blocking main process startup
-console.log("🚀 Sentinel Background Service Initializing...");
-setTimeout(() => {
-    console.log("⚡ Starting first background scan...");
+function start() {
+    if (pollingInterval) return;
+    console.log("🚀 Sentinel Background Service Starting...");
     checkAllRepos();
-    setInterval(checkAllRepos, POLLING_INTERVAL);
+    pollingInterval = setInterval(checkAllRepos, POLLING_INTERVAL);
+    isPollingActive = true;
+}
+
+function stop() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+    isPollingActive = false;
+    console.log("🛑 Sentinel Background Service Stopped.");
+}
+
+function isActive() {
+    return isPollingActive;
+}
+
+function getLastRun() {
+    return lastRunTime;
+}
+
+// Start polling - DEFERRED to avoid blocking main process startup
+setTimeout(() => {
+    start();
 }, 5000); // 5 second delay to let server start and UI load
+
+module.exports = {
+    start,
+    stop,
+    isActive,
+    getLastRun
+};
