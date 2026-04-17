@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { Activity, Cpu, HardDrive } from 'lucide-react';
-
-const API = 'http://localhost:3001';
 
 interface SystemStats {
   os: {
@@ -35,7 +33,7 @@ export const StatusBar: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get(`${API}/api/system/stats`);
+        const { data } = await api.get('/api/system/stats');
         setStats(data);
       } catch (e) {
         // Silent fail to not spam console

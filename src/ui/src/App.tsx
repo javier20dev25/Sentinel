@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Shield, Settings, History, RefreshCcw, Activity,
-  Bell, LogOut, Loader2, Terminal
+  Bell, LogOut, Loader2, Terminal, GitBranch, Lock as LockIcon
 } from 'lucide-react';
 import OnboardingScreen from './components/OnboardingScreen';
 import RepoSelector from './components/RepoSelector';
@@ -13,6 +12,13 @@ import { StatusBar } from './components/StatusBar';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { CLIReference } from './components/CLIReference';
 import { SecurityControls } from './components/SecurityControls';
+import { SafeStagingView } from './components/SafeStagingView';
+import ProjectShieldView from './components/ProjectShieldView';
+import AssetGuardView from './components/AssetGuardView';
+import { AuditTrailView } from './components/AuditTrailView';
+import { SupplyChainView } from './components/SupplyChainView';
+import { DependencyExplorer } from './components/DependencyExplorer';
+import { SandboxMonitor } from './components/SandboxMonitor';
 import { useLanguage } from './contexts/LanguageContext';
 
 // SECURITY: Access Electron APIs via contextBridge (preload.js)
@@ -21,40 +27,55 @@ const sentinelBridge = (window as any).sentinel;
 
 const API = 'http://localhost:3001';
 
-type AppPhase = 'loading' | 'onboarding' | 'repo-select' | 'dashboard' | 'error';
+type AppPhase = 'locked' | 'loading' | 'onboarding' | 'repo-select' | 'dashboard' | 'error';
 
-// Standardized API Client
-const api = axios.create({
-  baseURL: API,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
-});
+import { api } from './lib/api';
+import { LockScreen } from './components/LockScreen';
 
 const App: React.FC = () => {
   const { t } = useLanguage();
-  const [phase, setPhase] = useState<AppPhase>('loading');
+  const [phase, setPhase] = useState<AppPhase>('locked'); // Default to locked
   const [serverError, setServerError] = useState('');
   const [username, setUsername] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedRepoId, setSelectedRepoId] = useState<string>('all');
   const [repos, setRepos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { id: 'sandbox', icon: Activity, label: 'Sandbox' },
+    { id: 'supply', icon: Shield, label: 'Supply Chain' },
+    { id: 'depexplorer', icon: Activity, label: 'Dep Explorer' },
+    { id: 'audit', icon: History, label: 'Audit Trail' },
     { id: 'threats', icon: History, label: t('threat_logs') },
+    { id: 'shield', icon: Shield, label: 'Project Shield' },
+    { id: 'assets', icon: LockIcon, label: 'Asset Guard' },
+    { id: 'safepush', icon: GitBranch, label: 'Safe Push' },
     { id: 'settings', icon: Settings, label: t('settings') },
-            { id: 'cli', icon: Terminal, label: t('cli_reference') || 'CLI & Agents' },
-            { id: 'controls', icon: Activity, label: t('control_center') || 'Process Manager' },
+    { id: 'cli', icon: Terminal, label: t('cli_reference') || 'CLI & Agents' },
+    { id: 'controls', icon: Activity, label: t('control_center') || 'Process Manager' },
   ];
 
-  // Initial auth check and SSE connection
   useEffect(() => {
-    checkAuthStatus();
+    // If there is a token, try to bypass lock automatically
+    const token = localStorage.getItem('sentinel_jwt');
+    if (token) {
+       setPhase('loading'); // loading will naturally call checkAuthStatus
+    }
 
+    const handleLogout = () => {
+      setTokens('');
+    };
+
+    window.addEventListener('sentinel-logout', handleLogout);
+    return () => window.removeEventListener('sentinel-logout', handleLogout);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'loading') return;
+    checkAuthStatus();
     // ─── Remote Navigation Intents (SSE) ───
     const eventSource = new EventSource(`${API}/api/ui/stream`);
     
@@ -62,38 +83,23 @@ const App: React.FC = () => {
       try {
         const intent = JSON.parse(event.data);
         if (intent.connected) return; // Ignore initial dummy ping
-
-        console.log("📡 Received Navigation Intent:", intent);
-        
-        // Handle navigation intents sent from CLI
         if (intent.action === 'scan-all') {
           setActiveTab('dashboard');
           window.dispatchEvent(new CustomEvent('sentinel-intent', { detail: intent }));
-        } else if (intent.action === 'repo') {
-          setActiveTab('threats');
-          // Actually, ThreatLog takes a selectedRepoID but we'd need to find it by name.
-          // Since we'll need a global way to pass 'target', we can emit a custom event.
-          window.dispatchEvent(new CustomEvent('sentinel-intent', { detail: intent }));
-        } else if (intent.action === 'pr') {
+        } else if (intent.action === 'repo' || intent.action === 'pr') {
           setActiveTab('threats');
           window.dispatchEvent(new CustomEvent('sentinel-intent', { detail: intent }));
         }
-      } catch (e) {
-        console.error("Error parsing intent", e);
-      }
+      } catch (e) { }
     };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+    return () => eventSource.close();
+  }, [phase]);
 
   const checkAuthStatus = async (retryCount = 0) => {
     try {
       const { data: auth } = await api.get('/api/auth/status');
       if (auth.authenticated) {
         setUsername(auth.username);
-        // Check if user has any repos linked
         const { data: linkedRepos } = await api.get('/api/repositories');
         if (linkedRepos.length > 0) {
           setRepos(linkedRepos);
@@ -103,19 +109,27 @@ const App: React.FC = () => {
           setPhase('repo-select');
         }
       } else {
-        console.log("Session lost or not authenticated. Gracefully redirecting to onboarding.");
         setPhase('onboarding');
       }
     } catch (e: any) {
-      // Retry if backend is not ready yet (connection refused)
-      if (retryCount < 10) {
-        console.log(`Backend not ready, retrying... (${retryCount + 1}/10)`);
-        await new Promise(r => setTimeout(r, 1000));
-        return checkAuthStatus(retryCount + 1);
+      if (e.response?.status === 401) return; // interceptor pushes to lock
+      if (retryCount < 5) {
+        setTimeout(() => checkAuthStatus(retryCount + 1), 1000);
+        return;
       }
-      console.error(e);
       setServerError(e.message || 'Failed to connect to local backend');
       setPhase('error');
+    }
+  };
+
+  const setTokens = (token: string) => {
+    if (token) {
+      localStorage.setItem('sentinel_jwt', token);
+      // Use timeout to prevent removeChild crash with password managers or autofill
+      setTimeout(() => setPhase('loading'), 0);
+    } else {
+      localStorage.removeItem('sentinel_jwt');
+      setPhase('locked');
     }
   };
 
@@ -125,11 +139,7 @@ const App: React.FC = () => {
       const { data } = await api.get('/api/repositories');
       setRepos(data);
       setAlertCount(data.filter((r: any) => r.status !== 'SAFE').length);
-    } catch (e) {
-      console.error('Failed to fetch repos:', e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) {} finally { setLoading(false); }
   }, []);
 
   // Auto-refresh repos on dashboard
@@ -153,11 +163,48 @@ const App: React.FC = () => {
     setPhase('repo-select');
   };
 
+  const handleLogoutClick = () => {
+     setTokens('');
+  };
+
+  const handleShutdownClick = async () => {
+    try {
+      await api.post('/api/system/shutdown');
+      setTokens('');
+    } catch (e) {
+      setServerError('Sentinel Core is shutting down...');
+      setPhase('error');
+    }
+  };
+
   const tabLabels: Record<string, string> = {
     dashboard: t('dashboard'),
+    sandbox: 'Sandbox Monitor',
+    supply: 'Supply Chain Shield',
+    depexplorer: 'Dependency Explorer',
+    audit: 'Audit Trail',
     threats: t('threat_logs'),
     settings: t('settings'),
+    cli: t('cli_reference') || 'CLI & Agents',
+    controls: t('control_center') || 'Process Manager'
   };
+
+  // ── Lock Screen ──
+  if (phase === 'locked') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+           key="locked"
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="h-full w-full"
+        >
+          <LockScreen onUnlocked={setTokens} />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   // ── Loading ──
   if (phase === 'loading') {
@@ -296,13 +343,22 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          <button 
-            onClick={() => sentinelBridge?.quit()}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-red-500/10 bg-red-500/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-xs font-bold"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            {t('close_sentinel')}
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button 
+              onClick={handleLogoutClick}
+              title="Cerrar Sesión"
+              className="flex items-center justify-center p-3 rounded-xl border border-red-500/10 bg-red-500/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-xs font-bold"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+            <button 
+              onClick={handleShutdownClick}
+              title="Cerrar Sesión y Apagar Servidor"
+              className="flex items-center justify-center p-3 rounded-xl border border-zinc-500/10 bg-zinc-500/5 text-zinc-400 hover:bg-red-600 hover:text-white transition-all text-xs font-bold"
+            >
+              <RefreshCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -343,7 +399,65 @@ const App: React.FC = () => {
               {activeTab === 'dashboard' && (
                 <Dashboard repos={repos} loading={loading} onAddProject={handleAddMore} />
               )}
+              {activeTab === 'sandbox' && <SandboxMonitor repos={repos} />}
+              {activeTab === 'supply' && <SupplyChainView />}
+              {activeTab === 'depexplorer' && <DependencyExplorer />}
+              {activeTab === 'audit' && <AuditTrailView repoId={selectedRepoId} />}
               {activeTab === 'threats' && <ThreatLog repos={repos} />}
+              {activeTab === 'shield' && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <Shield className="w-5 h-5 text-blue-400" />
+                    <select 
+                      value={selectedRepoId}
+                      onChange={(e) => setSelectedRepoId(e.target.value)}
+                      className="bg-transparent text-sm font-bold outline-none flex-1 cursor-pointer"
+                    >
+                      <option value="all" className="bg-zinc-900">Select Project to Protected...</option>
+                      {repos.map(r => (
+                        <option key={r.id} value={r.id} className="bg-zinc-900">{r.github_full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <ProjectShieldView repoId={selectedRepoId} />
+                </div>
+              )}
+              {activeTab === 'assets' && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <LockIcon className="w-5 h-5 text-red-400" />
+                    <select 
+                      value={selectedRepoId}
+                      onChange={(e) => setSelectedRepoId(e.target.value)}
+                      className="bg-transparent text-sm font-bold outline-none flex-1 cursor-pointer"
+                    >
+                      <option value="all" className="bg-zinc-900">Select Project to Secure Assets...</option>
+                      {repos.map(r => (
+                        <option key={r.id} value={r.id} className="bg-zinc-900">{r.github_full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <AssetGuardView repoId={selectedRepoId} />
+                </div>
+              )}
+              {activeTab === 'safepush' && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <GitBranch className="w-5 h-5 text-emerald-400" />
+                    <select 
+                      value={selectedRepoId}
+                      onChange={(e) => setSelectedRepoId(e.target.value)}
+                      className="bg-transparent text-sm font-bold outline-none flex-1 cursor-pointer"
+                    >
+                      <option value="all" className="bg-zinc-900">Select Repository to Inspect Staging...</option>
+                      {repos.map(r => (
+                        <option key={r.id} value={r.id} className="bg-zinc-900">{r.github_full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <SafeStagingView repoId={selectedRepoId} />
+                </div>
+              )}
               {activeTab === 'settings' && <PreferencesPanel />}
             {activeTab === 'cli' && <CLIReference />}
             {activeTab === 'controls' && <SecurityControls />}

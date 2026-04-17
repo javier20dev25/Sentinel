@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, GitBranch as Github, Download, CheckCircle2, AlertTriangle, Loader2, Terminal, ExternalLink } from 'lucide-react';
-import axios from 'axios';
-
-const API = 'http://localhost:3001';
+import { api } from '../lib/api';
 
 interface SystemStatus {
   git: { installed: boolean; version: string | null };
@@ -28,13 +26,13 @@ const OnboardingScreen: React.FC<OnboardingProps> = ({ onAuthComplete }) => {
   const checkSystem = async () => {
     setStep('checking');
     try {
-      const { data } = await axios.get(`${API}/api/system/check`);
+      const { data } = await api.get('/api/system/check');
       setSystem(data);
       if (!data.git.installed || !data.gh.installed) {
         setStep('deps');
       } else {
         // All deps ok, check auth
-        const { data: auth } = await axios.get(`${API}/api/auth/status`);
+        const { data: auth } = await api.get('/api/auth/status');
         if (auth.authenticated) {
           onAuthComplete(auth.username);
         } else {
@@ -50,7 +48,7 @@ const OnboardingScreen: React.FC<OnboardingProps> = ({ onAuthComplete }) => {
     setInstalling(true);
     setInstallResult(null);
     try {
-      const { data } = await axios.post(`${API}/api/system/install-gh`);
+      const { data } = await api.post('/api/system/install-gh');
       setInstallResult(data);
       if (data.success) {
         setTimeout(checkSystem, 2000);
@@ -66,7 +64,7 @@ const OnboardingScreen: React.FC<OnboardingProps> = ({ onAuthComplete }) => {
     setStep('logging-in');
     setAuthError('');
     try {
-      const { data } = await axios.post(`${API}/api/auth/login`);
+      const { data } = await api.post('/api/auth/login');
       if (data.success) {
         onAuthComplete(data.username);
       } else {
@@ -182,8 +180,8 @@ const OnboardingScreen: React.FC<OnboardingProps> = ({ onAuthComplete }) => {
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold disabled:opacity-50 transition-colors"
                   >
                     {installing
-                      ? <><Loader2 className="w-3 h-3 animate-spin" /> Installing...</>
-                      : <><Download className="w-3 h-3" /> Install</>}
+                      ? <span className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Installing...</span>
+                      : <span className="flex items-center gap-1.5"><Download className="w-3 h-3" /> Install</span>}
                   </motion.button>
                 )}
               </div>

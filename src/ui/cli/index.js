@@ -12,13 +12,39 @@ try { notifier = require('node-notifier'); } catch (_) {}
 function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
 
 // Detection logic for packaged vs development environment
-// If the command is called through a shim that uses node directly or the app's own executable
 const isPackaged = (process.argv0 && process.argv0.toLowerCase().endsWith('sentinel.exe')) || 
                    process.execPath.toLowerCase().endsWith('sentinel.exe');
 
 // Fallback search for the executable relative to the CLI script (for unpacked/portable installs)
 const appExePath = isPackaged ? process.execPath : path.resolve(__dirname, '..', '..', '..', 'Sentinel.exe');
 const isPackagedFinal = isPackaged || fs.existsSync(appExePath);
+
+/**
+ * Generates a professional Markdown report for GitHub visibility.
+ */
+function generateMarkdownReport(githubName, prNumber, alerts) {
+    let report = `## 🛡️ Sentinel: Security Threat Detected in PR #${prNumber}\n\n`;
+    report += `**Repository:** ${githubName}\n`;
+    report += `**Status:** 🚨 THREAT FOUND\n\n`;
+    report += `Sentinel has identified potential security risks in this proposal. Transparency is key to maintaining repository integrity.\n\n`;
+    
+    report += `| Level | Severity | Rule | Description |\n`;
+    report += `| :--- | :--- | :--- | :--- |\n`;
+    
+    alerts.forEach(a => {
+        const severityStr = a.riskLevel >= 9 ? '🔥 CRITICAL' : (a.riskLevel >= 7 ? '🔴 HIGH' : '⚠️ MEDIUM');
+        report += `| ${a.riskLevel}/10 | ${severityStr} | **${a.ruleName}** | ${a.description} |\n`;
+    });
+    
+    report += `\n### 🔍 Evidence\n`;
+    alerts.forEach(a => {
+        report += `#### Rule: ${a.ruleName}\n`;
+        report += `**Snippet:**\n\`\`\`javascript\n${a.evidence}\n\`\`\`\n\n`;
+    });
+    
+    report += `\n---\n*Report generated automatically by Sentinel Security Core.*`;
+    return report;
+}
 
 /**
  * Helper to send navigation intents to the running UI via the backend.
@@ -50,34 +76,81 @@ function performManualScan(repoId, githubName) {
     const gh = require('../backend/lib/gh_bridge');
     const { scanFile } = require('../backend/scanner/index');
 
-    console.log(`🔍 Scanning open PRs for ${githubName}...`);
-    const prs = gh.listPRs(githubName);
-    let totalAlerts = 0;
+    const isCI = process.env.GITHUB_ACTIONS === 'true';
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
-    prs.forEach(pr => {
-        console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
-        const diff = gh.getPRDiff(githubName, pr.number);
-        if (diff) {
-            const results = scanFile(`PR #${pr.number}.diff`, diff);
-            if (results.alerts.length > 0) {
-                totalAlerts += results.alerts.length;
-                db.addScanLog(repoId, 'PR_THREAT', 10, `Threats in PR #${pr.number}`, results.alerts);
-                db.updateRepoStatus(repoId, 'INFECTED');
-                
-                safeNotify({
-                    title: '🚨 Sentinel: Threat Detected!',
-                    message: `PR #${pr.number} in ${githubName} looks dangerous.`,
-                    sound: true
-                });
+    console.log(`🔍 Scanning for threats in ${githubName}...`);
+    let totalAlerts = 0;
+    
+    // Attempt 1: Fetch and scan PRs via API
+    const prs = gh.listPRs(githubName);
+    
+    if (prs.length > 0) {
+        console.log(`🔎 Found ${prs.length} open PR(s) to analyze via API.`);
+        prs.forEach(pr => {
+            console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
+            const diff = gh.getPRDiff(githubName, pr.number);
+            if (diff) {
+                const results = scanFile(`PR #${pr.number}.diff`, diff);
+                if (results.alerts.length > 0) {
+                    processResults(results, `PR #${pr.number}`, pr.number);
+                }
             }
+        });
+    } else if (isCI) {
+        // Attempt 2: CI Fallback - Scan all local JS files in the workspace
+        console.log("⚠️ [Sentinel CI] No PRs detected via API. Performing deep local scan of workspace...");
+        const glob = require('glob');
+        const files = glob.sync('**/*.{js,ts,jsx,tsx}', { 
+            ignore: ['node_modules/**', 'dist/**', 'build/**'] 
+        });
+        
+        files.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+            const results = scanFile(file, content);
+            if (results.alerts.length > 0) {
+                processResults(results, file);
+            }
+        });
+    }
+
+    function processResults(results, sourceName, prNumber = null) {
+        totalAlerts += results.alerts.length;
+        db.addScanLog(repoId, 'THREAT_DETECTED', 10, `Threats in ${sourceName}`, results.alerts);
+        db.updateRepoStatus(repoId, 'INFECTED');
+        
+        // Local Notification (ignored in CI)
+        safeNotify({
+            title: '🚨 Sentinel: Threat Detected!',
+            message: `${sourceName} looks dangerous.`,
+            sound: true
+        });
+
+        // PR Reporting (if we have a PR number)
+        if (prNumber) {
+            const mdReport = generateMarkdownReport(githubName, prNumber, results.alerts);
+            gh.postPRComment(githubName, prNumber, mdReport);
         }
-    });
+
+        // CI Step Summary reporting
+        if (isCI && summaryPath) {
+            const mdSummary = `### 🚨 Threat Evidence in \`${sourceName}\`\n` + 
+                            results.alerts.map(a => `- **[${a.riskLevel}/10] ${a.ruleName}**: ${a.description}`).join('\n') + 
+                            `\n\n\`\`\`javascript\n${results.alerts[0].evidence}\n\`\`\`\n`;
+            fs.appendFileSync(summaryPath, mdSummary + '\n\n');
+        }
+    }
 
     if (totalAlerts === 0) {
         db.updateRepoStatus(repoId, 'SAFE');
         console.log("   ✅ No threats found.");
     } else {
         console.log(`   🚨 Found ${totalAlerts} potential threats!`);
+        // In CI, if we find threats, we should fail the job to block the merge effectively
+        if (isCI) {
+            console.error("❌ Blocking build due to security threats.");
+            process.exit(1);
+        }
     }
 }
 
@@ -105,7 +178,6 @@ program
         const repoId = db.addRepository(fullPath, info.fullName);
         console.log(`✅ Success! Linked to ${info.fullName}`);
         
-        // Initial scan
         performManualScan(repoId, info.fullName);
     });
 
@@ -128,11 +200,90 @@ program
     .description('Scan all linked repositories now')
     .action(() => {
         const db = require('../backend/lib/db');
-        const repos = db.getRepositories();
+        const gh = require('../backend/lib/gh_bridge');
+        let repos = db.getRepositories();
+        
+        // CI RESILIENCE: If running in GitHub Actions and no repos are linked, auto-link current dir
+        if (repos.length === 0 && process.env.GITHUB_ACTIONS === 'true') {
+            console.log("🛡️ [Sentinel CI] No linked repositories found. Auto-linking current workspace...");
+            const info = gh.getRepoInfoLocal(process.cwd());
+            if (info) {
+                const repoId = db.addRepository(process.cwd(), info.fullName);
+                repos = [db.getRepositoryById(repoId)];
+            } else {
+                console.error("❌ [Sentinel CI] Could not identify GitHub repository from current workspace.");
+            }
+        }
+
         repos.forEach(repo => {
             performManualScan(repo.id, repo.github_full_name);
         });
     });
+
+program
+    .command('hook <eventName>')
+    .description('Sentinel Git Hook Entrypoint')
+    .option('--reverse', 'Dry-run or securely revert code state instead of blocking')
+    .action((eventName, options) => {
+        if (eventName === 'pre-push') {
+            console.log("🛡️ [Sentinel] Analyzing outbound commits for security threats...");
+            try {
+                const { execSync } = require('child_process');
+                const { scanFile } = require('../backend/scanner/index');
+                
+                // Diff of what is about to be pushed compared to remote tracking branch
+                let diff = '';
+                try {
+                    diff = execSync('git diff @{u}..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+                } catch (e) {
+                    // No upstream or other error: fallback to full staged/unpushed diff check via HEAD
+                    try {
+                        diff = execSync('git diff HEAD~1..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+                    } catch(e2) {
+                        diff = '';
+                    }
+                }
+                
+                if (diff.trim() === '') {
+                    console.log("🛡️ [Sentinel] No diff found to scan. Proceeding...");
+                    process.exit(0);
+                }
+                
+                const results = scanFile('pre_push_commit.diff', diff);
+                
+                if (results.alerts.length > 0) {
+                    safeNotify({
+                        title: '🚨 Sentinel: Push Blocked!',
+                        message: `Malicious code detected in outbound commits.`,
+                        sound: true
+                    });
+                    
+                    console.error("\\n🚨 [SENTINEL ALERT] Push structurally halted! Malicious code detected in outbound commits:");
+                    results.alerts.forEach(alert => {
+                        console.error(`  - [${alert.riskLevel}] ${alert.ruleName}: ${alert.description}`);
+                    });
+                    
+                    if (options.reverse) {
+                        console.log("\\n♻️ [Reverse Analyzer] --reverse flag enabled. Dry-run noted. State maintained.");
+                        console.log("   To securely revert the malicious commit, run: git reset --soft HEAD~1");
+                        process.exit(0); // In reverse dry-run, we allow it or just exit 0 so to not block if it's a dry run
+                    } else {
+                        console.error("\\n❌ Strict enforcement: Push blocked.");
+                        console.error("   Use 'sentinel hook pre-push --reverse' for dry-run analysis.");
+                        process.exit(1);
+                    }
+                } else {
+                    console.log("✅ [Sentinel] Code changes are clean. Push allowed.");
+                    process.exit(0);
+                }
+            } catch (err) {
+                console.error("🛡️ [Sentinel] Hook error:", err.message);
+                process.exit(0); // Fail-open so we don't break git completely on unrelated errors
+            }
+        }
+    });
+
+// ─── Command: Open ──────────────────────────────────────────────────────────
 
 program
     .command('open')
@@ -148,34 +299,25 @@ program
 
     try {
         if (isPackagedFinal) {
-            console.log("📡 Sentinel Production detected. Launching app directly...");
             const exeToSpawn = isPackaged ? process.execPath : appExePath;
             
             spawn(exeToSpawn, ['.'], { 
                 detached: true, 
                 stdio: 'ignore' 
             });
-            
-            console.log("✅ Sentinel launched. Closing CLI.");
-            process.exit(0); // Direct exit for production
+            process.exit(0);
         }
 
-        // Development mode or backend intent logic
         await postIntent(intentPayload);
         console.log("✅ Sentinel UI navigated successfully via running backend.");
     } catch (e) {
         if (e.code === 'ECONNREFUSED' || e.message.includes('ECONNREFUSED')) {
-            console.log("📡 Sentinel UI not running. Launching dev environment...");
-            
-            // In development, launch via npm run electron:dev
             const isWindows = process.platform === 'win32';
             const cmd = isWindows ? 'npm.cmd' : 'npm';
             const args = ['run', 'electron:dev'];
-            const spawnCwd = path.resolve(__dirname, '..'); // 'ui' directory
+            const spawnCwd = path.resolve(__dirname, '..'); 
             
-            console.log(`📡 Launching via: ${cmd}`);
-            
-            const uiProcess = spawn(cmd, args, { 
+            const uiProcess = spawn(`${cmd} ${args.join(' ')}`, { 
                 cwd: spawnCwd,
                 detached: true, 
                 stdio: 'ignore',
@@ -184,20 +326,15 @@ program
             });
 
             uiProcess.unref();
-            
-            console.log("⏳ Waiting for UI to initialize (this may take a few seconds)...");
-            
             let retries = 0;
             const retryInterval = setInterval(async () => {
                 try {
                     await postIntent(intentPayload);
-                    console.log("✅ Sentinel launched and navigated.");
                     clearInterval(retryInterval);
                     process.exit(0);
                 } catch (err) {
                     retries++;
                     if (retries > 20) {
-                        console.error("❌ Error: Sentinel UI did not become ready in time.");
                         clearInterval(retryInterval);
                         process.exit(1);
                     }
