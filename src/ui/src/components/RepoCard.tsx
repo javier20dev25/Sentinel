@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   GitBranch, ShieldCheck, ShieldAlert, Clock, Scan, MoreVertical,
   Terminal as TermIcon, Shield, BugOff, Zap, ExternalLink,
-  ToggleLeft, ToggleRight, Copy, Check, ChevronRight
+  ToggleLeft, ToggleRight, Copy, Check, ChevronRight, FolderLock, PackageMinus
 } from 'lucide-react';
 import axios from 'axios';
 import { SentinelTerminal } from './SentinelTerminal';
 import { SandboxResultModal } from './SandboxResultModal';
+import { PackLoaderModal } from './PackLoaderModal';
+import { ProtectedFilesModal } from './ProtectedFilesModal';
 import { ScoreRing } from './ScoreRing';
 
 interface RepoCardProps { repo: any; }
@@ -25,6 +27,12 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
 
   // Analyze Local Modal
   const [analyzeOpen, setAnalyzeOpen] = useState(false);
+
+  // Pack Loader Modal
+  const [packModalOpen, setPackModalOpen] = useState(false);
+
+  // Protected Files Modal
+  const [protectedOpen, setProtectedOpen] = useState(false);
 
   // Sandbox State
   const [sandboxStatus, setSandboxStatus] = useState<SandboxStatus>('LOADING');
@@ -136,6 +144,16 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 {repo.status}
               </div>
 
+              {repo.activePacks > 0 && (
+                <div 
+                  onClick={(e) => { e.stopPropagation(); setPackModalOpen(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-widest border bg-[#18181b] text-zinc-400 border-[#2a2a30] hover:text-white cursor-pointer transition-colors uppercase"
+                  title="Gestionar Packs Instalados"
+                >
+                  {repo.activePacks} Packs
+                </div>
+              )}
+
               {/* 3-dot menu */}
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 transition-colors">
@@ -165,6 +183,20 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                           {sandboxEnabled ? <ToggleRight className="w-3.5 h-3.5 text-emerald-400" /> : <ToggleLeft className="w-3.5 h-3.5 text-zinc-500" />}
                           Sandbox {sandboxEnabled ? 'Enabled' : 'Disabled'}
                         </span>
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setProtectedOpen(true); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
+                        <FolderLock className="w-3.5 h-3.5 text-amber-500" /> Gestionar Archivos Protegidos
+                      </button>
+                      <button onClick={async (e) => {
+                          e.stopPropagation();
+                          if (confirm('Restaurar la configuración eliminará todos los packs. ¿Continuar?')) {
+                            try {
+                              await axios.delete(`http://localhost:3001/api/repositories/${repo.id}/packs`);
+                              window.location.reload();
+                            } catch(e) {}
+                          }
+                      }} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-300 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t border-white/5 mt-1">
+                        <PackageMinus className="w-3.5 h-3.5" /> Restaurar Configuración
                       </button>
                       <button onClick={async (e) => {
                         e.stopPropagation();
@@ -255,6 +287,14 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
               >
                 <Zap className="w-3.5 h-3.5" /> Analyze Changes
               </motion.button>
+              {/* Cargador de Packs */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => { e.stopPropagation(); setPackModalOpen(true); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-[10px] font-bold text-violet-400 transition-all"
+              >
+                Cargar Pack de Configuración
+              </motion.button>
               {/* Fast Scan */}
               <motion.button
                 onClick={(e) => launchTerm('sentinel fast-scan', e)}
@@ -270,6 +310,8 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
       {/* Terminals & Modals */}
       <SentinelTerminal isOpen={termOpen} onClose={() => setTermOpen(false)} command={termCmd} repoName={repo.github_full_name} />
       <SandboxResultModal isOpen={analyzeOpen} onClose={() => setAnalyzeOpen(false)} repoId={repo.id} repoName={repo.github_full_name} />
+      <PackLoaderModal isOpen={packModalOpen} onClose={() => setPackModalOpen(false)} repoId={repo.id} onUpdated={() => window.location.reload()} />
+      <ProtectedFilesModal isOpen={protectedOpen} onClose={() => setProtectedOpen(false)} repoId={repo.id} />
 
       {/* Install Guardian Modal */}
       <AnimatePresence>
