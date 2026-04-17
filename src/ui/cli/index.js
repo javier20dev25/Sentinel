@@ -395,20 +395,32 @@ program
         if (options.status || (!options.sync && !options.auto)) {
             // Show status table
             const repos = db.getRepositories();
+            
+            const results = repos.map(repo => {
+                const installed = repo.local_path ? gh.checkSandboxInstalled(repo.local_path) : { installed: false };
+                const run = gh.getLatestSandboxRun(repo.github_full_name);
+                return {
+                    fullName: repo.github_full_name,
+                    installed: installed.installed,
+                    version: installed.version,
+                    latestRun: run
+                };
+            });
+
+            if (program.opts().json) respondAgent(true, results);
+
             if (repos.length === 0) {
                 console.log('No repositories linked. Use: sentinel link <path> <owner/repo>');
                 return;
             }
             console.log('\n🛡️  Sentinel Sandbox Status\n');
-            repos.forEach(repo => {
-                const installed = repo.local_path ? gh.checkSandboxInstalled(repo.local_path) : { installed: false };
-                const run = gh.getLatestSandboxRun(repo.github_full_name);
-                const statusIcon = !installed.installed ? '⚪ Not configured' :
-                    !run ? '🟡 Installed, no runs yet' :
-                    run.conclusion === 'success' ? '🟢 Clean' :
-                    run.conclusion === 'failure' ? '🔴 Threat detected' : '🔵 Running';
-                console.log(`  ${repo.github_full_name}`);
-                console.log(`  └─ ${statusIcon}${run?.html_url ? `  → ${run.html_url}` : ''}`);
+            results.forEach(res => {
+                const statusIcon = !res.installed ? '⚪ Not configured' :
+                    !res.latestRun ? '🟡 Installed, no runs yet' :
+                    res.latestRun.conclusion === 'success' ? '🟢 Clean' :
+                    res.latestRun.conclusion === 'failure' ? '🔴 Threat detected' : '🔵 Running';
+                console.log(`  ${res.fullName}`);
+                console.log(`  └─ ${statusIcon}${res.latestRun?.html_url ? `  → ${res.latestRun.html_url}` : ''}`);
                 console.log('');
             });
             return;
@@ -417,43 +429,41 @@ program
         if (options.sync) {
             const repos = db.getRepositories().filter(r => r.local_path);
             if (repos.length === 0) {
+                if (program.opts().json) respondAgent(false, null, 'No repositories with a local path found.');
                 console.error('❌ No repositories with a local path found. Link one first: sentinel link <path> <owner/repo>');
                 process.exit(1);
             }
 
             // Use the first repo (or could add --repo option in future)
             const repo = repos[0];
-            console.log(`\n🛡️  Installing Sandbox Guardian for: ${repo.github_full_name}`);
+            if (!program.opts().json) console.log(`\n🛡️  Installing Sandbox Guardian for: ${repo.github_full_name}`);
 
             if (options.auto) {
-                console.log('⚠️  Auto mode: This will commit and push to your repository.');
-                console.log('   Requires: git push access + gh CLI with contents:write\n');
+                if (!program.opts().json) {
+                    console.log('⚠️  Auto mode: This will commit and push to your repository.');
+                    console.log('   Requires: git push access + gh CLI with contents:write\n');
+                }
                 const result = gh.pushSandboxConfig(repo.local_path);
                 if (result.success) {
                     db.setSandboxConsent(repo.id, true);
                     db.setSandboxVersion(repo.id, '1.0');
+                    if (program.opts().json) respondAgent(true, { installed: true, pushed: true, path: result.path });
                     console.log('✅ Sandbox workflow installed and pushed!');
-                    console.log(`   File: ${result.path}`);
                 } else {
+                    if (program.opts().json) respondAgent(false, null, result.error);
                     console.error('❌ Auto-install failed:', result.error);
-                    console.log('   Try manual mode (without --auto) instead.');
                     process.exit(1);
                 }
             } else {
-                // Manual mode: show the path and content
+                // Manual mode
                 const templateContent = gh.getSandboxTemplateContent();
-                const destPath = path.join(repo.local_path, '.github', 'workflows', 'sentinel-sandbox.yml');
                 const outputFile = path.join(process.cwd(), 'sentinel-sandbox.yml');
                 fs.writeFileSync(outputFile, templateContent, 'utf-8');
 
+                if (program.opts().json) respondAgent(true, { installed: true, pushed: false, outputFile });
+                
                 console.log('✅ Template saved to your current directory:');
-                console.log(`   ${outputFile}\n`);
-                console.log('📋 Next steps:');
-                console.log(`   1. Copy it to: ${destPath}`);
-                console.log('   2. git add .github/workflows/sentinel-sandbox.yml');
-                console.log('   3. git commit -m "chore: add Sentinel sandbox workflow"');
-                console.log('   4. git push');
-                console.log('\nOr use --auto to let Sentinel do it automatically.\n');
+                console.log(`   ${outputFile}`);
             }
         }
     });

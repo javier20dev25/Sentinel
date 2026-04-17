@@ -51,10 +51,12 @@ on:
   repository_dispatch:
     types: [sentinel-sandbox-run]
 
-# Permisos mínimos necesarios — sin acceso de escritura
+# Permisos necesarios para reportar en el PR y leer el código
 permissions:
   contents: read
   actions: read
+  pull-requests: write
+  issues: write
 
 jobs:
   sentinel-sandbox:
@@ -205,3 +207,38 @@ jobs:
           echo "| Conexiones nuevas | $(cat /tmp/netstat-diff.txt | grep '^>' | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "> Artefacto 'sentinel-telemetry' disponible para descarga y análisis profundo." >> $GITHUB_STEP_SUMMARY
+
+      # ── PASO 8: Comentar en el PR (Sentinel Bot Experience) ────────────────
+      # Si el análisis detectó anomalías críticas, Sentinel deja un comentario
+      # directamente en la conversación del PR para alertar a los revisores.
+      - name: "💬 Post Security Summary to PR"
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const wasmCount = parseInt(fs.readFileSync('/tmp/wasm-files.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No .wasm')).length);
+            const execCount = parseInt(fs.readFileSync('/tmp/executables.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No executables')).length);
+            const netCount = parseInt(fs.readFileSync('/tmp/netstat-diff.txt', 'utf8').split('\n').filter(l => l.startsWith('>')).length);
+            
+            if (wasmCount > 0 || execCount > 0 || netCount > 5) {
+              const body = `## 🛡️ Sentinel Sandbox: Threat Detected!
+              
+              Sentinel has identified high-risk anomalies during dynamic analysis of this PR.
+              
+              | Metric | Value | Risk |
+              | :--- | :--- | :--- |
+              | **WASM Binaries** | ${wasmCount} | 🔴 HIGH |
+              | **New Executables** | ${execCount} | 🔴 HIGH |
+              | **Strange Connections** | ${netCount} | ⚠️ MEDIUM |
+              
+              > [!CAUTION]
+              > Review the 'sentinel-telemetry' artifact for deep forensic data before merging this branch.`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
