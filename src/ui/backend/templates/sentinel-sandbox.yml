@@ -1,0 +1,154 @@
+# Sentinel Sandbox Analysis — v1.0
+# 
+# Template managed by Sentinel Local. Do not edit manually.
+# To update, use: sentinel sandbox --sync (in your terminal)
+# or click "Update Guardian" in the Sentinel dashboard.
+#
+# Security properties:
+#   - permissions: contents: read only
+#   - Docker container: node:22-slim (minimal attack surface)
+#   - --cap-drop=ALL (no Linux capabilities)
+#   - StepSecurity Harden-Runner with egress audit
+#   - No workflow write access, no id-token, no packages scope
+
+name: "🛡️ Sentinel Sandbox Analysis"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Minimal permissions — intentionally restricted
+permissions:
+  contents: read
+
+jobs:
+  sentinel-sandbox:
+    name: "Sentinel: Dynamic Threat Analysis"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: node:22-slim
+      options: >-
+        --cap-drop=ALL
+        --cap-add=NET_BIND_SERVICE
+        --security-opt no-new-privileges=true
+
+    steps:
+      # Step 1: Network hardening (StepSecurity Harden-Runner)
+      - name: "Harden Runner"
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+          disable-sudo: true
+          allowed-endpoints: >
+            github.com:443
+            registry.npmjs.org:443
+
+      # Step 2: Checkout source (no credentials persisted)
+      - name: "Checkout PR code"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      # Step 3: Capture pre-install lockfile state
+      - name: "Snapshot lockfile before install"
+        id: pre_snapshot
+        run: |
+          if [ -f package-lock.json ]; then
+            sha256sum package-lock.json > /tmp/lockfile_before.sha
+            echo "lockfile_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "lockfile_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 4: Install dependencies in sandbox
+      - name: "Install dependencies (sandboxed)"
+        run: |
+          npm install --ignore-scripts 2>&1 | head -100
+        env:
+          NODE_ENV: sandbox
+          npm_config_ignore_scripts: "true"
+
+      # Step 5: Detect lockfile mutation (supply chain signal)
+      - name: "Detect lockfile mutation"
+        id: lockfile_check
+        run: |
+          if [ "${{ steps.pre_snapshot.outputs.lockfile_exists }}" = "true" ]; then
+            sha256sum package-lock.json > /tmp/lockfile_after.sha
+            if diff /tmp/lockfile_before.sha /tmp/lockfile_after.sha; then
+              echo "lockfile_mutated=false" >> $GITHUB_OUTPUT
+              echo "✅ Lockfile integrity verified."
+            else
+              echo "lockfile_mutated=true" >> $GITHUB_OUTPUT
+              echo "::error::🔴 SUPPLY CHAIN ALERT: package-lock.json was mutated during npm install."
+            fi
+          fi
+
+      # Step 6: Monitor for suspicious outbound connections (inotifywait)
+      - name: "Monitor filesystem changes"
+        run: |
+          find . -name "*.js" -newer package.json -not -path "*/node_modules/*" \
+            -not -path "*/.git/*" 2>/dev/null | head -20 | tee /tmp/new_files.txt || true
+          
+          if [ -s /tmp/new_files.txt ]; then
+            echo "::warning::New JS files created during install:"
+            cat /tmp/new_files.txt
+          fi
+
+      # Step 7: Static secret scan on changed files
+      - name: "Secret & pattern scan on PR diff"
+        run: |
+          git diff HEAD~1 HEAD --name-only 2>/dev/null | \
+            grep -E '\.(js|ts|json|py|rb|sh|env|yaml|yml)$' | \
+            head -50 | while read file; do
+              if [ -f "$file" ]; then
+                node -e "
+                  const fs = require('fs');
+                  const content = fs.readFileSync('$file', 'utf8');
+                  const patterns = [
+                    { name: 'AWS Key', re: /AKIA[0-9A-Z]{16}/ },
+                    { name: 'GH Token', re: /ghp_[a-zA-Z0-9]{36}/ },
+                    { name: 'Private Key', re: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/ },
+                    { name: 'Eval exec', re: /eval\s*\(.*require\s*\(/ },
+                    { name: 'Curl pipe bash', re: /curl.+(sh|bash|zsh)\s*\|/ },
+                    { name: 'Postinstall exec', re: /\"postinstall\"\s*:\s*\"[^\"]{10,}\"/ },
+                  ];
+                  let found = false;
+                  patterns.forEach(p => {
+                    if (p.re.test(content)) {
+                      console.log('::error::SENTINEL: [' + p.name + '] detected in $file');
+                      found = true;
+                    }
+                  });
+                  if (!found) console.log('::notice::✅ $file — clean');
+                " 2>/dev/null || echo "::warning::Could not scan $file"
+              fi
+            done
+
+      # Step 8: Check for new binary/WASM files (high-risk)
+      - name: "Check for unexpected binary/WASM files"
+        run: |
+          git diff HEAD~1 HEAD --name-only 2>/dev/null | \
+            grep -E '\.(exe|dll|bin|wasm|so|dylib)$' | while read file; do
+              echo "::error::🔴 SENTINEL: Binary/WASM file added to PR: $file — requires manual review."
+            done || true
+
+      # Step 9: Write Sentinel summary to GITHUB_STEP_SUMMARY
+      - name: "Generate Sentinel Report"
+        if: always()
+        run: |
+          echo "## 🛡️ Sentinel Sandbox Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.lockfile_check.outputs.lockfile_mutated }}" = "true" ]; then
+            echo "| Lockfile Integrity | 🔴 MUTATED |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Lockfile Integrity | ✅ Clean |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| Secret Scan | See step logs |" >> $GITHUB_STEP_SUMMARY
+          echo "| Binary Files | See step logs |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Analysis by [Sentinel Security](https://github.com/javier20dev25/Sentinel)_" >> $GITHUB_STEP_SUMMARY

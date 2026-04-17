@@ -90,4 +90,18 @@ Whether you are a React wizard, a Node.js backend architect, or an active securi
 
 ---
 
+## ⚖️ License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for the full text.
+
+### 📜 Credits, Ethics & Attribution (Required by Author)
+
+While the legal license is MIT, the author (javier20dev25) requests that all users and developers adhere to the following **mandatory** conditions for the health of the project and its community:
+
+1.  **Prior Notification**: If you intend to deploy Sentinel or a derivative work (commercial or non-commercial) in a production or public environment, you **must contact the author first** for awareness and potential collaboration.
+2.  **Legitimate & Good Use Only**: Sentinel is a tool for defense. It must only be used for legitimate security engineering, auditing, and defensive research. Any malicious use is strictly prohibited by our code of conduct.
+3.  **Mandatory Attribution**: Any product or service built using Sentinel's code must clearly display a link to this repository and satisfy the "Powered by Sentinel" attribution in a visible part of the product's interface or website.
+
+---
+
 *Sentinel: Because your code deserves an uncompromising guardian.*

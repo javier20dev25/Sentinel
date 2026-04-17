@@ -8,6 +8,7 @@
   },
   "author": "Sentinel Team <sentinel@example.com>",
   "private": true,
+  "license": "MIT",
   "main": "electron/main.js",
   "bin": {
     "sentinel": "./cli/index.js",

@@ -87,6 +87,7 @@ Thumbs.db
 dist/
 dist-electron/
 release/
+build-cache/
 .vite/
 *.db
 *.db-journal

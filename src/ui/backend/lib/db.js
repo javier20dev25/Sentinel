@@ -124,6 +124,20 @@ class SentinelDB {
         } catch (err) {
             console.error('[DB] Migration failed:', err.message);
         }
+
+        // Migration: Add sandbox columns to repositories if they don't exist
+        try {
+            const repoCols = this.db.prepare("PRAGMA table_info(repositories)").all();
+            const colNames = repoCols.map(c => c.name);
+            if (!colNames.includes('sandbox_consent')) {
+                this.db.exec('ALTER TABLE repositories ADD COLUMN sandbox_consent BOOLEAN DEFAULT 0');
+            }
+            if (!colNames.includes('sandbox_version')) {
+                this.db.exec('ALTER TABLE repositories ADD COLUMN sandbox_version TEXT DEFAULT NULL');
+            }
+        } catch (err) {
+            console.error('[DB] Sandbox migration failed:', err.message);
+        }
     }
 
     addRepository(localPath, githubName) {
@@ -205,6 +219,16 @@ class SentinelDB {
         const stmt = this.db.prepare('DELETE FROM repositories WHERE id = ?');
         const info = stmt.run(repoId);
         return info.changes > 0;
+    }
+
+    setSandboxConsent(repoId, consented) {
+        const stmt = this.db.prepare('UPDATE repositories SET sandbox_consent = ? WHERE id = ?');
+        return stmt.run(consented ? 1 : 0, repoId).changes > 0;
+    }
+
+    setSandboxVersion(repoId, version) {
+        const stmt = this.db.prepare('UPDATE repositories SET sandbox_version = ? WHERE id = ?');
+        return stmt.run(version, repoId).changes > 0;
     }
 }
 

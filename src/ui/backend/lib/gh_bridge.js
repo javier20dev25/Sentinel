@@ -313,6 +313,110 @@ class GitHubBridge {
             return null;
         }
     }
+    // ─── Sandbox Methods ───
+
+    /**
+     * Check if the Sentinel sandbox workflow is installed in a local repo.
+     * Returns { installed: boolean, version: string|null, path: string }
+     */
+    checkSandboxInstalled(localPath) {
+        const fs = require('fs');
+        const path = require('path');
+        if (!isValidLocalPath(localPath)) return { installed: false, version: null };
+
+        const workflowPath = path.join(localPath, '.github', 'workflows', 'sentinel-sandbox.yml');
+        if (!fs.existsSync(workflowPath)) return { installed: false, version: null, path: workflowPath };
+
+        try {
+            const content = fs.readFileSync(workflowPath, 'utf-8');
+            const match = content.match(/Template managed by Sentinel Local[^\n]+\n# .*?--- v([\d.]+)/s) ||
+                          content.match(/sentinel-sandbox\.yml — v([\d.]+)/) ||
+                          content.match(/Sentinel Sandbox Analysis — v([\d.]+)/);
+            const version = match ? match[1] : 'unknown';
+            return { installed: true, version, path: workflowPath };
+        } catch {
+            return { installed: true, version: 'unknown', path: workflowPath };
+        }
+    }
+
+    /**
+     * Get the local git diff (uncommitted changes) as a string.
+     * SECURITY: Uses execFileSync without shell. No code is executed from the diff.
+     */
+    getLocalDiff(localPath) {
+        if (!isValidLocalPath(localPath)) {
+            console.error(`[SECURITY] getLocalDiff: invalid path rejected`);
+            return null;
+        }
+        try {
+            // Get staged + unstaged changes vs HEAD
+            const staged = execFileSync('git', ['diff', '--cached'], { cwd: localPath, encoding: 'utf-8', timeout: 10000, maxBuffer: 5 * 1024 * 1024 });
+            const unstaged = execFileSync('git', ['diff'], { cwd: localPath, encoding: 'utf-8', timeout: 10000, maxBuffer: 5 * 1024 * 1024 });
+            return (staged + unstaged).trim() || null;
+        } catch (e) {
+            console.error('[getLocalDiff]', sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
+    /**
+     * Fetch the latest Sentinel Sandbox workflow run from GitHub.
+     * Returns { status, conclusion, html_url, created_at } or null.
+     */
+    getLatestSandboxRun(repoFullName) {
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        try {
+            // List workflow runs for sentinel-sandbox.yml
+            const runsRaw = execFileSync('gh', [
+                'api', `repos/${repoFullName}/actions/workflows/sentinel-sandbox.yml/runs`,
+                '--jq', '.workflow_runs[0] | {status, conclusion, html_url, created_at}'
+            ], { encoding: 'utf-8', timeout: 15000 });
+            return JSON.parse(runsRaw.trim());
+        } catch (e) {
+            // Workflow might not exist yet
+            console.warn('[getLatestSandboxRun]', sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
+    /**
+     * Push the Sentinel sandbox workflow config to the repo via git.
+     * SECURITY: Uses execFileSync array args only. Requires contents:write permission.
+     * Only called after explicit user consent (sandbox_consent stored in DB).
+     */
+    pushSandboxConfig(localPath) {
+        if (!isValidLocalPath(localPath)) {
+            return { success: false, error: 'Invalid local path.' };
+        }
+        const fs = require('fs');
+        const path = require('path');
+        const templatePath = path.join(__dirname, '..', 'templates', 'sentinel-sandbox.yml');
+        const destDir = path.join(localPath, '.github', 'workflows');
+        const destPath = path.join(destDir, 'sentinel-sandbox.yml');
+
+        try {
+            fs.mkdirSync(destDir, { recursive: true });
+            fs.copyFileSync(templatePath, destPath);
+
+            execFileSync('git', ['add', destPath], { cwd: localPath, timeout: 10000 });
+            execFileSync('git', ['commit', '-m', 'chore: add Sentinel sandbox workflow v1.0'], { cwd: localPath, timeout: 10000 });
+            execFileSync('git', ['push'], { cwd: localPath, timeout: 30000 });
+
+            return { success: true, path: destPath };
+        } catch (e) {
+            return { success: false, error: sanitizeForLog(e.message) };
+        }
+    }
+
+    /**
+     * Return the template content as a string (for manual copy mode).
+     */
+    getSandboxTemplateContent() {
+        const fs = require('fs');
+        const path = require('path');
+        const templatePath = path.join(__dirname, '..', 'templates', 'sentinel-sandbox.yml');
+        return fs.readFileSync(templatePath, 'utf-8');
+    }
 }
 
 module.exports = new GitHubBridge();
