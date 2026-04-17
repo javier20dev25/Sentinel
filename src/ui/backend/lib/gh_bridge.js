@@ -319,12 +319,18 @@ class GitHubBridge {
             return null;
         }
         try {
-            return JSON.parse(execFileSync('gh', ['repo', 'view', '--json', 'fullName'], {
+            const output = execFileSync('gh', ['repo', 'view', '--json', 'nameWithOwner'], {
                 cwd: localPath,
                 encoding: 'utf-8',
                 timeout: 10000
-            }));
-        } catch {
+            });
+            const result = JSON.parse(output);
+            // Map nameWithOwner to fullName for internal compatibility
+            return {
+                fullName: result.nameWithOwner
+            };
+        } catch (e) {
+            console.warn('[GH_BRIDGE] Could not get repo info:', e.message);
             return null;
         }
     }
