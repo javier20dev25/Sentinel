@@ -11,6 +11,20 @@ let notifier = null;
 try { notifier = require('node-notifier'); } catch (_) {}
 function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
 
+/**
+ * Consistent Response Format for AI Agents
+ */
+function respondAgent(success, data, error = null) {
+    if (program.opts().json) {
+        process.stdout.write(JSON.stringify({
+            success,
+            data,
+            error: error ? String(error) : null
+        }, null, 2) + '\n');
+        process.exit(success ? 0 : 1);
+    }
+}
+
 // Detection logic for packaged vs development environment
 const isPackaged = (process.argv0 && process.argv0.toLowerCase().endsWith('sentinel.exe')) || 
                    process.execPath.toLowerCase().endsWith('sentinel.exe');
@@ -88,12 +102,19 @@ function performManualScan(repoId, githubName) {
     if (prs.length > 0) {
         console.log(`🔎 Found ${prs.length} open PR(s) to analyze via API.`);
         prs.forEach(pr => {
-            console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
-            const diff = gh.getPRDiff(githubName, pr.number);
-            if (diff) {
-                const results = scanFile(`PR #${pr.number}.diff`, diff);
-                if (results.alerts.length > 0) {
-                    processResults(results, `PR #${pr.number}`, pr.number);
+            if (!program.opts().json) console.log(`   - Checking PR #${pr.number}: ${pr.title}`);
+            try {
+                const diff = gh.getPRDiff(githubName, pr.number);
+                if (diff) {
+                    const results = scanFile(`PR #${pr.number}.diff`, diff);
+                    if (results.alerts.length > 0) {
+                        processResults(results, `PR #${pr.number}`, pr.number);
+                    }
+                }
+            } catch (e) {
+                console.error(`   ⚠️  Error scanning PR #${pr.number}: ${e.message}`);
+                if (e.message.includes('406')) {
+                    console.error("      Note: Standard GitHub CLI diffs are limited to 300 files. High-volume PRs should be reviewed manually.");
                 }
             }
         });
@@ -158,7 +179,8 @@ function performManualScan(repoId, githubName) {
 
 program
     .version('1.0.0')
-    .description('Sentinel Security CLI');
+    .description('Sentinel Security CLI')
+    .option('--json', 'Output structured JSON for AI and automation');
 
 program
     .command('link <path> <github_full_name>')
@@ -167,16 +189,20 @@ program
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
         const fullPath = path.resolve(localPath);
-        console.log(`Linking repository at ${fullPath}...`);
+        
+        if (!program.opts().json) console.log(`Linking repository at ${fullPath}...`);
         
         const info = gh.getRepoInfoLocal(fullPath);
         if (!info) {
+            if (program.opts().json) respondAgent(false, null, "Could not identify GitHub repository. Make sure 'gh' is authenticated.");
             console.error("❌ Could not identify GitHub repository. Make sure 'gh' is authenticated and you are inside a git repo.");
             return;
         }
 
         const repoId = db.addRepository(fullPath, info.fullName);
-        console.log(`✅ Success! Linked to ${info.fullName}`);
+        if (!program.opts().json) console.log(`✅ Success! Linked to ${info.fullName}`);
+        
+        if (program.opts().json) respondAgent(true, { id: repoId, fullName: info.fullName });
         
         performManualScan(repoId, info.fullName);
     });
@@ -187,12 +213,17 @@ program
     .action(() => {
         const db = require('../backend/lib/db');
         const repos = db.getRepositories();
-        console.table(repos.map(r => ({
-            ID: r.id,
-            Name: r.github_full_name,
-            Status: r.status,
-            LastScan: r.last_scan_at
-        })));
+        
+        const data = repos.map(r => ({
+            id: r.id,
+            fullName: r.github_full_name,
+            status: r.status,
+            lastScan: r.last_scan_at
+        }));
+
+        if (program.opts().json) respondAgent(true, data);
+
+        console.table(data);
     });
 
 program
@@ -218,6 +249,8 @@ program
         repos.forEach(repo => {
             performManualScan(repo.id, repo.github_full_name);
         });
+
+        if (program.opts().json) respondAgent(true, { scanned: repos.length });
     });
 
 program
@@ -477,9 +510,11 @@ program
             console.log(`   Official: ${isOfficial ? '✅ Yes' : '❌ No'}`);
 
             db.installPack(repo.id, packData, isOfficial);
+            if (program.opts().json) respondAgent(true, { installed: true, name: packData.metadata?.name });
             console.log('\n✅ Pack successfully loaded into the repository config!');
 
         } catch (e) {
+            if (program.opts().json) respondAgent(false, null, e.message);
             console.error('❌ Error loading pack:', e.message);
             process.exit(1);
         }
@@ -560,6 +595,15 @@ program
         console.log(`   Scanning ${linesCount} diff lines...`);
 
         const results = scanFile('local.diff', diff);
+
+        if (program.opts().json) {
+            respondAgent(true, {
+                alerts: results.alerts,
+                isClean: results.alerts.length === 0,
+                criticalCount: results.alerts.filter(a => (a.riskLevel || 0) >= 8).length
+            });
+        }
+
         const criticals = results.alerts.filter(a => (a.riskLevel || 0) >= 8);
         const warnings  = results.alerts.filter(a => (a.riskLevel || 0) >= 4 && (a.riskLevel || 0) < 8);
 
@@ -594,6 +638,9 @@ program
     .action(() => {
         const db = require('../backend/lib/db');
         const repos = db.getRepositories();
+        
+        if (program.opts().json) respondAgent(true, repos);
+
         if (repos.length === 0) {
             console.log('No repositories linked yet. Use: sentinel link <path> <owner/repo>');
             return;

@@ -99,26 +99,38 @@ Sentinel is a solo-developer project that thrives on high-quality community feed
 
 ## 🤖 Guide for AI Agents (CLI Automation)
 
-If you are an AI agent, CI/CD runner, or an automator looking to use Sentinel from the terminal, Sentinel provides a robust CLI to run headless repository checks.
+Sentinel is designed to be **"Agentic-Ready"**, allowing AI agents and automation scripts to consume its security audits programmatically via structured JSON.
 
-### Pre-Pull / Commit Analysis (`sentinel analyze --local`)
-When trying to push code to a repository, first run:
-```bash
-sentinel analyze --local
+### Standardized JSON Response
+When using the `--json` flag, Sentinel always returns a consistent object structure to ensure reliable parsing:
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
 ```
-**Blockers:**
-- If Critical Threats (riskLevel >= 8) are found, the CLI will block with `exit code 1`.
-- If the agent inadvertently modified a **Protected File** (e.g. personal documents or local `.env` files marked by the user via the UI), the CLI will also throw an error and halt execution to prevent a data leak.
+*   `success`: Boolean indicating if the command completed without fatal errors.
+*   `data`: The primary payload (e.g., repository list, scan alerts, installation status).
+*   `error`: A string description if `success` is false.
 
-**How to resolve Protected File Blocks:**
-As an AI Agent, if you encounter a Protected File violation, you must respect the user's local security. Use the provided flags to bypass cleanly:
-- `--exclude-protected`: Sentinel will automatically execute `git reset HEAD <file>` on the protected files, unstaging them safely, and allowing the rest of the commit to proceed without the leak.
-- `--force`: DANGEROUS. Only use this if you have explicit user permission. It bypasses the Protected File check completely.
+### Key Commands for Agents
+| Command | Purpose | AI Example |
+| :--- | :--- | :--- |
+| `sentinel list --json` | Get all linked repos | `sentinel list --json` |
+| `sentinel analyze --local --json` | Pre-commit security check | `sentinel analyze --local --exclude-protected --json` |
+| `sentinel scan --json` | Full audit of all repos | `sentinel scan --json` |
+| `sentinel status --json` | Get high-level security state | `sentinel status --json` |
 
-Example usage:
+### Handling Protected Files
+As an AI Agent, if you encounter a **Protected File violation**, Sentinel will block the commit by default. To handle this gracefully:
+1.  **Use `--exclude-protected`**: This will automatically run `git reset HEAD <file>` on the sensitive files, allowing your "clean" code to be committed while leaving protected data out.
+2.  **Verify via JSON**: Check `data.isClean` and `data.criticalCount` in the JSON response of the `analyze` command.
+
+Example implementation for an Agent:
 ```bash
-# Recommended for AI Agents:
-sentinel analyze --local --exclude-protected
+# Analyze local changes and safely exclude any user-protected leaks
+sentinel analyze --local --exclude-protected --json
 ```
 
 ---
