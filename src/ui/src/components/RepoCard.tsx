@@ -270,8 +270,9 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 </div>
               ))}
             </div>
-            
-            {latestCommit && (
+          )}
+          
+          {latestCommit && (
               <div className="flex gap-2.5">
                 <div className="w-[1px] bg-blue-500/20 translate-x-1.5 mt-2 mb-2" />
                 <div className="space-y-1">
@@ -287,10 +288,10 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
             )}
 
             <DependencyAudit repoId={repo.id} />
-          </div>
+        </div>
 
-          {/* Footer actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-white/[0.04] gap-2">
+        {/* Footer actions */}
+        <div className="flex items-center justify-between pt-4 border-t border-white/[0.04] gap-2">
             <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold">
               <Clock className="w-3 h-3" />
               {repo.last_scan_at ? new Date(repo.last_scan_at).toLocaleString() : 'Never scanned'}
@@ -317,14 +318,12 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 onClick={(e) => launchTerm('sentinel fast-scan', e)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[10px] font-bold text-blue-400 transition-all"
               >
-                <TermIcon className="w-3.5 h-3.5" /> Fast Scan
               </motion.button>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Terminals & Modals */}
+        {/* Terminals & Modals */}
       <SentinelTerminal isOpen={termOpen} onClose={() => setTermOpen(false)} command={termCmd} repoName={repo.github_full_name} />
       <SandboxResultModal isOpen={analyzeOpen} onClose={() => setAnalyzeOpen(false)} repoId={repo.id} repoName={repo.github_full_name} />
       <PackLoaderModal isOpen={packModalOpen} onClose={() => setPackModalOpen(false)} repoId={repo.id} onUpdated={() => window.location.reload()} />
