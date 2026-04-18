@@ -13,8 +13,19 @@ function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (
 
 /**
  * Normalizes paths for reliable comparison on Windows/Unix.
+ * Handles both relative paths (from git status) and absolute paths (from DB).
  */
 function normalizePath(p) {
+    if (!p) return '';
+    // Use normalize (NOT resolve) to avoid converting relative paths to absolute.
+    // This preserves 'keys/file.txt' as 'keys/file.txt' instead of 'C:/Users/.../keys/file.txt'.
+    return path.normalize(p).toLowerCase().replace(/\\/g, '/');
+}
+
+/**
+ * Normalizes an absolute path (for repo local_path comparison).
+ */
+function normalizeAbsPath(p) {
     if (!p) return '';
     return path.resolve(p).toLowerCase().replace(/\\/g, '/');
 }
@@ -209,7 +220,7 @@ program
         
         // Update path if it changed
         const existing = db.getRepositoryById(repoId);
-        if (normalizePath(existing.local_path) !== normalizePath(fullPath)) {
+        if (normalizeAbsPath(existing.local_path) !== normalizeAbsPath(fullPath)) {
             db.updateRepoPath(repoId, fullPath);
         }
 
@@ -278,7 +289,7 @@ function performLocalAnalysis(options = {}) {
     const cwd = process.cwd();
 
     const repos = db.getRepositories();
-    const repo = repos.find(r => r.local_path && normalizePath(r.local_path) === normalizePath(cwd));
+    const repo = repos.find(r => r.local_path && normalizeAbsPath(r.local_path) === normalizeAbsPath(cwd));
     
     let violations = [];
     if (repo) {
@@ -335,32 +346,101 @@ function performLocalAnalysis(options = {}) {
     };
 }
 
+// ─── sentinel prepush (Advisory Pre-Push Analysis) ───
+program
+    .command('prepush')
+    .description('Analyze outbound commits before pushing. Advisory only — does NOT block.')
+    .action(() => {
+        console.log('\n🛡️  Sentinel Pre-Push Security Analysis');
+        console.log('─'.repeat(50));
+
+        const analysis = performLocalAnalysis({ isHook: true });
+        const criticals = analysis.alerts.filter(a => (a.riskLevel || 0) >= 8);
+        const warnings  = analysis.alerts.filter(a => (a.riskLevel || 0) >= 4 && (a.riskLevel || 0) < 8);
+        let isSafe = true;
+        let reasons = [];
+
+        // Protected files check
+        if (analysis.violations.length > 0) {
+            isSafe = false;
+            reasons.push(`${analysis.violations.length} protected file(s) detected`);
+            console.log(`\n⚠️  PROTECTED FILES IN OUTBOUND COMMITS:`);
+            analysis.violations.forEach(v => console.log(`   📁 ${v}`));
+            console.log(`   Fix: sentinel heal --leaks`);
+        }
+
+        // Threat check
+        if (criticals.length > 0) {
+            isSafe = false;
+            reasons.push(`${criticals.length} critical threat(s) detected`);
+            console.log(`\n🚨 CRITICAL THREATS DETECTED:`);
+            criticals.forEach(a => console.log(`   🔴 [${a.riskLevel}/10] ${a.ruleName}: ${a.description}`));
+            console.log(`   Fix: sentinel heal --threats`);
+        }
+
+        if (warnings.length > 0) {
+            console.log(`\n⚠️  WARNINGS (${warnings.length}):`);
+            warnings.forEach(a => console.log(`   🟡 [${a.riskLevel}/10] ${a.ruleName}: ${a.description}`));
+        }
+
+        // Final Verdict
+        console.log('\n' + '─'.repeat(50));
+        if (isSafe) {
+            console.log('✅ VERDICT: Safe to push. No issues found.');
+        } else {
+            console.log('🛑 VERDICT: UNSAFE TO PUSH.');
+            console.log('\n   ⚠️  DISCLAIMER:');
+            console.log('   If you are a HUMAN: You are about to push files that affect');
+            console.log('   the security or confidentiality of your project. Sentinel');
+            console.log('   strongly recommends NOT doing this. If you proceed, Sentinel');
+            console.log('   is not responsible for any consequences.');
+            console.log('');
+            console.log('   If you are an AI AGENT: You should NOT push this without');
+            console.log('   explicit human approval. Run "sentinel heal" to fix issues');
+            console.log('   before proceeding.');
+        }
+        console.log('');
+
+        if (program.opts().json) {
+            respondAgent(true, {
+                safe: isSafe,
+                violations: analysis.violations,
+                criticalThreats: criticals.length,
+                warnings: warnings.length,
+                reasons,
+                disclaimer: isSafe ? null : 'You are pushing files that affect security/confidentiality. Sentinel is not responsible if you proceed.'
+            });
+        }
+    });
+
+// ─── sentinel hook (warn-only, never blocks) ───
 program
     .command('hook <eventName>')
-    .description('Sentinel Git Hook Entrypoint (Blocks pushes on threat/leak)')
+    .description('Sentinel Git Hook Entrypoint (Warn-only, never blocks push)')
     .action((eventName) => {
         if (eventName === 'pre-push') {
-            const analysis = performLocalAnalysis({ isHook: true });
-            
-            const criticals = analysis.alerts.filter(a => (a.riskLevel || 0) >= 8);
-            
-            if (analysis.violations.length > 0) {
-                console.error(`\n🚨 ABORTED: Push blocked by Security Policy.`);
-                console.error(`   The following files are PROTECTED and cannot be leaked:`);
-                analysis.violations.forEach(v => console.error(`   - ${v}`));
-                console.error(`\n   Run 'sentinel heal --leaks' to unstage them.`);
-                process.exit(1);
-            }
+            // WARN-ONLY: Always exit 0. Sentinel advises but does not block.
+            try {
+                const analysis = performLocalAnalysis({ isHook: true });
+                const criticals = analysis.alerts.filter(a => (a.riskLevel || 0) >= 8);
 
-            if (criticals.length > 0) {
-                console.error(`\n🚨 ABORTED: Push blocked due to ${criticals.length} CRITICAL threats.`);
-                criticals.forEach(a => console.error(`   - [${a.riskLevel}/10] ${a.ruleName}: ${a.description}`));
-                console.error(`\n   Review the threats or run 'sentinel heal --threats' if they are accidental leaks.`);
-                process.exit(1);
+                if (analysis.violations.length > 0 || criticals.length > 0) {
+                    console.log('\n🛡️  [Sentinel] Security advisory:');
+                    if (analysis.violations.length > 0) {
+                        console.log(`   ⚠️  ${analysis.violations.length} protected file(s) in this push.`);
+                    }
+                    if (criticals.length > 0) {
+                        console.log(`   🚨 ${criticals.length} critical threat(s) detected.`);
+                    }
+                    console.log('   Run "sentinel prepush" for full details before pushing.');
+                    console.log('');
+                } else {
+                    console.log('✅ [Sentinel] Code looks clean.');
+                }
+            } catch (e) {
+                // Fail-open: never break git
             }
-
-            console.log("✅ [Sentinel] Code changes are clean. Push allowed.\n");
-            process.exit(0);
+            process.exit(0); // ALWAYS allow push
         }
     });
 
@@ -710,7 +790,7 @@ program
         const db = require('../backend/lib/db');
         const cwd = process.cwd();
         const repos = db.getRepositories();
-        const repo = repos.find(r => r.local_path && path.resolve(r.local_path) === path.resolve(cwd));
+        const repo = repos.find(r => r.local_path && normalizeAbsPath(r.local_path) === normalizeAbsPath(cwd));
 
         if (!repo) {
             if (program.opts().json) respondAgent(false, null, 'No linked repository found for the current directory.');
@@ -773,12 +853,8 @@ program
         const hookSignature = '# --- Sentinel Security Hook ---';
         
         const hookContent = `\n${hookSignature}
-# Prevents sensitive leaks and malicious code from leaving your machine.
+# Advisory security scan before push (warn-only, never blocks).
 ${hookScript}
-if [ $? -ne 0 ]; then
-  echo "🚨 [Sentinel] Push blocked by security policy."
-  exit 1
-fi
 # --- End Sentinel Hook ---\n`;
 
         try {
