@@ -744,23 +744,76 @@ program
     .option('--threats', 'Unstage detected threats and move them to quarantine')
     .action((options) => {
         const { execFileSync } = require('child_process');
-        const analysis = performLocalAnalysis();
+        const analysis = performLocalAnalysis({ isHook: true });
         const cwd = process.cwd();
 
         if (options.leaks) {
             if (analysis.violations.length === 0) {
-                console.log('✅ No protected files detected in the current commit.');
+                console.log('✅ No protected files detected in outbound commits.');
                 return;
             }
-            console.log('\n🛡️  Sentinel Healing: Unstaging protected files...');
+            console.log('\n🛡️  Sentinel Healing: Removing protected files from outbound commits...');
+            
+            // Step 1: Check if the violations are in staged (uncommitted) or committed state
+            const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
+            const stagedFiles = new Set(
+                statusOutput.split('\n')
+                    .filter(l => l.trim().length > 0 && l[0] !== '?' && l[0] !== ' ')
+                    .map(l => normalizePath(l.substring(3).trim()))
+            );
+
+            let stagedLeaks = [];
+            let committedLeaks = [];
+
             analysis.violations.forEach(v => {
-                try {
-                    execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000 });
-                    console.log(`   Restored: ${v}`);
-                } catch (e) {
-                    console.error(`   Failed to restore ${v}: ${e.message}`);
+                if (stagedFiles.has(normalizePath(v))) {
+                    stagedLeaks.push(v);
+                } else {
+                    committedLeaks.push(v);
                 }
             });
+
+            // Step 2a: Unstage files that are only staged (not committed yet)
+            stagedLeaks.forEach(v => {
+                try {
+                    execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000, stdio: 'pipe' });
+                    console.log(`   Unstaged: ${v}`);
+                } catch (e) {
+                    console.error(`   Failed to unstage ${v}: ${e.message}`);
+                }
+            });
+
+            // Step 2b: For committed leaks, undo the last commit, unstage the protected files, then re-commit
+            if (committedLeaks.length > 0) {
+                try {
+                    // Soft reset: undo commit but keep all files staged
+                    execFileSync('git', ['reset', 'HEAD~1', '--soft'], { cwd, timeout: 5000, stdio: 'pipe' });
+                    console.log('   ↩️  Last commit undone (soft reset).');
+
+                    // Unstage only the protected files
+                    committedLeaks.forEach(v => {
+                        try {
+                            execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000, stdio: 'pipe' });
+                            console.log(`   Unstaged: ${v}`);
+                        } catch (e) {
+                            // May not exist in HEAD, just continue
+                        }
+                    });
+
+                    // Re-commit the remaining staged files (if any)
+                    const remainingStaged = execFileSync('git', ['diff', '--cached', '--name-only'], { cwd, encoding: 'utf-8', timeout: 5000 }).trim();
+                    if (remainingStaged.length > 0) {
+                        execFileSync('git', ['commit', '-m', 'chore: re-commit without protected files (healed by Sentinel)'], { cwd, timeout: 10000, stdio: 'pipe' });
+                        console.log('   ✏️  Re-committed without protected files.');
+                    } else {
+                        console.log('   ℹ️  No other files to re-commit. The commit was fully protected content.');
+                    }
+                } catch (e) {
+                    console.log(`   ℹ️  Could not auto-heal committed files: ${e.message}`);
+                    console.log('   Run manually: git reset HEAD~1 --soft && git reset HEAD <protected_file>');
+                }
+            }
+            
             console.log('✅ Leaks contained.');
         }
 
