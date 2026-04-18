@@ -23,8 +23,8 @@ Alternatively, use it directly via `node src/ui/cli/index.js`.
 
 ### `sentinel heal` [NEW]
 Automated incident response to contain leaks or threats.
-- **`--leaks`**: Unstages files belonging to protected folders (`git reset HEAD`).
-- **`--threats`**: Unstages malicious code and moves it to `.sentinel/quarantine/` for analysis.
+- **`--leaks`**: Automatically removes protected files from outbound commits. Handles both staged files (`git reset`) and already-committed files (`git reset HEAD~1 --soft` + re-commit) without losing other staged work.
+- **`--threats`**: Unstages detected threats and moves them to `.sentinel/quarantine/` for analysis.
 
 ### `sentinel protected` [NEW]
 Manage sensitive folders and files for the current repository.
