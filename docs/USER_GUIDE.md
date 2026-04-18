@@ -38,7 +38,7 @@ Upon the first launch of the **Sentinel Web Edition**, you will be prompted to s
 4. **Visibility**: If a leak is found, the CLI will output a clear report and a legal disclaimer. The responsibility to proceed or fix (using `sentinel heal`) stays with the developer or AI agent.
 
 > [!TIP]
-> Use `sentinel heal --leaks` to automatically unstage protected files if they were included by accident.
+> Use `sentinel heal --leaks` to automatically remove protected files from your staging area or current commit if they were included by accident.
 
 ---
 
