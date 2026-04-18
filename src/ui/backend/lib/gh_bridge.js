@@ -438,6 +438,33 @@ class GitHubBridge {
         const templatePath = path.join(__dirname, '..', 'templates', 'sentinel-sandbox.yml');
         return fs.readFileSync(templatePath, 'utf-8');
     }
+
+    /**
+     * Post a comment on a Pull Request via GitHub CLI.
+     * SECURITY: All parameters are validated to prevent command injection.
+     */
+    postPRComment(repoFullName, prNumber, message) {
+        if (!isValidOwnerRepo(repoFullName)) return { success: false, error: 'Invalid repo name.' };
+        if (!isValidPRNumber(prNumber)) return { success: false, error: 'Invalid PR number.' };
+        if (!message) return { success: false, error: 'Empty message.' };
+
+        try {
+            console.log(`💬 Posting sentinel summary to ${repoFullName} PR #${prNumber}...`);
+            execFileSync('gh', [
+                'pr', 'comment', String(prNumber),
+                '--repo', repoFullName,
+                '--body', message
+            ], {
+                encoding: 'utf-8',
+                timeout: 30000,
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+            return { success: true };
+        } catch (e) {
+            console.error('[postPRComment] FAILED:', sanitizeForLog(e.message));
+            return { success: false, error: e.message };
+        }
+    }
 }
 
 module.exports = new GitHubBridge();
