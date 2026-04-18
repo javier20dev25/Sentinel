@@ -295,22 +295,31 @@ program
 // ─── sentinel hook (the actual Git hook entrypoint) ───
 program
     .command('hook <eventName>')
-    .description('Sentinel Git Hook Entrypoint (Warn-only)')
+    .description('Sentinel Git Hook Entrypoint (Smart-block mode)')
     .action((eventName) => {
         if (eventName === 'pre-push') {
+            const hasBypass = process.env.SENTINEL_BYPASS === '1';
             try {
                 const analysis = performLocalAnalysis({ isHook: true });
                 if (analysis.violations.length > 0) {
-                    console.log('\n🛡️  [Sentinel] Security advisory:');
-                    console.log(`   ⚠️  ${analysis.violations.length} protected file(s) in this push.`);
+                    if (hasBypass) {
+                        console.log('\n⚠️  [Sentinel] Bypass active. Allowing push with protected files...');
+                        process.exit(0);
+                    }
+                    console.log('\n🛑  [Sentinel] SECURITY THREAT BLOCKED');
+                    console.log(`   ⚠️  At least ${analysis.violations.length} protected file(s) would be exposed in this push.`);
                     analysis.violations.forEach(v => console.log(`      - ${v}`));
-                    console.log('\n   🚨 Pro-tip: Run "sentinel heal --leaks" to fix this.');
+                    console.log('\n   🛠️  To safely fix this: run "sentinel heal --leaks"');
+                    console.log('   🔓 To FORCE push (take absolute responsibility): run "SENTINEL_BYPASS=1 git push"');
                     console.log('');
+                    process.exit(1); // Block the push
                 } else {
                     console.log('✅ [Sentinel] Code looks clean.');
+                    process.exit(0);
                 }
-            } catch (e) {}
-            process.exit(0); // Advisory mode never blocks
+            } catch (e) {
+                process.exit(0); // Failsafe allows push on unknown errors
+            }
         }
     });
 
@@ -330,17 +339,24 @@ program
             process.exit(1);
         }
 
-        const hookContent = `#!/bin/sh\n# Sentinel Security Guardian — Advisory Pre-Push Hook\n# This hook is warn-only and will NEVER block your push.\n${sentinel} hook pre-push\nexit 0\n`;
+        const hookContent = `#!/bin/sh\n# Sentinel Security Guardian — Smart Pre-Push Hook\n${sentinel} hook pre-push\nexit $?\n`;
 
         if (fs.existsSync(hookPath)) {
             const existing = fs.readFileSync(hookPath, 'utf-8');
             if (existing.includes('sentinel hook pre-push')) {
+                // Si existe pero está obsoleto con 'exit 0', forzamos el reemplazo a la versión segura:
+                if (existing.includes('EVER block') || existing.includes('exit 0')) {
+                     fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+                     console.log('✅ Sentinel hook updated to smart-block mode.');
+                     if (program.opts().json) respondAgent(true, { status: 'updated' });
+                     return;
+                }
                 console.log('✅ Sentinel hook already installed. No changes needed.');
                 if (program.opts().json) respondAgent(true, { status: 'already_installed' });
                 return;
             }
             // Append to existing hook
-            fs.appendFileSync(hookPath, `\n# Sentinel Security Guardian — Appended\n${sentinel} hook pre-push\n`);
+            fs.appendFileSync(hookPath, `\n# Sentinel Security Guardian — Appended\n${sentinel} hook pre-push\nexit $?\n`);
             console.log('✅ Sentinel hook appended to existing pre-push hook.');
             if (program.opts().json) respondAgent(true, { status: 'appended' });
             return;
@@ -480,104 +496,76 @@ program
 // ─── sentinel heal ───
 program
     .command('heal')
-    .option('--leaks', 'Unstage protected files from staged area and ALL unpushed commits')
+    .option('--leaks', 'Unstage protected files from staging area and provide instructions for committed leaks')
     .action((options) => {
         const { execFileSync } = require('child_process');
         const cwd = process.cwd();
 
         if (options.leaks) {
-            const MAX_ITERATIONS = 10;
-            let iteration = 0;
-            let totalHealed = 0;
+            const analysis = performLocalAnalysis({ isHook: true });
 
-            while (iteration < MAX_ITERATIONS) {
-                iteration++;
-                const analysis = performLocalAnalysis({ isHook: true });
-
-                if (analysis.violations.length === 0) break;
-
-                const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8' });
-                const stagedFiles = new Set(
-                    statusOutput.split('\n')
-                        .filter(l => l.length >= 3 && l[0] !== ' ' && l[0] !== '?')
-                        .map(l => normalizePath(l.substring(3).trim()))
-                );
-
-                let stagedLeaks = [];
-                let committedLeaks = [];
-
-                analysis.violations.forEach(v => {
-                    if (stagedFiles.has(normalizePath(v))) stagedLeaks.push(v);
-                    else committedLeaks.push(v);
-                });
-
-                // Unstage files that are in the staging area
-                stagedLeaks.forEach(v => {
-                    execFileSync('git', ['reset', 'HEAD', v], { cwd });
-                    console.log(`   Unstaged (staged): ${v}`);
-                    totalHealed++;
-                });
-
-                if (committedLeaks.length > 0) {
-                    // Find how many unpushed commits exist
-                    let unpushedCount = 0;
-                    try {
-                        const logOutput = execFileSync('git', ['rev-list', '--count', '@{upstream}..HEAD'], { cwd, encoding: 'utf-8' }).trim();
-                        unpushedCount = parseInt(logOutput, 10) || 0;
-                    } catch (e) {
-                        // No upstream — count total commits on branch (cap at 5 for safety)
-                        try {
-                            const logOutput = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd, encoding: 'utf-8' }).trim();
-                            unpushedCount = Math.min(parseInt(logOutput, 10) || 1, 5);
-                        } catch (e2) { unpushedCount = 1; }
-                    }
-
-                    // Find the deepest commit that contains a protected file
-                    let resetDepth = 1;
-                    for (let i = 1; i <= unpushedCount; i++) {
-                        try {
-                            const filesInCommit = execFileSync('git', ['diff', '--name-only', `HEAD~${i}..HEAD~${i-1}`], { cwd, encoding: 'utf-8' });
-                            const commitFiles = filesInCommit.split('\n').filter(l => l.trim()).map(f => normalizePath(f.trim()));
-                            const hasProtected = committedLeaks.some(v => commitFiles.includes(normalizePath(v)));
-                            if (hasProtected) resetDepth = i;
-                        } catch (e) { break; }
-                    }
-
-                    // Soft reset back to before all offending commits
-                    execFileSync('git', ['reset', `HEAD~${resetDepth}`, '--soft'], { cwd });
-                    console.log(`   ↩️  Soft-reset ${resetDepth} commit(s).`);
-
-                    // Unstage the protected files
-                    committedLeaks.forEach(v => {
-                        try {
-                            execFileSync('git', ['reset', 'HEAD', v], { cwd });
-                            console.log(`   Unstaged (committed): ${v}`);
-                            totalHealed++;
-                        } catch (e) {
-                            // File may not be in index anymore after deep reset
-                        }
-                    });
-
-                    // Re-commit whatever safe files remain staged
-                    const remaining = execFileSync('git', ['diff', '--cached', '--name-only'], { cwd, encoding: 'utf-8' }).trim();
-                    if (remaining) {
-                        execFileSync('git', ['commit', '-m', 'chore: healed by sentinel — protected files removed'], { cwd });
-                        console.log('   ✏️  Re-committed safe files.');
-                    }
-                } else {
-                    // Only staged leaks were found, no more iterations needed
-                    break;
-                }
+            if (analysis.violations.length === 0) {
+                console.log('✅ No leaks found.');
+                if (program.opts().json) respondAgent(true, { healed: 0, committed_leaks: [] });
+                return;
             }
 
-            if (totalHealed === 0) {
-                console.log('✅ No leaks found.');
-            } else {
-                console.log(`✅ Healing complete. Removed ${totalHealed} protected file(s) from git history.`);
+            const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8' });
+            const stagedFiles = new Set(
+                statusOutput.split('\n')
+                    .filter(l => l.length >= 3 && l[0] !== ' ' && l[0] !== '?')
+                    .map(l => normalizePath(l.substring(3).trim()))
+            );
+
+            let stagedLeaks = [];
+            let committedLeaks = [];
+            let totalHealed = 0;
+
+            analysis.violations.forEach(v => {
+                if (stagedFiles.has(normalizePath(v))) stagedLeaks.push(v);
+                else committedLeaks.push(v);
+            });
+
+            // Safely unstage files
+            stagedLeaks.forEach(v => {
+                try {
+                    execFileSync('git', ['restore', '--staged', v], { cwd });
+                    console.log(`   ✅ Unstaged: ${v}`);
+                    totalHealed++;
+                } catch (e) {
+                    try {
+                        execFileSync('git', ['reset', 'HEAD', v], { cwd });
+                        console.log(`   ✅ Unstaged (fallback): ${v}`);
+                        totalHealed++;
+                    } catch (e2) {
+                        console.log(`   ❌ Failed to unstage: ${v}`);
+                    }
+                }
+            });
+
+            if (totalHealed > 0) {
+                console.log(`✅ Healing complete. Safely unstaged ${totalHealed} protected file(s).`);
+            }
+
+            if (committedLeaks.length > 0) {
+                console.log('\n⚠️  MANUAL INTERVENTION REQUIRED FOR COMMITTED LEAKS');
+                console.log('   The following protected files are already inside your commits:');
+                committedLeaks.forEach(v => console.log(`      - ${v}`));
+                console.log('\n   Sentinel avoids rewriting your Git history automatically as it can be destructive.');
+                console.log('   To fix this safely, undo your recent commits:');
+                console.log('      1. Run `git reset HEAD~1` to undo your last commit without losing changes.');
+                console.log('      2. Unstage the protected files using `sentinel heal --leaks`.');
+                console.log('      3. Re-commit your safe files.');
+                console.log('   If you are absolutely certain you want to push anyway, bypass Sentinel with:');
+                console.log('      SENTINEL_BYPASS=1 git push\n');
             }
 
             if (program.opts().json) {
-                respondAgent(true, { healed: totalHealed, iterations: iteration });
+                respondAgent(true, { 
+                    healed: totalHealed, 
+                    staged_leaks_removed: stagedLeaks,
+                    committed_leaks_remaining: committedLeaks 
+                });
             }
         }
     });
