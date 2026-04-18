@@ -12,6 +12,14 @@ try { notifier = require('node-notifier'); } catch (_) {}
 function safeNotify(opts) { try { if (notifier) notifier.notify(opts); } catch (_) {} }
 
 /**
+ * Normalizes paths for reliable comparison on Windows/Unix.
+ */
+function normalizePath(p) {
+    if (!p) return '';
+    return path.resolve(p).toLowerCase().replace(/\\/g, '/');
+}
+
+/**
  * Consistent Response Format for AI Agents
  */
 function respondAgent(success, data, error = null) {
@@ -190,8 +198,6 @@ program
         const gh = require('../backend/lib/gh_bridge');
         const fullPath = path.resolve(localPath);
         
-        if (!program.opts().json) console.log(`Linking repository at ${fullPath}...`);
-        
         const info = gh.getRepoInfoLocal(fullPath);
         if (!info) {
             if (program.opts().json) respondAgent(false, null, "Could not identify GitHub repository. Make sure 'gh' is authenticated.");
@@ -203,7 +209,7 @@ program
         
         // Update path if it changed
         const existing = db.getRepositoryById(repoId);
-        if (existing.local_path !== fullPath) {
+        if (normalizePath(existing.local_path) !== normalizePath(fullPath)) {
             db.updateRepoPath(repoId, fullPath);
         }
 
@@ -260,66 +266,101 @@ program
         if (program.opts().json) respondAgent(true, { scanned: repos.length });
     });
 
+/**
+ * Shared logic for local analysis (used by 'analyze' and 'hook').
+ * Returns { success, alerts, violations, repo }
+ */
+function performLocalAnalysis(options = {}) {
+    const gh = require('../backend/lib/gh_bridge');
+    const db = require('../backend/lib/db');
+    const { scanFile } = require('../backend/scanner/index');
+    const { execFileSync } = require('child_process');
+    const cwd = process.cwd();
+
+    const repos = db.getRepositories();
+    const repo = repos.find(r => r.local_path && normalizePath(r.local_path) === normalizePath(cwd));
+    
+    let violations = [];
+    if (repo) {
+        try {
+            // Get files that are actually STAGED or COMMITTED differently than upstream
+            // For hook mode, we often want to be stricter.
+            const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
+            const changedFiles = statusOutput.split('\n')
+                .filter(l => l.trim().length > 0)
+                // Only care about staged (A, M in first col) or committed changes if we are in 'hook' context
+                .map(l => ({ status: l.substring(0, 2), file: l.substring(3).trim() }));
+            
+            const protectedList = db.getProtectedFiles(repo.id).map(p => normalizePath(p.file_path));
+            
+            for (const item of changedFiles) {
+                const normFile = normalizePath(item.file);
+                const isProtected = protectedList.some(p => normFile === p || normFile.startsWith(p + '/'));
+                
+                // In pre-push hook, only block if it's STAGED or modified in index.
+                // If it's just an untracked file (??) in a protected folder, we might allow it if not staged.
+                // But generally, any file in a protected folder should be ignored by git.
+                if (isProtected) {
+                    if (options.isHook) {
+                        // Only block if staged/committed (not '??' or '  ')
+                        if (item.status[0] !== '?' && item.status[0] !== ' ') violations.push(item.file);
+                    } else {
+                        violations.push(item.file);
+                    }
+                }
+            }
+        } catch (e) { /* ignore git errors */ }
+    }
+
+    let diff = '';
+    if (options.isHook) {
+        // Only scan what is about to be pushed
+        try {
+            diff = execFileSync('git', ['diff', '@{u}..HEAD'], { cwd, encoding: 'utf-8', timeout: 10000 }) || '';
+        } catch (e) {
+            // Fallback: scan last commit if no upstream
+            try { diff = execFileSync('git', ['diff', 'HEAD~1..HEAD'], { cwd, encoding: 'utf-8', timeout: 5000 }) || ''; } catch(e2) {}
+        }
+    } else {
+        diff = gh.getLocalDiff(cwd) || '';
+    }
+
+    const results = scanFile(options.isHook ? 'outgoing.diff' : 'local.diff', diff);
+
+    return {
+        success: true,
+        alerts: results.alerts,
+        violations,
+        repo
+    };
+}
+
 program
     .command('hook <eventName>')
-    .description('Sentinel Git Hook Entrypoint')
-    .option('--reverse', 'Dry-run or securely revert code state instead of blocking')
-    .action((eventName, options) => {
+    .description('Sentinel Git Hook Entrypoint (Blocks pushes on threat/leak)')
+    .action((eventName) => {
         if (eventName === 'pre-push') {
-            console.log("🛡️ [Sentinel] Analyzing outbound commits for security threats...");
-            try {
-                const { execSync } = require('child_process');
-                const { scanFile } = require('../backend/scanner/index');
-                
-                // Diff of what is about to be pushed compared to remote tracking branch
-                let diff = '';
-                try {
-                    diff = execSync('git diff @{u}..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
-                } catch (e) {
-                    // No upstream or other error: fallback to full staged/unpushed diff check via HEAD
-                    try {
-                        diff = execSync('git diff HEAD~1..HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
-                    } catch(e2) {
-                        diff = '';
-                    }
-                }
-                
-                if (diff.trim() === '') {
-                    console.log("🛡️ [Sentinel] No diff found to scan. Proceeding...");
-                    process.exit(0);
-                }
-                
-                const results = scanFile('pre_push_commit.diff', diff);
-                
-                if (results.alerts.length > 0) {
-                    safeNotify({
-                        title: '🚨 Sentinel: Push Blocked!',
-                        message: `Malicious code detected in outbound commits.`,
-                        sound: true
-                    });
-                    
-                    console.error("\\n🚨 [SENTINEL ALERT] Push structurally halted! Malicious code detected in outbound commits:");
-                    results.alerts.forEach(alert => {
-                        console.error(`  - [${alert.riskLevel}] ${alert.ruleName}: ${alert.description}`);
-                    });
-                    
-                    if (options.reverse) {
-                        console.log("\\n♻️ [Reverse Analyzer] --reverse flag enabled. Dry-run noted. State maintained.");
-                        console.log("   To securely revert the malicious commit, run: git reset --soft HEAD~1");
-                        process.exit(0); // In reverse dry-run, we allow it or just exit 0 so to not block if it's a dry run
-                    } else {
-                        console.error("\\n❌ Strict enforcement: Push blocked.");
-                        console.error("   Use 'sentinel hook pre-push --reverse' for dry-run analysis.");
-                        process.exit(1);
-                    }
-                } else {
-                    console.log("✅ [Sentinel] Code changes are clean. Push allowed.");
-                    process.exit(0);
-                }
-            } catch (err) {
-                console.error("🛡️ [Sentinel] Hook error:", err.message);
-                process.exit(0); // Fail-open so we don't break git completely on unrelated errors
+            const analysis = performLocalAnalysis({ isHook: true });
+            
+            const criticals = analysis.alerts.filter(a => (a.riskLevel || 0) >= 8);
+            
+            if (analysis.violations.length > 0) {
+                console.error(`\n🚨 ABORTED: Push blocked by Security Policy.`);
+                console.error(`   The following files are PROTECTED and cannot be leaked:`);
+                analysis.violations.forEach(v => console.error(`   - ${v}`));
+                console.error(`\n   Run 'sentinel heal --leaks' to unstage them.`);
+                process.exit(1);
             }
+
+            if (criticals.length > 0) {
+                console.error(`\n🚨 ABORTED: Push blocked due to ${criticals.length} CRITICAL threats.`);
+                criticals.forEach(a => console.error(`   - [${a.riskLevel}/10] ${a.ruleName}: ${a.description}`));
+                console.error(`\n   Review the threats or run 'sentinel heal --threats' if they are accidental leaks.`);
+                process.exit(1);
+            }
+
+            console.log("✅ [Sentinel] Code changes are clean. Push allowed.\n");
+            process.exit(0);
         }
     });
 
@@ -542,109 +583,120 @@ program
     .command('analyze')
     .description('Analyze local changes before committing')
     .option('--local', 'Scan staged and unstaged git diff for threats')
-    .option('--exclude-protected', 'Automatically unstage (git reset HEAD) any protected files before scanning/committing')
+    .option('--exclude-protected', 'Automatically unstage (git reset HEAD) any protected files')
     .option('--force', 'Bypass protected files block')
     .action(async (options) => {
-        const gh = require('../backend/lib/gh_bridge');
-        const db = require('../backend/lib/db');
-        const { scanFile } = require('../backend/scanner/index');
         const { execFileSync } = require('child_process');
-        const path = require('path');
-        const cwd = process.cwd();
-
         console.log('\n🔍 Sentinel: Analyzing local changes...\n');
 
-        // --- Protected Files Interception ---
-        const repos = db.getRepositories();
-        // Match repo by local path. Use path.resolve for safety.
-        const repo = repos.find(r => r.local_path && path.resolve(r.local_path) === path.resolve(cwd));
-        
-        let protectedBlocked = false;
-        if (repo) {
-            try {
-                const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
-                const changedFiles = statusOutput.split('\n').filter(l => l.trim().length > 0).map(l => l.substring(3).trim());
-                const protectedList = db.getProtectedFiles(repo.id).map(p => path.normalize(p.file_path));
-                
-                const violations = [];
-                for (const file of changedFiles) {
-                    const normFile = path.normalize(file);
-                    const isProtected = protectedList.some(p => normFile === p || normFile.startsWith(p + path.sep));
-                    if (isProtected) violations.push(file);
-                }
+        const analysis = performLocalAnalysis();
+        const cwd = process.cwd();
 
-                if (violations.length > 0) {
-                    console.log(`\n⚠️  PROTECTED FILES DETECTED:`);
-                    violations.forEach(v => console.log(`   - ${v}`));
-                    
-                    if (options.excludeProtected) {
-                        console.log('\n✅ --exclude-protected flag passed. Unstaging protected files...');
-                        violations.forEach(v => {
-                            try {
-                                execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000 });
-                                console.log(`   Unstaged: ${v}`);
-                            } catch (e) {
-                                console.log(`   Failed to unstage: ${v}`);
-                            }
-                        });
-                    } else if (!options.force) {
-                        console.log('\n🚫 BLOCKED: You are attempting to commit protected files.');
-                        console.log('   Use the Sentinel UI to manage this, OR use one of these flags:');
-                        console.log('   --exclude-protected   (Removes them from the commit automatically)');
-                        console.log('   --force               (Bypasses this block and scans/commits anyway)\n');
-                        process.exit(1);
-                    } else {
-                        console.log('\n⚠️  --force flag passed. Bypassing protected files block...\n');
+        if (analysis.violations.length > 0) {
+            console.log(`\n⚠️  PROTECTED FILES DETECTED:`);
+            analysis.violations.forEach(v => console.log(`   - ${v}`));
+            
+            if (options.excludeProtected) {
+                console.log('\n✅ --exclude-protected flag passed. Unstaging protected files...');
+                analysis.violations.forEach(v => {
+                    try {
+                        execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000 });
+                        console.log(`   Unstaged: ${v}`);
+                    } catch (e) {
+                        console.log(`   Failed to unstage: ${v}`);
                     }
-                }
-            } catch (e) {
-                // Ignore git errors if not a git repo
+                });
+            } else if (!options.force) {
+                console.log('\n🚫 BLOCKED: You are attempting to commit protected files.');
+                console.log('   Use: sentinel heal --leaks (to unstage them automatically)');
+                process.exit(1);
             }
         }
 
-        const diff = gh.getLocalDiff(cwd);
-        if (!diff) {
-            console.log('✅ No local changes detected. Working tree is clean.');
-            return;
-        }
+        const criticals = analysis.alerts.filter(a => (a.riskLevel || 0) >= 8);
+        const warnings  = analysis.alerts.filter(a => (a.riskLevel || 0) >= 4 && (a.riskLevel || 0) < 8);
 
-        const linesCount = diff.split('\n').length;
-        console.log(`   Scanning ${linesCount} diff lines...`);
-
-        const results = scanFile('local.diff', diff);
-
-        if (program.opts().json) {
-            respondAgent(true, {
-                alerts: results.alerts,
-                isClean: results.alerts.length === 0,
-                criticalCount: results.alerts.filter(a => (a.riskLevel || 0) >= 8).length
-            });
-        }
-
-        const criticals = results.alerts.filter(a => (a.riskLevel || 0) >= 8);
-        const warnings  = results.alerts.filter(a => (a.riskLevel || 0) >= 4 && (a.riskLevel || 0) < 8);
-
-        if (results.alerts.length === 0) {
+        if (analysis.alerts.length === 0) {
             console.log('✅ No threats detected. Safe to commit.\n');
         } else {
+            console.log(`\n🚨 FOUND ${analysis.alerts.length} POTENTIAL THREATS:\n`);
+            criticals.forEach(a => console.log(`   [CRITICAL] ${a.ruleName}: ${a.description}`));
+            warnings.forEach(a => console.log(`   [WARN] ${a.ruleName}: ${a.description}`));
+
             if (criticals.length > 0) {
-                console.log(`🔴 BLOCKED: ${criticals.length} critical threat(s) detected!\n`);
-                criticals.forEach(a => {
-                    console.log(`   [CRITICAL] ${a.ruleName || 'THREAT'}: ${a.description || 'No description'}`);
-                });
-            }
-            if (warnings.length > 0) {
-                console.log(`\n⚠️  ${warnings.length} warning(s):\n`);
-                warnings.forEach(a => {
-                    console.log(`   [WARN] ${a.ruleName || 'FINDING'}: ${a.description || 'No description'}`);
-                });
-            }
-            if (criticals.length > 0) {
-                console.log('\n❌ Push is NOT recommended until critical issues are resolved.');
+                console.log('\n❌ Commit is NOT recommended. Use sentinel heal --threats to quarantine.');
                 process.exit(1);
             } else {
                 console.log('\n✓ No critical threats. Proceed with caution.\n');
             }
+        }
+    });
+
+// ─── sentinel heal [--leaks/--threats] ───
+program
+    .command('heal')
+    .description('Sentinel Guardian Mode: Automatically fix leaks and contain threats')
+    .option('--leaks', 'Unstage all files belonging to protected folders')
+    .option('--threats', 'Unstage detected threats and move them to quarantine')
+    .action((options) => {
+        const { execFileSync } = require('child_process');
+        const analysis = performLocalAnalysis();
+        const cwd = process.cwd();
+
+        if (options.leaks) {
+            if (analysis.violations.length === 0) {
+                console.log('✅ No protected files detected in the current commit.');
+                return;
+            }
+            console.log('\n🛡️  Sentinel Healing: Unstaging protected files...');
+            analysis.violations.forEach(v => {
+                try {
+                    execFileSync('git', ['reset', 'HEAD', v], { cwd, timeout: 5000 });
+                    console.log(`   Restored: ${v}`);
+                } catch (e) {
+                    console.error(`   Failed to restore ${v}: ${e.message}`);
+                }
+            });
+            console.log('✅ Leaks contained.');
+        }
+
+        if (options.threats) {
+            const highRisks = analysis.alerts.filter(a => (a.riskLevel || 0) >= 7);
+            if (highRisks.length === 0) {
+                console.log('✅ No high-risk threats detected locally.');
+                return;
+            }
+
+            console.log('\n🛡️  Sentinel Healing: Containing threats...');
+            const quarantineDir = path.join(cwd, '.sentinel', 'quarantine');
+            if (!fs.existsSync(quarantineDir)) fs.mkdirSync(quarantineDir, { recursive: true });
+
+            // Since multiple alerts can point to the same file, collect unique filenames
+            const uniqueFiles = [...new Set(analysis.alerts.map(a => a.filename))];
+
+            uniqueFiles.forEach(targetFile => {
+                const fullTargetPath = path.resolve(cwd, targetFile);
+                if (fs.existsSync(fullTargetPath)) {
+                    try {
+                        // Unstage from git first
+                        execFileSync('git', ['reset', 'HEAD', targetFile], { cwd, timeout: 5000 });
+                        
+                        // Copy to quarantine
+                        const dest = path.join(quarantineDir, `${Date.now()}_${targetFile}`);
+                        fs.copyFileSync(fullTargetPath, dest);
+                        
+                        console.log(`   Quarantined: ${targetFile} -> ${path.relative(cwd, dest)}`);
+                        console.log(`   (Successfully unstaged from Git)`);
+                    } catch (e) {
+                        console.error(`   Partial success. Failed to unstage ${targetFile}: ${e.message}`);
+                    }
+                }
+            });
+            console.log('\n✅ Threats contained in quarantine. Review them before proceeding.');
+        }
+
+        if (!options.leaks && !options.threats) {
+            console.log('   Please specify --leaks or --threats. Use --help for details.');
         }
     });
 
@@ -717,19 +769,37 @@ program
         if (!fs.existsSync(hooksDir)) fs.mkdirSync(hooksDir, { recursive: true });
 
         const hookPath = path.join(hooksDir, 'pre-push');
-        const hookContent = `#!/bin/sh
-# Sentinel Security Hook
+        const hookScript = `node "${path.resolve(__dirname, 'index.js')}" hook pre-push`;
+        const hookSignature = '# --- Sentinel Security Hook ---';
+        
+        const hookContent = `\n${hookSignature}
 # Prevents sensitive leaks and malicious code from leaving your machine.
-
-node "${path.resolve(__dirname, 'index.js')}" hook pre-push
+${hookScript}
 if [ $? -ne 0 ]; then
   echo "🚨 [Sentinel] Push blocked by security policy."
   exit 1
 fi
-`;
+# --- End Sentinel Hook ---\n`;
 
         try {
-            fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+            let existingContent = '';
+            if (fs.existsSync(hookPath)) {
+                existingContent = fs.readFileSync(hookPath, 'utf-8');
+            }
+
+            if (existingContent.includes(hookSignature)) {
+                if (program.opts().json) respondAgent(true, { installed: true, alreadyExisted: true });
+                console.log('✅ Sentinel Security Skill is already installed and up to date.');
+                return;
+            }
+
+            // If it doesn't have a shebang, add one
+            if (existingContent.trim() === '') {
+                fs.writeFileSync(hookPath, `#!/bin/sh${hookContent}`, { mode: 0o755 });
+            } else {
+                fs.appendFileSync(hookPath, hookContent);
+            }
+
             if (program.opts().json) respondAgent(true, { installed: true, hook: 'pre-push' });
             console.log('\n✅ Sentinel Security Skill installed successfully!');
             console.log('   Git hook: .git/hooks/pre-push');
