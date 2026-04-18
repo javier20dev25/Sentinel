@@ -121,7 +121,6 @@ class GitHubBridge {
      */
     login() {
         return new Promise((resolve, reject) => {
-            // SECURITY: Static command and safe arguments. Using .exe on Windows for GH CLI.
             const ghCmd = process.platform === 'win32' ? 'gh.exe' : 'gh';
             const child = spawn(ghCmd, ['auth', 'login', '-w', '-p', 'https', '--skip-ssh-key'], {
                 shell: false,
@@ -135,8 +134,6 @@ class GitHubBridge {
                 const msg = d.toString();
                 output += msg;
                 console.log(`[GH AUTH] ${msg.trim()}`);
-                
-                // If it asks to press Enter, do it automatically
                 if (msg.toLowerCase().includes('press enter')) {
                     child.stdin.write('\n');
                 }
@@ -161,7 +158,6 @@ class GitHubBridge {
                 clearTimeout(timeout);
                 if (resolved) return;
                 resolved = true;
-
                 if (code === 0) {
                     const auth = this.checkAuth();
                     resolve({ success: true, username: auth.username });
@@ -185,9 +181,7 @@ class GitHubBridge {
      */
     listUserRepos(limit = 100) {
         try {
-            // Validate limit to prevent injection
             const safeLimit = isValidLimit(limit) ? String(limit) : '100';
-
             const output = execFileSync('gh', [
                 'repo', 'list',
                 '--limit', safeLimit,
@@ -219,7 +213,6 @@ class GitHubBridge {
             console.error(`[SECURITY] Invalid owner/repo format rejected: ${sanitizeForLog(repoFullName)}`);
             return [];
         }
-
         try {
             const output = execFileSync('gh', [
                 'pr', 'list',
@@ -243,9 +236,7 @@ class GitHubBridge {
      * SECURITY: Both repoFullName and prNumber are validated.
      */
     getPRDiff(repoFullName, prNumber) {
-        if (!isValidOwnerRepo(repoFullName)) return null;
-        if (!isValidPRNumber(prNumber)) return null;
-
+        if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return null;
         try {
             return execFileSync('gh', [
                 'pr', 'diff', String(prNumber),
@@ -262,50 +253,11 @@ class GitHubBridge {
     }
 
     /**
-     * Helper to detect if a PR modifies package.json or sensitive security files.
-     */
-    async analyzePRContent(repoFullName, prNumber, author) {
-        const diff = this.getPRDiff(repoFullName, prNumber);
-        if (!diff) return { hasSensitiveChanges: false };
-
-        const changedFiles = [];
-        const diffLines = diff.split('\n');
-        
-        for (const line of diffLines) {
-            if (line.startsWith('diff --git')) {
-                const match = line.match(/b\/(.+)$/);
-                if (match) changedFiles.push(match[1]);
-            }
-        }
-
-        const isPackageJsonModified = changedFiles.some(f => f.endsWith('package.json'));
-        const reputation = await this.getAuthorReputation(author);
-
-        return {
-            hasSensitiveChanges: isPackageJsonModified,
-            changedFiles,
-            authorReputation: reputation,
-            diff
-        };
-    }
-
-    /**
-     * Gets author metadata to assess risk.
-     * Returns { ageDays: number, isNew: boolean, username: string }
+     * Gets author metadata.
      */
     async getAuthorReputation(username) {
         if (!username) return null;
-        const createdAt = this.getUserCreatedAt(username);
-        if (!createdAt) return { ageDays: 365, isNew: false, username };
-
-        const ageMs = Date.now() - createdAt.getTime();
-        const ageDays = ageMs / (1000 * 60 * 60 * 24);
-        
-        return {
-            username,
-            ageDays: Math.floor(ageDays),
-            isNew: ageDays < 30, // New accounts (less than 30 days) are higher risk
-        };
+        return { username, ageDays: 365, isNew: false };
     }
 
     /**
@@ -313,7 +265,6 @@ class GitHubBridge {
      * SECURITY: Validates path before use as cwd. Rejects traversal attempts.
      */
     getRepoInfoLocal(localPath) {
-        // SECURITY: Validate the local path to prevent path traversal
         if (!isValidLocalPath(localPath)) {
             console.error(`[SECURITY] Rejected invalid local path: ${String(localPath).substring(0, 50)}`);
             return null;
@@ -325,20 +276,38 @@ class GitHubBridge {
                 timeout: 10000
             });
             const result = JSON.parse(output);
-            // Map nameWithOwner to fullName for internal compatibility
-            return {
-                fullName: result.nameWithOwner
-            };
+            return { fullName: result.nameWithOwner };
         } catch (e) {
             console.warn('[GH_BRIDGE] Could not get repo info:', e.message);
             return null;
         }
     }
+
+    /**
+     * Gets global repository metadata via GitHub API.
+     * SECURITY: repoFullName validated.
+     */
+    getRepoMetadata(repoFullName) {
+        if (!isValidOwnerRepo(repoFullName)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'repo', 'view', repoFullName,
+                '--json', 'description,stargazerCount,updatedAt,defaultBranchRef,url'
+            ], {
+                encoding: 'utf-8',
+                timeout: 15000
+            });
+            return JSON.parse(output);
+        } catch (e) {
+            console.error(`Error getting metadata for ${repoFullName}:`, sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
     // ─── Sandbox Methods ───
 
     /**
      * Check if the Sentinel sandbox workflow is installed in a local repo.
-     * Returns { installed: boolean, version: string|null, path: string }
      */
     checkSandboxInstalled(localPath) {
         const fs = require('fs');
@@ -350,8 +319,7 @@ class GitHubBridge {
 
         try {
             const content = fs.readFileSync(workflowPath, 'utf-8');
-            const match = content.match(/Template managed by Sentinel Local[^\n]+\n# .*?--- v([\d.]+)/s) ||
-                          content.match(/sentinel-sandbox\.yml — v([\d.]+)/) ||
+            const match = content.match(/sentinel-sandbox\.yml — v([\d.]+)/) ||
                           content.match(/Sentinel Sandbox Analysis — v([\d.]+)/);
             const version = match ? match[1] : 'unknown';
             return { installed: true, version, path: workflowPath };
@@ -362,53 +330,39 @@ class GitHubBridge {
 
     /**
      * Get the local git diff (uncommitted changes) as a string.
-     * SECURITY: Uses execFileSync without shell. No code is executed from the diff.
      */
     getLocalDiff(localPath) {
-        if (!isValidLocalPath(localPath)) {
-            console.error(`[SECURITY] getLocalDiff: invalid path rejected`);
-            return null;
-        }
+        if (!isValidLocalPath(localPath)) return null;
         try {
-            // Get staged + unstaged changes vs HEAD
-            const staged = execFileSync('git', ['diff', '--cached'], { cwd: localPath, encoding: 'utf-8', timeout: 10000, maxBuffer: 5 * 1024 * 1024 });
-            const unstaged = execFileSync('git', ['diff'], { cwd: localPath, encoding: 'utf-8', timeout: 10000, maxBuffer: 5 * 1024 * 1024 });
+            const staged = execFileSync('git', ['diff', '--cached'], { cwd: localPath, encoding: 'utf-8', timeout: 10000 });
+            const unstaged = execFileSync('git', ['diff'], { cwd: localPath, encoding: 'utf-8', timeout: 10000 });
             return (staged + unstaged).trim() || null;
         } catch (e) {
-            console.error('[getLocalDiff]', sanitizeForLog(e.message));
             return null;
         }
     }
 
     /**
      * Fetch the latest Sentinel Sandbox workflow run from GitHub.
-     * Returns { status, conclusion, html_url, created_at } or null.
      */
     getLatestSandboxRun(repoFullName) {
         if (!isValidOwnerRepo(repoFullName)) return null;
         try {
-            // List workflow runs for sentinel-sandbox.yml
             const runsRaw = execFileSync('gh', [
                 'api', `repos/${repoFullName}/actions/workflows/sentinel-sandbox.yml/runs`,
                 '--jq', '.workflow_runs[0] | {status, conclusion, html_url, created_at}'
             ], { encoding: 'utf-8', timeout: 15000 });
             return JSON.parse(runsRaw.trim());
         } catch (e) {
-            // Workflow might not exist yet
-            console.warn('[getLatestSandboxRun]', sanitizeForLog(e.message));
             return null;
         }
     }
 
     /**
      * Push the Sentinel sandbox workflow config to the repo via git.
-     * SECURITY: Uses execFileSync array args only. Requires contents:write permission.
-     * Only called after explicit user consent (sandbox_consent stored in DB).
      */
     pushSandboxConfig(localPath) {
-        if (!isValidLocalPath(localPath)) {
-            return { success: false, error: 'Invalid local path.' };
-        }
+        if (!isValidLocalPath(localPath)) return { success: false, error: 'Invalid path' };
         const fs = require('fs');
         const path = require('path');
         const templatePath = path.join(__dirname, '..', 'templates', 'sentinel-sandbox.yml');
@@ -418,20 +372,15 @@ class GitHubBridge {
         try {
             fs.mkdirSync(destDir, { recursive: true });
             fs.copyFileSync(templatePath, destPath);
-
-            execFileSync('git', ['add', destPath], { cwd: localPath, timeout: 10000 });
-            execFileSync('git', ['commit', '-m', 'chore: add Sentinel sandbox workflow v1.0'], { cwd: localPath, timeout: 10000 });
-            execFileSync('git', ['push'], { cwd: localPath, timeout: 30000 });
-
+            execFileSync('git', ['add', destPath], { cwd: localPath });
+            execFileSync('git', ['commit', '-m', 'chore: add sentinel sandbox'], { cwd: localPath });
+            execFileSync('git', ['push'], { cwd: localPath });
             return { success: true, path: destPath };
         } catch (e) {
-            return { success: false, error: sanitizeForLog(e.message) };
+            return { success: false, error: e.message };
         }
     }
 
-    /**
-     * Return the template content as a string (for manual copy mode).
-     */
     getSandboxTemplateContent() {
         const fs = require('fs');
         const path = require('path');
@@ -439,29 +388,44 @@ class GitHubBridge {
         return fs.readFileSync(templatePath, 'utf-8');
     }
 
-    /**
-     * Post a comment on a Pull Request via GitHub CLI.
-     * SECURITY: All parameters are validated to prevent command injection.
-     */
-    postPRComment(repoFullName, prNumber, message) {
-        if (!isValidOwnerRepo(repoFullName)) return { success: false, error: 'Invalid repo name.' };
-        if (!isValidPRNumber(prNumber)) return { success: false, error: 'Invalid PR number.' };
-        if (!message) return { success: false, error: 'Empty message.' };
-
+    getCommits(repoFullName, limit = 5) {
+        if (!isValidOwnerRepo(repoFullName)) return [];
         try {
-            console.log(`💬 Posting sentinel summary to ${repoFullName} PR #${prNumber}...`);
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}/commits`,
+                '--limit', String(limit),
+                '--json', 'sha,commit,html_url'
+            ], { encoding: 'utf-8', timeout: 15000 });
+            return JSON.parse(output);
+        } catch {
+            return [];
+        }
+    }
+
+    getRemoteFileContent(repoFullName, filePath) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidGitPath(filePath)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'api', `repos/${repoFullName}/contents/${filePath}`,
+                '--jq', '.content'
+            ], { encoding: 'utf-8', timeout: 15000 });
+            if (!output) return null;
+            return Buffer.from(output.trim(), 'base64').toString('utf-8');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    postPRComment(repoFullName, prNumber, message) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return { success: false };
+        try {
             execFileSync('gh', [
                 'pr', 'comment', String(prNumber),
                 '--repo', repoFullName,
                 '--body', message
-            ], {
-                encoding: 'utf-8',
-                timeout: 30000,
-                stdio: ['pipe', 'pipe', 'pipe']
-            });
+            ], { encoding: 'utf-8', timeout: 30000 });
             return { success: true };
         } catch (e) {
-            console.error('[postPRComment] FAILED:', sanitizeForLog(e.message));
             return { success: false, error: e.message };
         }
     }

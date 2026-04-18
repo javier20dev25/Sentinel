@@ -12,6 +12,9 @@
     "service": "node src/ui/backend/services/polling.js",
     "ui": "npm --prefix src/ui run electron:dev",
     "start": "node src/start.js",
+    "sentinel-link": "node src/ui/cli/index.js link",
+    "sentinel-list": "node src/ui/cli/index.js list",
+    "sentinel-scan": "node src/ui/cli/index.js scan",
     "test": "node src/ui/backend/scanner/test_scanner.js"
   },
   "keywords": [],
