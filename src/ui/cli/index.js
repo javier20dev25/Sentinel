@@ -294,27 +294,51 @@ function performLocalAnalysis(options = {}) {
     let violations = [];
     if (repo) {
         try {
-            // Get files that are actually STAGED or COMMITTED differently than upstream
-            // For hook mode, we often want to be stricter.
+            // --- Source 1: Staged but uncommitted files (git status) ---
             const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
             const changedFiles = statusOutput.split('\n')
                 .filter(l => l.trim().length > 0)
-                // Only care about staged (A, M in first col) or committed changes if we are in 'hook' context
                 .map(l => ({ status: l.substring(0, 2), file: l.substring(3).trim() }));
             
+            // --- Source 2: Committed but unpushed files (for prepush/hook mode) ---
+            // git status becomes empty after commit, so we also check what's about to be pushed.
+            let unpushedFiles = [];
+            if (options.isHook) {
+                try {
+                    const unpushedOutput = execFileSync('git', ['diff', '--name-only', '@{upstream}..HEAD'], { cwd, encoding: 'utf-8', timeout: 5000 });
+                    unpushedFiles = unpushedOutput.split('\n')
+                        .filter(l => l.trim().length > 0)
+                        .map(f => ({ status: 'C ', file: f.trim() })); // 'C ' = committed
+                } catch (e) {
+                    // No upstream set — try comparing with HEAD~1
+                    try {
+                        const fallbackOutput = execFileSync('git', ['diff', '--name-only', 'HEAD~1..HEAD'], { cwd, encoding: 'utf-8', timeout: 5000 });
+                        unpushedFiles = fallbackOutput.split('\n')
+                            .filter(l => l.trim().length > 0)
+                            .map(f => ({ status: 'C ', file: f.trim() }));
+                    } catch (e2) { /* no history yet */ }
+                }
+            }
+
+            // Merge both sources, deduplicate by filename
+            const allFiles = [...changedFiles];
+            const existingFiles = new Set(changedFiles.map(c => normalizePath(c.file)));
+            for (const uf of unpushedFiles) {
+                if (!existingFiles.has(normalizePath(uf.file))) {
+                    allFiles.push(uf);
+                }
+            }
+
             const protectedList = db.getProtectedFiles(repo.id).map(p => normalizePath(p.file_path));
             
-            for (const item of changedFiles) {
+            for (const item of allFiles) {
                 const normFile = normalizePath(item.file);
                 const isProtected = protectedList.some(p => normFile === p || normFile.startsWith(p + '/'));
                 
-                // In pre-push hook, only block if it's STAGED or modified in index.
-                // If it's just an untracked file (??) in a protected folder, we might allow it if not staged.
-                // But generally, any file in a protected folder should be ignored by git.
                 if (isProtected) {
                     if (options.isHook) {
-                        // Only block if staged/committed (not '??' or '  ')
-                        if (item.status[0] !== '?' && item.status[0] !== ' ') violations.push(item.file);
+                        // Block staged, modified, or committed files (not untracked '??')
+                        if (item.status[0] !== '?') violations.push(item.file);
                     } else {
                         violations.push(item.file);
                     }
