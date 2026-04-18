@@ -100,28 +100,24 @@ class SentinelDB {
                 FOREIGN KEY(repo_id) REFERENCES repositories(id)
             );
 
-            CREATE TABLE IF NOT EXISTS system_config (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS prohibited_assets (
+            CREATE TABLE IF NOT EXISTS repo_packs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 repo_id INTEGER,
-                path TEXT,
-                prohibited BOOLEAN DEFAULT 1,
-                FOREIGN KEY(repo_id) REFERENCES repositories(id),
-                UNIQUE(repo_id, path)
+                name TEXT,
+                version TEXT,
+                author TEXT,
+                is_official BOOLEAN DEFAULT 0,
+                config_json TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                installed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(repo_id) REFERENCES repositories(id)
             );
 
-            CREATE TABLE IF NOT EXISTS audit_logs (
+            CREATE TABLE IF NOT EXISTS protected_files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 repo_id INTEGER,
-                event_type TEXT, -- 'PUSH', 'DETECTION', 'ASSET_TOGGLE', 'SHIELD_HARDEN'
-                description TEXT,
-                target TEXT,
-                commit_hash TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                file_path TEXT,
+                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(repo_id) REFERENCES repositories(id)
             );
         `);
@@ -132,7 +128,23 @@ class SentinelDB {
             if (!hasPinned) {
                 this.db.exec('ALTER TABLE scan_logs ADD COLUMN pinned BOOLEAN DEFAULT 0');
             }
-        } catch (err) {}
+        } catch (err) {
+            console.error('[DB] Migration failed:', err.message);
+        }
+
+        // Migration: Add sandbox columns to repositories if they don't exist
+        try {
+            const repoCols = this.db.prepare("PRAGMA table_info(repositories)").all();
+            const colNames = repoCols.map(c => c.name);
+            if (!colNames.includes('sandbox_consent')) {
+                this.db.exec('ALTER TABLE repositories ADD COLUMN sandbox_consent BOOLEAN DEFAULT 0');
+            }
+            if (!colNames.includes('sandbox_version')) {
+                this.db.exec('ALTER TABLE repositories ADD COLUMN sandbox_version TEXT DEFAULT NULL');
+            }
+        } catch (err) {
+            console.error('[DB] Sandbox migration failed:', err.message);
+        }
     }
 
     // --- Audit Logs ---
@@ -159,7 +171,6 @@ class SentinelDB {
         `).all(repoId);
     }
 
-    // --- Repositories ---
     addRepository(localPath, githubName) {
         if (githubName) {
             const existing = this.db.prepare('SELECT id FROM repositories WHERE github_full_name = ?').get(githubName);
@@ -169,6 +180,11 @@ class SentinelDB {
         const stmt = this.db.prepare('INSERT OR IGNORE INTO repositories (local_path, github_full_name) VALUES (?, ?)');
         const info = stmt.run(pathVal, githubName);
         return info.lastInsertRowid;
+    }
+
+    updateRepoPath(repoId, localPath) {
+        const stmt = this.db.prepare('UPDATE repositories SET local_path = ? WHERE id = ?');
+        return stmt.run(localPath, repoId).changes > 0;
     }
 
     deleteRepository(repoId) {
@@ -248,10 +264,111 @@ class SentinelDB {
         return row ? row.value : null;
     }
 
-    setSystemConfig(key, value) {
-        const stmt = this.db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
-        const info = stmt.run(key, value);
+    deleteRepository(repoId) {
+        // First delete dependent records
+        this.db.prepare('DELETE FROM protected_files WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM repo_packs WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM security_config WHERE repo_id = ?').run(repoId);
+        this.db.prepare('DELETE FROM scan_logs WHERE repo_id = ?').run(repoId);
+        
+        const stmt = this.db.prepare('DELETE FROM repositories WHERE id = ?');
+        const info = stmt.run(repoId);
         return info.changes > 0;
+    }
+
+    setSandboxConsent(repoId, consented) {
+        const stmt = this.db.prepare('UPDATE repositories SET sandbox_consent = ? WHERE id = ?');
+        return stmt.run(consented ? 1 : 0, repoId).changes > 0;
+    }
+
+    setSandboxVersion(repoId, version) {
+        const stmt = this.db.prepare('UPDATE repositories SET sandbox_version = ? WHERE id = ?');
+        return stmt.run(version, repoId).changes > 0;
+    }
+
+    // --- Config Packs (Phase 13) ---
+    installPack(repoId, packData, isOfficial) {
+        const stmt = this.db.prepare(`
+            INSERT INTO repo_packs (repo_id, name, version, author, is_official, config_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const info = stmt.run(
+            repoId, 
+            packData.metadata.name || 'Unknown Pack', 
+            packData.metadata.version || '1.0.0', 
+            packData.metadata.author || 'Unknown', 
+            isOfficial ? 1 : 0, 
+            JSON.stringify(packData.config || {})
+        );
+        return info.lastInsertRowid;
+    }
+
+    getRepoPacks(repoId) {
+        return this.db.prepare('SELECT id, repo_id, name, version, author, is_official, is_active, installed_at FROM repo_packs WHERE repo_id = ? ORDER BY installed_at DESC').all(repoId);
+    }
+
+    togglePack(packId, active) {
+        const stmt = this.db.prepare('UPDATE repo_packs SET is_active = ? WHERE id = ?');
+        return stmt.run(active ? 1 : 0, packId).changes > 0;
+    }
+
+    deletePack(packId) {
+        const stmt = this.db.prepare('DELETE FROM repo_packs WHERE id = ?');
+        return stmt.run(packId).changes > 0;
+    }
+
+    getEffectiveConfig(repoId) {
+        // 1. Get base config (or defaults if missing)
+        const baseConfigStmt = this.db.prepare('SELECT strict_mode, ignore_scripts, auto_scan_pr FROM security_config WHERE repo_id = ?').get(repoId);
+        
+        // Defaults if base is missing
+        let effective = baseConfigStmt ? {
+            strict_mode: !!baseConfigStmt.strict_mode,
+            ignore_scripts: !!baseConfigStmt.ignore_scripts,
+            auto_scan_pr: !!baseConfigStmt.auto_scan_pr
+        } : {
+            strict_mode: false,
+            ignore_scripts: true,
+            auto_scan_pr: true
+        };
+
+        // 2. Get active packs, ordered by ASC so the latest one overrides
+        const activePacks = this.db.prepare('SELECT config_json FROM repo_packs WHERE repo_id = ? AND is_active = 1 ORDER BY installed_at ASC').all(repoId);
+        
+        for (const pack of activePacks) {
+            try {
+                const config = JSON.parse(pack.config_json);
+                effective = { ...effective, ...config }; // Merge!
+            } catch (e) {
+                console.error('[DB] Failed to parse pack config:', e);
+            }
+        }
+        
+        return effective;
+    }
+
+    resetPacks(repoId) {
+        const stmt = this.db.prepare('DELETE FROM repo_packs WHERE repo_id = ?');
+        return stmt.run(repoId).changes > 0;
+    }
+
+    // --- Protected Files (Phase 14) ---
+    getProtectedFiles(repoId) {
+        return this.db.prepare('SELECT * FROM protected_files WHERE repo_id = ? ORDER BY added_at DESC').all(repoId);
+    }
+
+    addProtectedFile(repoId, filePath) {
+        // Evitar duplicados
+        const exists = this.db.prepare('SELECT id FROM protected_files WHERE repo_id = ? AND file_path = ?').get(repoId, filePath);
+        if (exists) return exists.id;
+
+        const stmt = this.db.prepare('INSERT INTO protected_files (repo_id, file_path) VALUES (?, ?)');
+        return stmt.run(repoId, filePath).lastInsertRowid;
+    }
+
+    removeProtectedFile(id) {
+        const stmt = this.db.prepare('DELETE FROM protected_files WHERE id = ?');
+        return stmt.run(id).changes > 0;
     }
 }
 

@@ -1,5 +1,9 @@
 /**
  * Sentinel: Scanner Test Suite (Midu-style Exploit Simulation)
+ * 
+ * IMPORTANT NOTE FOR AUDITORS: 
+ * This file and its contents only contain DUMMY payloads meant for testing the scanner.
+ * Not real malware or secrets. They are simulated purely for functional tests.
  */
 
 const { scanFile } = require('./index');

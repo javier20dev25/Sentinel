@@ -33,48 +33,40 @@
 name: "🛡️ Sentinel Sandbox Analysis"
 
 on:
-  # Disparado manualmente (el usuario puede lanzarlo desde la UI de GitHub)
   workflow_dispatch:
     inputs:
       target_branch:
-        description: "Rama a analizar (default: rama actual)"
+        description: "Rama a analizar"
         required: false
         default: ""
         type: string
       debug_mode:
-        description: "Activar logging detallado (ACTIONS_STEP_DEBUG)"
+        description: "Activar logging detallado"
         required: false
         default: false
         type: boolean
 
-  # Disparado programáticamente por Sentinel CLI vía repository_dispatch
   repository_dispatch:
     types: [sentinel-sandbox-run]
 
-# Permisos mínimos necesarios — sin acceso de escritura
+# Permisos necesarios para reportar en el PR and leer el código
 permissions:
   contents: read
   actions: read
+  pull-requests: write
+  issues: write
 
 jobs:
   sentinel-sandbox:
     name: "Sentinel Dynamic Analysis"
     runs-on: ubuntu-latest
-
-    # Límite de tiempo: 15 minutos máximo para evitar costos si algo falla
     timeout-minutes: 15
 
     steps:
-      # ── PASO 0: Harden-Runner (Monitoreo de Egress) ────────────────────────
-      # Para repos PÚBLICOS: Harden-Runner es gratuito y da visibilidad completa.
-      # Para repos PRIVADOS: Comenta este paso y usa el de netstat más abajo.
-      # Referencia: https://github.com/step-security/harden-runner
       - name: "🔒 Habilitar monitoreo de red (Harden-Runner)"
         uses: step-security/harden-runner@v2
         with:
-          # "audit" permite todo pero registra. Cambiar a "block" para bloquear activamente.
           egress-policy: audit
-          # Dominios permitidos explícitamente (todo lo demás se registra como anomalía)
           allowed-endpoints: >
             registry.npmjs.org:443
             registry.yarnpkg.com:443
@@ -82,96 +74,36 @@ jobs:
             api.github.com:443
             objects.githubusercontent.com:443
 
-      # ── PASO 1: Checkout del código ───────────────────────────────────────
       - name: "📥 Checkout"
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.target_branch || github.head_ref || github.ref_name }}
-          # Profundidad mínima — no necesitamos historial completo
           fetch-depth: 1
 
-      # ── PASO 2: Setup de Node.js ──────────────────────────────────────────
       - name: "⚙️ Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          # No usar cache aquí — queremos ver el estado real de la instalación
 
-      # ── PASO 3: Snapshot PRE-INSTALL ─────────────────────────────────────
-      # Capturamos el estado ANTES de instalar para detectar diferencias
       - name: "📸 Snapshot pre-instalación"
         run: |
           echo "=== SENTINEL PRE-INSTALL SNAPSHOT ===" > /tmp/sentinel-pre.txt
-          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> /tmp/sentinel-pre.txt
+          cp package-lock.json /tmp/before-lock.json 2>/dev/null || echo "{}" > /tmp/before-lock.json
+          ss -tunp 2>/dev/null > /tmp/netstat-before.txt || echo "netstat not available" > /tmp/netstat-before.txt
 
-          # Guardar lockfile para comparar después
-          cp package-lock.json /tmp/before-lock.json 2>/dev/null \
-            || echo "No package-lock.json found" > /tmp/before-lock.json
-
-          # Guardar conexiones de red ACTIVAS antes de instalar
-          # (alternativa a Harden-Runner para repos privados)
-          ss -tunp 2>/dev/null > /tmp/netstat-before.txt \
-            || netstat -tunp 2>/dev/null > /tmp/netstat-before.txt \
-            || echo "netstat/ss not available" > /tmp/netstat-before.txt
-
-          # Variables de entorno npm actuales
-          env | grep -i npm 2>/dev/null > /tmp/npm-env.txt || true
-
-          echo "Pre-snapshot completado." >> /tmp/sentinel-pre.txt
-
-      # ── PASO 4: Instalación CON --ignore-scripts (baseline seguro) ────────
-      # Se instala con ignore-scripts para ver qué trae el lockfile sin ejecutar
-      # hooks posiblemente maliciosos. El análisis de comportamiento se hace
-      # sobre los ARCHIVOS resultantes, no ejecutando los scripts.
-      - name: "📦 npm ci --ignore-scripts (instalación controlada)"
+      - name: "📦 npm ci --ignore-scripts"
         run: |
-          npm ci --ignore-scripts --no-audit 2>&1 | tee /tmp/npm-install-output.txt || true
+          npm ci --ignore-scripts --no-audit | tee /tmp/npm-install-output.txt || true
         env:
-          # Forzar no-color para logs más limpios
           NO_COLOR: "1"
 
-      # ── PASO 5: Snapshot POST-INSTALL ────────────────────────────────────
       - name: "🔍 Análisis post-instalación"
         run: |
-          echo "=== SENTINEL POST-INSTALL ANALYSIS ===" > /tmp/sentinel-post.txt
-          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> /tmp/sentinel-post.txt
+          diff /tmp/before-lock.json package-lock.json > /tmp/lockfile-diff.txt 2>/dev/null || echo "No diff" > /tmp/lockfile-diff.txt
+          ss -tunp 2>/dev/null > /tmp/netstat-after.txt || echo "netstat not available" > /tmp/netstat-after.txt
+          find node_modules -name "*.wasm" -type f 2>/dev/null > /tmp/wasm-files.txt || echo "No WASM" > /tmp/wasm-files.txt
+          find node_modules -type f -executable -not -name "*.sh" 2>/dev/null | head -50 > /tmp/executables.txt || echo "No Execs" > /tmp/executables.txt
 
-          # Diff del lockfile (detecta phantom deps o manifest-swaps)
-          diff /tmp/before-lock.json package-lock.json > /tmp/lockfile-diff.txt 2>/dev/null \
-            || echo "No diff found or error" > /tmp/lockfile-diff.txt
-
-          # Conexiones de red DESPUÉS de instalar
-          ss -tunp 2>/dev/null > /tmp/netstat-after.txt \
-            || netstat -tunp 2>/dev/null > /tmp/netstat-after.txt \
-            || echo "netstat/ss not available" > /tmp/netstat-after.txt
-
-          # Diferencia de conexiones (lo que se abrió durante la instalación)
-          diff /tmp/netstat-before.txt /tmp/netstat-after.txt > /tmp/netstat-diff.txt 2>/dev/null || true
-
-          # Detectar archivos .wasm creados (vector de WASM dropper)
-          find node_modules -name "*.wasm" -type f 2>/dev/null > /tmp/wasm-files.txt \
-            || echo "No .wasm files found" > /tmp/wasm-files.txt
-
-          # Detectar binarios ejecutables en node_modules (no deberían existir normalmente)
-          find node_modules -type f -executable -not -name "*.sh" 2>/dev/null \
-            | head -50 > /tmp/executables.txt \
-            || echo "No executables found" > /tmp/executables.txt
-
-          # Listar scripts de lifecycle en todos los package.json de node_modules
-          # Esto permite a Sentinel analizar scripts de sub-dependencias
-          find node_modules -name "package.json" -not -path "*/node_modules/*/node_modules/*" \
-            -exec grep -l '"scripts"' {} \; 2>/dev/null \
-            | head -100 > /tmp/packages-with-scripts.txt || true
-
-          echo "Post-analysis completado." >> /tmp/sentinel-post.txt
-          echo "=== SUMMARY ===" >> /tmp/sentinel-post.txt
-          echo "WASM files: $(wc -l < /tmp/wasm-files.txt)" >> /tmp/sentinel-post.txt
-          echo "Executables: $(wc -l < /tmp/executables.txt)" >> /tmp/sentinel-post.txt
-          echo "Packages with scripts: $(wc -l < /tmp/packages-with-scripts.txt)" >> /tmp/sentinel-post.txt
-
-      # ── PASO 6: Subir telemetría como artefacto ───────────────────────────
-      # Sentinel CLI descarga este artefacto con GET /actions/artifacts
-      # y lo analiza para detectar comportamientos anómalos.
       - name: "📤 Subir telemetría Sentinel"
         uses: actions/upload-artifact@v4
         with:
@@ -179,29 +111,36 @@ jobs:
           path: |
             /tmp/lockfile-diff.txt
             /tmp/wasm-files.txt
-            /tmp/netstat-diff.txt
-            /tmp/npm-env.txt
+            /tmp/netstat-after.txt
             /tmp/npm-install-output.txt
             /tmp/executables.txt
-            /tmp/packages-with-scripts.txt
-            /tmp/sentinel-pre.txt
-            /tmp/sentinel-post.txt
-          # Retener 7 días (suficiente para análisis forense)
           retention-days: 7
-          # Si no hay archivos (instalación falló), no fallar el workflow
-          if-no-files-found: warn
 
-      # ── PASO 7: Resumen en GitHub Actions Summary ─────────────────────────
       - name: "📊 Resumen de análisis"
         if: always()
         run: |
           echo "## 🛡️ Sentinel Sandbox Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| WASM files detectados | $(cat /tmp/wasm-files.txt | grep -v 'No .wasm' | wc -l) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Binarios ejecutables | $(cat /tmp/executables.txt | grep -v 'No executables' | wc -l) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Cambios en lockfile | $(cat /tmp/lockfile-diff.txt | wc -l) líneas |" >> $GITHUB_STEP_SUMMARY
-          echo "| Conexiones nuevas | $(cat /tmp/netstat-diff.txt | grep '^>' | wc -l) |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Artefacto 'sentinel-telemetry' disponible para descarga y análisis profundo." >> $GITHUB_STEP_SUMMARY
+          echo "| WASM Files | $(grep -v 'No WASM' /tmp/wasm-files.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Executables | $(grep -v 'No Execs' /tmp/executables.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: "💬 Post Security Summary to PR"
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          script: |
+             const fs = require('fs');
+             const wasm = fs.readFileSync('/tmp/wasm-files.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No WASM')).length;
+             const execs = fs.readFileSync('/tmp/executables.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No Execs')).length;
+             
+             if (wasm > 0 || execs > 0) {
+               const body = `## 🛡️ Sentinel: Threat Detected!
+               Anomalies found in PR #${context.issue.number}. WASM: ${wasm}, Execs: ${execs}.`;
+               github.rest.issues.createComment({
+                 issue_number: context.issue.number,
+                 owner: context.repo.owner,
+                 repo: context.repo.repo,
+                 body: body
+               });
+             }

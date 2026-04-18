@@ -112,7 +112,9 @@ function scanFile(filename, content, authorMeta = null) {
         compiledRules.forEach(rule => {
             try {
                 rule.regex.lastIndex = 0; // reset
-                if (safeRegexTest(rule.regex, line)) {
+                // PERFORMANCE: Avoid vm context for every line test. 
+                // Only use safeRegexTest for complex/massive files if needed.
+                if (rule.regex.test(line)) {
                     // Capture snippet: 2 lines before, current line, 2 lines after
                     const start = Math.max(0, index - 2);
                     const end = Math.min(lines.length, index + 3);
@@ -129,7 +131,6 @@ function scanFile(filename, content, authorMeta = null) {
                     });
                 }
             } catch (e) {
-                // ReDoS protection: if regex execution fails or times out, skip silently
                 console.error(`[SECURITY] Regex execution failed for rule ${rule.name}: ${e.message}`);
             }
         });

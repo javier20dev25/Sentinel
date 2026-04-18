@@ -7,15 +7,15 @@
     "sentinel": "src/ui/cli/index.js"
   },
   "scripts": {
-    "scan": "node src/scanner/index.js",
-    "dashboard": "node src/server/index.js",
-    "service": "node src/services/polling.js",
-    "ui": "cd src/ui && npx tauri dev",
+    "scan": "node src/ui/backend/scanner/index.js",
+    "dashboard": "node src/ui/backend/server/index.js",
+    "service": "node src/ui/backend/services/polling.js",
+    "ui": "npm --prefix src/ui run electron:dev",
     "start": "node src/start.js",
-    "sentinel-link": "node src/cli/index.js link",
-    "sentinel-list": "node src/cli/index.js list",
-    "sentinel-scan": "node src/cli/index.js scan",
-    "test": "jest --config jest.config.js"
+    "sentinel-link": "node src/ui/cli/index.js link",
+    "sentinel-list": "node src/ui/cli/index.js list",
+    "sentinel-scan": "node src/ui/cli/index.js scan",
+    "test": "node src/ui/backend/scanner/test_scanner.js"
   },
   "keywords": [],
   "author": "",

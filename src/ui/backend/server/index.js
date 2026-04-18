@@ -17,6 +17,8 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const yaml = require('js-yaml');
 const db = require('../lib/db');
 const gh = require('../lib/gh_bridge');
 const git = require('../lib/git_bridge');
@@ -46,6 +48,9 @@ function emitSse(intent) {
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+// Ed25519 Public Key for Oficial Sentinel Lab Packs
+const SENTINEL_LAB_PUB_KEY = "MCowBQYDK2VwAyEA2wvghIjoNvPuAQ3fEeFVbcLbpNigUR4DJJy24Q6JlB0=";
 
 const app = express();
 const PORT = 3001;
@@ -252,17 +257,21 @@ app.get('/api/repositories', (req, res) => {
         const repos = db.getRepositories();
         const reposWithLogs = repos.map(repo => {
             const logs = db.getLogsByRepoFilter(repo.id);
-            let score = 100;
             
-            const hardenerStatus = hardener.getSwitchesStatus();
-            const isHardenerActive = hardenerStatus ? hardenerStatus.npmIgnoreScripts : false;
-            const gHooksActive = gitHooks.isInstalled();
+            // Calculate Security Posture Score (0-100) using Effective Config
+            let score = 100;
+            const effectiveConfig = db.getEffectiveConfig(repo.id);
+            const isHardenerActive = effectiveConfig.ignore_scripts !== false; 
+            const isStrictMode = effectiveConfig.strict_mode === true;
+            const gHooksActive = gitHooks.isInstalled(); // Still global for now, but valid indicator
             
             const criticalThreats = logs.filter(l => l.risk_level > 7 && !l.pinned);
             const mediumThreats = logs.filter(l => l.risk_level > 4 && l.risk_level <= 7 && !l.pinned);
+            const activePacks = db.getRepoPacks(repo.id).filter(p => p.is_active);
             
             if (!isHardenerActive) score -= 15;
             if (!gHooksActive) score -= 15;
+            if (isStrictMode) score += 5; // Reward
             
             const lastScan = new Date(repo.last_scan_at || 0);
             const hoursSinceScan = (Date.now() - lastScan.getTime()) / (1000 * 60 * 60);
@@ -272,7 +281,7 @@ app.get('/api/repositories', (req, res) => {
             score -= (mediumThreats.length * 10);
             score = Math.max(0, Math.min(100, score));
             
-            return { ...repo, score, logs };
+            return { ...repo, score, logs, effectiveConfig, activePacks: activePacks.length };
         });
         res.json(reposWithLogs);
     } catch (e) {
@@ -893,6 +902,454 @@ app.get('/api/supply/logs', (req, res) => {
 app.post('/api/system/shutdown', (req, res) => {
     res.json({ success: true, message: 'Shutting down...' });
     setTimeout(() => process.exit(0), 1000);
+});
+
+// ─── Sandbox ───
+
+/**
+ * GET /api/repositories/:id/sandbox/status
+ * Returns sandbox installation state + latest GHA run info.
+ */
+app.get('/api/repositories/:id/sandbox/status', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        const installed = repo.local_path ? gh.checkSandboxInstalled(repo.local_path) : { installed: false };
+        const latestRun = isValidOwnerRepo(repo.github_full_name) ? gh.getLatestSandboxRun(repo.github_full_name) : null;
+
+        res.json({
+            installed: installed.installed,
+            version: installed.version || null,
+            consent: !!repo.sandbox_consent,
+            run: latestRun || null
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/sandbox/sync
+ * mode: 'manual' → returns template content for user to copy.
+ * mode: 'auto'   → pushes template via git (requires prior consent stored in DB).
+ */
+app.post('/api/repositories/:id/sandbox/sync', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const { mode, consented } = req.body;
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        if (mode === 'manual') {
+            // Safe path: just return the template text
+            const content = gh.getSandboxTemplateContent();
+            const workflowPath = '.github/workflows/sentinel-sandbox.yml';
+            return res.json({ content, path: workflowPath });
+        }
+
+        if (mode === 'auto') {
+            if (!consented) {
+                return res.status(403).json({
+                    error: 'Consent required. Set consented: true to proceed.',
+                    requires: ['contents:write on the repository', 'git push access via gh CLI']
+                });
+            }
+
+            if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+                return res.status(400).json({ error: 'Repository has no linked local path. Use manual mode.' });
+            }
+
+            // Store consent before pushing
+            db.setSandboxConsent(repoId, true);
+
+            const result = gh.pushSandboxConfig(repo.local_path);
+            if (result.success) {
+                db.setSandboxVersion(repoId, '1.0');
+                return res.json({ success: true, path: result.path });
+            }
+            return res.status(500).json({ success: false, error: result.error });
+        }
+
+        res.status(400).json({ error: 'Unknown mode. Use "manual" or "auto".' });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/analyze-local
+ * Scans local unstaged/staged diff through the scanner.
+ * Returns alerts + pushBlocked flag if critical threats found.
+ */
+app.post('/api/repositories/:id/analyze-local', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+
+        if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+            return res.status(400).json({ error: 'No local path linked. Link a local directory first.' });
+        }
+
+        const diff = gh.getLocalDiff(repo.local_path);
+        if (!diff) {
+            return res.json({ alerts: [], pushBlocked: false, message: 'No local changes detected.' });
+        }
+
+        // --- PHASE 14: Protected Files Check ---
+        let protectedFilesBlocked = false;
+        const protectedFilesAlerts = [];
+        try {
+            // Get list of changed/added files
+            const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd: repo.local_path, encoding: 'utf-8', timeout: 5000 });
+            const changedFiles = statusOutput.split('\n').filter(l => l.trim().length > 0).map(l => l.substring(3).trim());
+            
+            const protectedList = db.getProtectedFiles(repoId).map(p => path.normalize(p.file_path));
+            
+            for (const file of changedFiles) {
+                const normFile = path.normalize(file);
+                // Check if file is exactly in the list or inside a protected directory
+                const isProtected = protectedList.some(p => normFile === p || normFile.startsWith(p + path.sep));
+                if (isProtected) {
+                    protectedFilesAlerts.push({
+                        title: '⚠️ Archivo Protegido Detectado',
+                        description: `Estás intentando subir un archivo o directorio protegido: ${file}`,
+                        riskLevel: 9,
+                        ruleName: 'Protected File Violation',
+                        file: file
+                    });
+                    protectedFilesBlocked = true;
+                }
+            }
+        } catch (e) {
+            console.error('[ProtectedFiles Check Error]', e.message);
+        }
+
+        const results = scanFile('local.diff', diff);
+        const criticalAlerts = results.alerts.filter(a => (a.riskLevel || a.severity || 0) >= 8);
+        
+        const pushBlocked = criticalAlerts.length > 0 || protectedFilesBlocked;
+        const allAlerts = [...protectedFilesAlerts, ...results.alerts];
+
+        if (criticalAlerts.length > 0) {
+            db.addScanLog(repoId, 'LOCAL_DIFF_SCAN', 9,
+                `Pre-commit scan blocked: ${criticalAlerts[0].ruleName || 'Critical threat'}`,
+                results.alerts
+            );
+        }
+
+        res.json({
+            alerts: allAlerts,
+            pushBlocked,
+            protectedFilesBlocked,
+            linesScanned: diff.split('\n').length,
+            message: protectedFilesBlocked
+                ? `🚫 Bloqueado: Se detectó intento de subir archivos protegidos.`
+                : pushBlocked
+                    ? `🔴 Push blocked: ${criticalAlerts.length} critical threat(s) detected.`
+                    : results.alerts.length > 0
+                        ? `⚠️ ${results.alerts.length} low/medium finding(s). Review before committing.`
+                        : '✅ No threats detected. Safe to commit.'
+        });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * POST /api/repositories/:id/commit
+ * Commits (and optionally pushes) local changes.
+ * SECURITY: execFileSync with array args, no shell.
+ */
+app.post('/api/repositories/:id/commit', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const { message, push, signoff, excludedFiles } = req.body;
+        if (!message || typeof message !== 'string' || message.trim().length < 3) {
+            return res.status(400).json({ error: 'Commit message required (min 3 chars).' });
+        }
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        if (!repo) return res.status(404).json({ error: 'Repository not found' });
+        if (!repo.local_path || !isValidLocalPath(repo.local_path)) {
+            return res.status(400).json({ error: 'No local path linked.' });
+        }
+
+        const commitArgs = ['commit', '-m', message.trim()];
+        if (signoff) commitArgs.push('--signoff');
+
+        // Stage all
+        execFileSync('git', ['add', '-A'], { cwd: repo.local_path, timeout: 10000 });
+        
+        // Unstage excluded files
+        if (Array.isArray(excludedFiles) && excludedFiles.length > 0) {
+            for (const file of excludedFiles) {
+                try {
+                    // git reset HEAD <file> removes it from the index (unstage)
+                    execFileSync('git', ['reset', 'HEAD', file], { cwd: repo.local_path, timeout: 5000 });
+                } catch (e) {
+                    console.error(`Failed to exclude file: ${file}`, e.message);
+                }
+            }
+        }
+
+        execFileSync('git', commitArgs, { cwd: repo.local_path, timeout: 10000 });
+
+        if (push) {
+            execFileSync('git', ['push'], { cwd: repo.local_path, timeout: 30000 });
+        }
+
+        res.json({ success: true, pushed: !!push });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Config Packs (Phase 13) ───
+
+function calculateScoreImpact(currentScore, originalConfig, newConfig) {
+    let delta = 0;
+    // Lowered security
+    if (originalConfig.ignore_scripts && newConfig.ignore_scripts === false) delta -= 15;
+    if (originalConfig.strict_mode && newConfig.strict_mode === false) delta -= 5;
+    if (originalConfig.auto_scan_pr && newConfig.auto_scan_pr === false) delta -= 10;
+    
+    // Increased security
+    if (!originalConfig.ignore_scripts && newConfig.ignore_scripts !== false) delta += 15;
+    if (!originalConfig.strict_mode && newConfig.strict_mode === true) delta += 5;
+    if (!originalConfig.auto_scan_pr && newConfig.auto_scan_pr !== false) delta += 10;
+
+    return {
+        newScore: Math.max(0, Math.min(100, currentScore + delta)),
+        delta
+    };
+}
+
+/**
+ * Scan a pack before installing
+ */
+app.post('/api/repositories/:id/packs/scan', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+        
+        const { fileContent } = req.body;
+        if (!fileContent) return res.status(400).json({ error: 'Missing fileContent' });
+
+        let packData;
+        try {
+            // Internal conversion: Try JSON first, fallback to YAML
+            if (fileContent.trim().startsWith('{')) {
+                packData = JSON.parse(fileContent);
+            } else {
+                packData = yaml.load(fileContent);
+            }
+        } catch (e) {
+            return res.status(400).json({ error: 'File format invalid. Must be valid JSON or YAML.' });
+        }
+
+        if (!packData || !packData.metadata || !packData.config) {
+            return res.status(400).json({ error: 'Pack missing required fields (metadata, config).' });
+        }
+
+        // Signature verification
+        let isOfficial = false;
+        if (packData._signature) {
+            try {
+                const dataToSign = {
+                    metadata: packData.metadata,
+                    config: packData.config
+                };
+                const payloadBuffer = Buffer.from(JSON.stringify(dataToSign));
+                const pubKey = crypto.createPublicKey({ key: Buffer.from(SENTINEL_LAB_PUB_KEY, 'base64'), format: 'der', type: 'spki' });
+                const isValid = crypto.verify(null, payloadBuffer, pubKey, Buffer.from(packData._signature, 'base64'));
+                if (isValid) isOfficial = true;
+            } catch (e) {
+                console.warn('[PACKS] Verification failed:', e.message);
+            }
+        }
+
+        // Fetch repo details to calculate impact
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        const effectiveConfig = db.getEffectiveConfig(repoId);
+        
+        // Very basic recalculation for difference (needs real repo logic match)
+        const diff = Object.keys(packData.config).map(k => ({
+            key: k,
+            old: effectiveConfig[k] !== undefined ? effectiveConfig[k] : 'default',
+            new: packData.config[k]
+        })).filter(d => d.old !== d.new);
+
+        // Alerts for HIGH RISK
+        const alerts = [];
+        if (effectiveConfig.ignore_scripts !== false && packData.config.ignore_scripts === false) {
+            alerts.push('WARNING: Este pack desactiva `ignore_scripts`. Esto permite a las dependencias ejecutar scripts post-install automáticamente, lo que es un vector común de malware de Supply Chain.');
+        }
+
+        // Send results
+        res.json({
+            isOfficial,
+            metadata: packData.metadata,
+            diff,
+            alerts,
+            packData // sending back standardized JSON
+        });
+
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * Install a scanned pack
+ */
+app.post('/api/repositories/:id/packs/install', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const { packData, isOfficial } = req.body;
+        if (!packData) return res.status(400).json({ error: 'Missing packData' });
+
+        const id = db.installPack(repoId, packData, isOfficial);
+        res.json({ success: true, id });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * Get installed packs
+ */
+app.get('/api/repositories/:id/packs', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+        
+        res.json(db.getRepoPacks(repoId));
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * Toggle pack active state
+ */
+app.put('/api/repositories/:id/packs/:packId/toggle', (req, res) => {
+    try {
+        const packId = parseInt(req.params.packId, 10);
+        const { active } = req.body;
+        if (isNaN(packId)) return res.status(400).json({ error: 'Invalid Pack ID' });
+
+        const success = db.togglePack(packId, active);
+        res.json({ success });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * Delete a pack
+ */
+app.delete('/api/repositories/:id/packs/:packId', (req, res) => {
+    try {
+        const packId = parseInt(req.params.packId, 10);
+        if (isNaN(packId)) return res.status(400).json({ error: 'Invalid Pack ID' });
+
+        const success = db.deletePack(packId);
+        res.json({ success });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/**
+ * Reset/Delete all packs
+ */
+app.delete('/api/repositories/:id/packs', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+
+        const success = db.resetPacks(repoId);
+        res.json({ success });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+// ─── Protected Files (Phase 14) ───
+
+app.get('/api/repositories/:id/protected', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+        res.json(db.getProtectedFiles(repoId));
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+/** Add protected file(s) */
+app.post('/api/repositories/:id/protected', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+        
+        const { files } = req.body; 
+        if (!Array.isArray(files)) return res.status(400).json({ error: 'Expected array of files' });
+
+        const repo = db.getRepositories().find(r => r.id === repoId);
+        
+        files.forEach(file => {
+            // Relativize path if it's absolute
+            let relPath = file;
+            if (repo && repo.local_path && file.startsWith(repo.local_path)) {
+                relPath = path.relative(repo.local_path, file);
+            }
+            // Normalize path separators to forward slash for git compatibility
+            relPath = relPath.replace(/\\/g, '/');
+            db.addProtectedFile(repoId, relPath);
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.delete('/api/repositories/:id/protected/:fileId', (req, res) => {
+    try {
+        const fileId = parseInt(req.params.fileId, 10);
+        if (isNaN(fileId)) return res.status(400).json({ error: 'Invalid ID' });
+        
+        const success = db.removeProtectedFile(fileId);
+        res.json({ success });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.delete('/api/repositories/:id/protected', (req, res) => {
+    try {
+        const repoId = parseInt(req.params.id, 10);
+        if (isNaN(repoId)) return res.status(400).json({ error: 'Invalid ID' });
+        
+        const success = db.db.prepare('DELETE FROM protected_files WHERE repo_id = ?').run(repoId).changes > 0;
+        res.json({ success });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
 });
 
 app.listen(PORT, () => {
