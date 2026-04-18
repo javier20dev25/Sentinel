@@ -110,35 +110,39 @@ When using the `--json` flag, Sentinel always returns a consistent object struct
   "error": null
 }
 ```
-*   `success`: Boolean indicating if the command completed without fatal errors.
-*   `data`: The primary payload (e.g., repository list, scan alerts, installation status).
-*   `error`: A string description if `success` is false.
 
-### Key Commands for Agents
-| Command | Purpose | AI Example |
+### 🏆 Essential Commands for Agents
+| Command | Purpose | JSON Output Tip |
 | :--- | :--- | :--- |
-| `sentinel list --json` | Get all linked repos | `sentinel list --json` |
-| `sentinel analyze --local --json` | Pre-commit security check | `sentinel analyze --local --exclude-protected --json` |
-| `sentinel scan --json` | Full audit of all repos | `sentinel scan --json` |
-| `sentinel status --json` | Get high-level security state | `sentinel status --json` |
+| `sentinel prepush --json` | **Crucial:** Analyze commits before pushing | Check `data.safe` (boolean) |
+| `sentinel heal --leaks` | Automatically unstage protected files | `success: true` means fixed |
+| `sentinel heal --threats` | Quarantine detected threats | `success: true` means fixed |
+| `sentinel list --json` | Get all linked repositories | Returns array of repos |
+| `sentinel status --json` | Get high-level security state | Check `status` field |
 
-### Installing Security Skills (Git Hooks)
-AI Agents can "self-harden" their environment by installing the Sentinel pre-push gate. This ensures that any malicious code or accidental leak is blocked before it leaves the local machine.
+### ⚡ Lite Model Protocol (Gemini Flash Lite / GPT-3.5)
+If you are a basic AI model, follow this simple 3-step loop to ensure a safe push:
+1.  **Check**: Run `sentinel prepush --json`.
+2.  **Fix**: If `data.safe` is `false`, run `sentinel heal --leaks` and/or `sentinel heal --threats`.
+3.  **Verify**: Run `sentinel prepush --json` again. If `true`, proceed with `git push`.
+
+### Advisory Security Skills (Git Hooks)
+AI Agents should install the Sentinel advisory hook. This ensures that even if you forget to run a manual check, Sentinel will print a security warning during `git push`.
+*Note: To prevent fragile automation breaks, the hook does NOT block the push physically. It is your responsibility to read the output.*
 
 **The "Agentic Skill" Protocol:**
 1.  **Link the Repo**: `sentinel link . <owner/repo>`
 2.  **Protect Folders**: `sentinel protected add secrets/ --json`
 3.  **Install the Skill**: `sentinel hook-install --json`
 
-Once installed, Sentinel will automatically audit every `git push`. If a threat is found, the push will be structuraly blocked.
-
 ### CLI Reference for Agents
 | Command | Purpose | Example |
 | :--- | :--- | :--- |
-| `sentinel protected add <path>` | Mark a folder as sensitive | `sentinel protected add config/` |
-| `sentinel protected list` | Get all protected paths | `sentinel protected list --json` |
-| `sentinel hook-install` | Enable automated push blocking | `sentinel hook-install --json` |
-| `sentinel analyze --local` | Manual pre-commit check | `sentinel analyze --local --json` |
+| `sentinel prepush` | Advisory pre-push analysis | `sentinel prepush --json` |
+| `sentinel heal --leaks` | Unstage protected files | `sentinel heal --leaks` |
+| `sentinel heal --threats` | Quarantine malware | `sentinel heal --threats` |
+| `sentinel protected add <path>` | Mark folder as sensitive | `sentinel protected add config/` |
+| `sentinel hook-install` | Enable advisory push scan | `sentinel hook-install --json` |
 
 ---
 
