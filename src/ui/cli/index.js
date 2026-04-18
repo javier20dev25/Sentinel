@@ -314,6 +314,45 @@ program
         }
     });
 
+// ─── sentinel hook-install (Idempotent Hook Installer) ───
+program
+    .command('hook-install')
+    .description('Install the Sentinel pre-push hook into the current repository.')
+    .action(() => {
+        const cwd = process.cwd();
+        const hooksDir = path.join(cwd, '.git', 'hooks');
+        const hookPath = path.join(hooksDir, 'pre-push');
+        const sentinel = 'sentinel';
+
+        if (!fs.existsSync(path.join(cwd, '.git'))) {
+            console.error('❌ Not a git repository. Run this from the root of a git repo.');
+            if (program.opts().json) respondAgent(false, null, 'Not a git repository');
+            process.exit(1);
+        }
+
+        const hookContent = `#!/bin/sh\n# Sentinel Security Guardian — Advisory Pre-Push Hook\n# This hook is warn-only and will NEVER block your push.\n${sentinel} hook pre-push\nexit 0\n`;
+
+        if (fs.existsSync(hookPath)) {
+            const existing = fs.readFileSync(hookPath, 'utf-8');
+            if (existing.includes('sentinel hook pre-push')) {
+                console.log('✅ Sentinel hook already installed. No changes needed.');
+                if (program.opts().json) respondAgent(true, { status: 'already_installed' });
+                return;
+            }
+            // Append to existing hook
+            fs.appendFileSync(hookPath, `\n# Sentinel Security Guardian — Appended\n${sentinel} hook pre-push\n`);
+            console.log('✅ Sentinel hook appended to existing pre-push hook.');
+            if (program.opts().json) respondAgent(true, { status: 'appended' });
+            return;
+        }
+
+        if (!fs.existsSync(hooksDir)) fs.mkdirSync(hooksDir, { recursive: true });
+        fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+        console.log('✅ Sentinel pre-push hook installed successfully.');
+        console.log(`   Location: ${hookPath}`);
+        if (program.opts().json) respondAgent(true, { status: 'installed', path: hookPath });
+    });
+
 // ─── sentinel open ───
 program
     .command('open')
