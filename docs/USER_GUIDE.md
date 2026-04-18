@@ -1,7 +1,7 @@
 # Sentinel User Guide
 
 ## 🇪🇸 Resumen Ejecutivo (Spanish)
-La versión 3.0 de Sentinel incorpora una infraestructura de **Sandbox Dinámico** remota para la validación proactiva de dependencias. Esta funcionalidad permite ejecutar y auditar el proceso de instalación de paquetes en entornos aislados (GitHub Actions), proporcionando visibilidad sobre el comportamiento en tiempo de ejecución antes de su integración en el entorno local.
+La versión 3.0 de Sentinel incorpora una infraestructura de **Sandbox Dinámico** remota para la validación proactiva de dependencias. Esta funcionalidad permite ejecutar y auditar el proceso de instalación de paquetes en entornos aislados (GitHub Actions), proporcionando visibilidad sobre el comportamiento en tiempo de ejecución, como conexiones de red y modificaciones en archivos críticos, antes de su integración en el entorno local.
 
 ---
 
@@ -19,11 +19,11 @@ Upon the first launch of the **Sentinel Web Edition**, you will be prompted to s
 ---
 
 ## 🛡️ Sentinel Project Shield (SPS)
-**Project Shield** performs static analysis and environment hardening.
+**Project Shield** is a core module that performs static analysis and environment hardening.
 
 ### Core Features:
-- **Environment Hardening**: Automatically configures `ignore-scripts` to prevent malicious scripts from executing during sensitive operations.
-- **Dependency Audit**: Scans `package.json` for known-malicious patterns and registry overrides.
+- **Environment Hardening**: Automatically runs `npm config set ignore-scripts true` for the linked project to prevent malicious scripts from executing during installation.
+- **Dependency Audit**: Scans your `package.json` for known-malicious patterns and registry overrides.
 - **Dynamic Validation**: Leverages the Sandbox to analyze dependency behavior in a simulated environment.
 
 ---
@@ -45,8 +45,8 @@ Upon the first launch of the **Sentinel Web Edition**, you will be prompted to s
 ## 📊 Global Audit Trail (SGA)
 The **Audit Trail** provides an record of security events.
 
-- **Event Logging**: Every scan result and threat detected is logged.
-- **Traceability**: Logs are linked to specific Git commit hashes for accountability.
+- **Event Logging**: Every scan result and threat detected is logged with high-precision timestamps.
+- **Traceability**: Logs are linked to specific Git commit hashes and user identities for accountability.
 - **Sanitization**: Sensitive data captured during audits (e.g., partial secrets) is sanitized before storage.
 
 ---
@@ -55,7 +55,10 @@ The **Audit Trail** provides an record of security events.
 Sentinel's engine operates in three main modes:
 1. **Manual Scan**: Triggered via `sentinel scan` or the UI.
 2. **Pre-Push Advisory**: Triggered automatically before a push via the Sentinel Hook.
-3. **Manual Analysis**: Triggered via `sentinel prepush` for a detailed machine-readable audit.
+3. **Dynamic Sandbox**: Behavioral analysis of the runtime environment during package installation.
+
+> [!TIP]
+> Use the **Sandbox Monitor** tab in the dashboard to review historical simulations and behavioral signals detected by the Dynamic Sandbox engine.
 
 ---
 

@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   GitBranch, ShieldCheck, ShieldAlert, Clock, Scan, MoreVertical,
   Terminal as TermIcon, Shield, BugOff, Zap, ExternalLink,
-  ToggleLeft, ToggleRight, Copy, Check, ChevronRight, FolderLock, PackageMinus
+  ToggleLeft, ToggleRight, Copy, Check, ChevronRight, FolderLock, PackageMinus,
+  Activity
 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { SentinelTerminal } from './SentinelTerminal';
 import { SandboxResultModal } from './SandboxResultModal';
 import { PackLoaderModal } from './PackLoaderModal';
@@ -20,6 +21,7 @@ type SandboxStatus = 'NOT_CONFIGURED' | 'ACTIVE_SAFE' | 'ACTIVE_THREAT' | 'ACTIV
 const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
   const isSafe = repo.status === 'SAFE';
   const [showMenu, setShowMenu] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   // Terminal State
   const [termOpen, setTermOpen] = useState(false);
@@ -42,19 +44,21 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
   const [templateContent, setTemplateContent] = useState('');
   const [templatePath, setTemplatePath] = useState('');
   const [copied, setCopied] = useState(false);
-  const [sandboxEnabled, setSandboxEnabled] = useState(true); // toggle state
+  const [sandboxEnabled, setSandboxEnabled] = useState(true);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+
+  const [commits, setCommits] = useState<any[]>([]);
 
   const latestAlerts = (repo.logs || []).filter((l: any) => l.risk_level >= 6).slice(0, 2);
   const repoName = repo.github_full_name?.includes('/')
     ? repo.github_full_name.split('/')[1]
     : repo.github_full_name || 'Unknown Repo';
 
-  // Fetch sandbox status
+  // Fetch sandbox status & Commits
   useEffect(() => {
     const fetchSandbox = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:3001/api/repositories/${repo.id}/sandbox/status`);
+        const { data } = await api.get(`/api/repositories/${repo.id}/sandbox/status`);
         setSandboxRun(data.run);
         if (!data.installed) {
           setSandboxStatus('NOT_CONFIGURED');
@@ -73,16 +77,24 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
         setSandboxStatus('NOT_CONFIGURED');
       }
     };
+
+    const fetchCommits = async () => {
+      try {
+        const res = await api.get(`/api/repositories/${repo.id}/commits`);
+        setCommits(res.data.commits || []);
+      } catch (err) {}
+    };
+
     fetchSandbox();
-    const interval = setInterval(fetchSandbox, 60000); // Poll every minute
+    fetchCommits();
+    const interval = setInterval(() => {
+      fetchSandbox();
+      fetchCommits();
+    }, 60000);
     return () => clearInterval(interval);
   }, [repo.id]);
 
-  const handleScan = async (e: React.MouseEvent) => {
-    e.stopPropagation(); setScanning(true);
-    try { await axios.post(`http://localhost:3001/api/repositories/${repo.id}/scan`); }
-    catch (err) { } finally { setScanning(false); }
-  };
+  const latestCommit = commits[0];
 
   const launchTerm = (cmd: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -93,7 +105,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
 
   const openGuardianManual = async () => {
     try {
-      const { data } = await axios.post(`http://localhost:3001/api/repositories/${repo.id}/sandbox/sync`, { mode: 'manual' });
+      const { data } = await api.post(`/api/repositories/${repo.id}/sandbox/sync`, { mode: 'manual' });
       setTemplateContent(data.content);
       setTemplatePath(data.path);
       setGuardianStep('manual');
@@ -104,7 +116,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
 
   const installGuardianAuto = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/repositories/${repo.id}/sandbox/sync`, { mode: 'auto', consented: true });
+      await api.post(`/api/repositories/${repo.id}/sandbox/sync`, { mode: 'auto', consented: true });
       setSandboxStatus('ACTIVE_SAFE');
       setGuardianStep('auto_done');
     } catch (e) {
@@ -191,7 +203,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                           e.stopPropagation();
                           if (confirm('Restaurar la configuración eliminará todos los packs. ¿Continuar?')) {
                             try {
-                              await axios.delete(`http://localhost:3001/api/repositories/${repo.id}/packs`);
+                              await api.delete(`/api/repositories/${repo.id}/packs`);
                               window.location.reload();
                             } catch(e) {}
                           }
@@ -261,18 +273,17 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
             </div>
           </div>
 
-          {/* Alert preview */}
-          {latestAlerts.length > 0 && !isSafe && (
-            <div className="space-y-2 mb-4">
-              {latestAlerts.map((log: any) => (
-                <div key={log.id} className="text-[11px] text-red-300/70 leading-relaxed px-3 py-2 rounded-xl bg-red-500/5 border border-red-500/10 truncate">
-                  {log.description}
-                </div>
-              ))}
+          {/* Aura Monitor Insights */}
+          <div className="mb-5 space-y-3">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-blue-500/5 border border-blue-500/10 hover:bg-blue-500/10 transition-colors cursor-help">
+              <div className="flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5 text-blue-400" />
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">Aura Monitor</p>
+              </div>
+              <p className="text-[9px] font-bold text-blue-300/60 uppercase">Live</p>
             </div>
-          )}
-          
-          {latestCommit && (
+
+            {latestCommit && (
               <div className="flex gap-2.5">
                 <div className="w-[1px] bg-blue-500/20 translate-x-1.5 mt-2 mb-2" />
                 <div className="space-y-1">
@@ -288,6 +299,18 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
             )}
 
             <DependencyAudit repoId={repo.id} />
+          </div>
+
+          {/* Alert preview */}
+          {latestAlerts.length > 0 && !isSafe && (
+            <div className="space-y-2 mb-4">
+              {latestAlerts.map((log: any) => (
+                <div key={log.id} className="text-[11px] text-red-300/70 leading-relaxed px-3 py-2 rounded-xl bg-red-500/5 border border-red-500/10 truncate">
+                  {log.description}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -297,33 +320,25 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
               {repo.last_scan_at ? new Date(repo.last_scan_at).toLocaleString() : 'Never scanned'}
             </div>
             <div className="flex items-center gap-2">
-              {/* Analyze Local Changes */}
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={(e) => { e.stopPropagation(); setAnalyzeOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 transition-all font-sans"
               >
-                <Zap className="w-3.5 h-3.5" /> Analyze Changes
+                <Zap className="w-3.5 h-3.5" /> Analyze
               </motion.button>
-              {/* Cargador de Packs */}
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={(e) => { e.stopPropagation(); setPackModalOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-[10px] font-bold text-violet-400 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-[10px] font-bold text-violet-400 transition-all font-sans"
               >
-                Cargar Pack de Configuración
-              </motion.button>
-              {/* Fast Scan */}
-              <motion.button
-                onClick={(e) => launchTerm('sentinel fast-scan', e)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[10px] font-bold text-blue-400 transition-all"
-              >
+                Packs
               </motion.button>
             </div>
           </div>
-        </motion.div>
+      </motion.div>
 
-        {/* Terminals & Modals */}
+      {/* Terminals & Modals */}
       <SentinelTerminal isOpen={termOpen} onClose={() => setTermOpen(false)} command={termCmd} repoName={repo.github_full_name} />
       <SandboxResultModal isOpen={analyzeOpen} onClose={() => setAnalyzeOpen(false)} repoId={repo.id} repoName={repo.github_full_name} />
       <PackLoaderModal isOpen={packModalOpen} onClose={() => setPackModalOpen(false)} repoId={repo.id} onUpdated={() => window.location.reload()} />
@@ -346,17 +361,17 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 {guardianStep === 'info' && (
                   <>
                     <p className="text-[12px] text-zinc-300 leading-relaxed">
-                      Installing the <span className="text-amber-300 font-bold">Sentinel Sandbox</span> will add a GitHub Actions workflow to <span className="font-mono text-emerald-400">{repo.github_full_name}</span> that automatically analyzes every Pull Request in an isolated Docker container.
+                      Installing the <span className="text-amber-300 font-bold">Sentinel Sandbox</span> will add a GitHub Actions workflow that automatically analyzes every Pull Request in an isolated container.
                     </p>
                     <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 space-y-2">
                       <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">What this will do:</p>
                       <ul className="space-y-1.5 text-[11px] text-zinc-400">
                         {[
-                          'Run on every Pull Request (trigger: pull_request)',
+                          'Run on every Pull Request',
                           'Use minimal Docker image (node:22-slim)',
-                          'Drop ALL Linux capabilities (--cap-drop=ALL)',
+                          'Drop ALL Linux capabilities',
                           'Only read access (permissions: contents: read)',
-                          'Scan for secrets, supply chain attacks, binary injection',
+                          'Scan for secrets, supply chain attacks',
                           'Post a summary to the PR automatically',
                         ].map((item, i) => (
                           <li key={i} className="flex items-start gap-2"><ChevronRight className="w-3 h-3 mt-0.5 text-amber-500 shrink-0" />{item}</li>
@@ -364,15 +379,8 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                       </ul>
                     </div>
                     <div className="flex items-center justify-between gap-3 pt-2">
-                      <button onClick={openGuardianManual} className="flex-1 py-2 rounded-xl border border-white/10 text-[11px] text-zinc-300 hover:bg-white/5 hover:text-white transition-colors font-bold">
-                        Copy Template (Manual)
-                      </button>
-                      <button
-                        onClick={() => setGuardianStep('auto_confirm')}
-                        className="flex-1 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 text-[11px] font-bold transition-all"
-                      >
-                        Auto-Install (Advanced)
-                      </button>
+                       <button onClick={openGuardianManual} className="flex-1 py-2 rounded-xl border border-white/10 text-[11px] text-zinc-300 hover:bg-white/5 font-bold transition-colors">Manual Setup</button>
+                       <button onClick={() => setGuardianStep('auto_confirm')} className="flex-1 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 text-[11px] font-bold transition-all">Auto-Install</button>
                     </div>
                   </>
                 )}
@@ -380,7 +388,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                 {guardianStep === 'manual' && (
                   <>
                     <p className="text-[12px] text-zinc-400 leading-relaxed">
-                      Copy the contents below and create the file at: <code className="text-emerald-400 text-[11px]">{templatePath}</code> in your repository.
+                      Copy the contents below and create the file at: <code className="text-emerald-400 text-[11px]">{templatePath}</code>
                     </p>
                     <div className="relative bg-black/50 rounded-xl border border-white/10 max-h-52 overflow-y-auto">
                       <pre className="p-3 text-[10px] font-mono text-zinc-400 leading-relaxed whitespace-pre-wrap">{templateContent}</pre>
@@ -388,7 +396,6 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                     <button onClick={copyTemplate} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-white/10 text-[11px] text-zinc-300 hover:bg-white/5 transition-colors font-bold">
                       {copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Template</>}
                     </button>
-                    <p className="text-[10px] text-zinc-600 text-center">After creating the file, commit and push it. Sentinel will detect it automatically.</p>
                   </>
                 )}
 
@@ -397,31 +404,21 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
                     <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-2">
                       <p className="text-[11px] text-red-300 font-bold uppercase tracking-wider">⚠️ Auto-Install Requires:</p>
                       <ul className="space-y-1.5 text-[11px] text-zinc-400">
-                        <li className="flex items-start gap-2"><ChevronRight className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />gh CLI with <code className="text-amber-300">contents: write</code> access</li>
-                        <li className="flex items-start gap-2"><ChevronRight className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />Git push access to the repository</li>
-                        <li className="flex items-start gap-2"><ChevronRight className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />A local path linked to this repository</li>
+                        <li className="flex items-start gap-2"><ChevronRight className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />gh CLI with contents:write access</li>
                       </ul>
                     </div>
-                    <p className="text-[12px] text-zinc-400">
-                      Sentinel will create <code className="text-emerald-400">.github/workflows/sentinel-sandbox.yml</code>, commit it, and push to your remote. <span className="text-white font-bold">No other files will be modified.</span>
-                    </p>
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => setGuardianStep('info')} className="flex-1 py-2 rounded-xl border border-white/10 text-[11px] text-zinc-400 hover:bg-white/5 transition-colors">← Back</button>
-                      <button onClick={installGuardianAuto} className="flex-1 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-[11px] font-bold transition-all">
-                        I Understand — Auto-Install
-                      </button>
+                      <button onClick={installGuardianAuto} className="flex-1 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-[11px] font-bold transition-all">Install Now</button>
                     </div>
                   </>
                 )}
 
                 {guardianStep === 'auto_done' && (
                   <div className="text-center py-6 space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-                      <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                    </div>
+                    <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto" />
                     <p className="text-sm font-bold text-emerald-400">Sandbox Guardian Installed!</p>
-                    <p className="text-[11px] text-zinc-500">The workflow has been committed and pushed. It will activate on the next Pull Request.</p>
-                    <button onClick={() => setShowGuardianModal(false)} className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold hover:bg-emerald-500/20 transition-all">Done</button>
+                    <button onClick={() => setShowGuardianModal(false)} className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">Done</button>
                   </div>
                 )}
               </div>
@@ -430,7 +427,6 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
         )}
       </AnimatePresence>
 
-      {/* Sandbox Toggle Confirmation */}
       <AnimatePresence>
         {showDisableConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
@@ -438,23 +434,14 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               className="w-full max-w-sm bg-[#0d0d0f] border border-[#2a2a30] rounded-2xl shadow-2xl p-5 space-y-4"
             >
-              <p className="text-sm font-bold text-white">
-                {sandboxEnabled ? 'Disable Sandbox Guardian?' : 'Enable Sandbox Guardian?'}
-              </p>
-              <p className="text-[12px] text-zinc-400 leading-relaxed">
-                {sandboxEnabled
-                  ? 'This will pause automated sandbox scanning for this repository. You can re-enable it anytime.'
-                  : 'This will re-activate the Sentinel Sandbox workflow for this repository.'}
-              </p>
+              <p className="text-sm font-bold text-white">Toggle Sandbox Guardian?</p>
               <div className="flex gap-3">
                 <button onClick={() => setShowDisableConfirm(false)} className="flex-1 py-2 rounded-xl border border-white/10 text-[11px] text-zinc-400 hover:bg-white/5 transition-colors">Cancel</button>
                 <button
                   onClick={() => { setSandboxEnabled(!sandboxEnabled); setShowDisableConfirm(false); }}
-                  className={`flex-1 py-2 rounded-xl text-[11px] font-bold transition-all border ${sandboxEnabled
-                    ? 'bg-red-500/20 border-red-500/30 text-red-300 hover:bg-red-500/30'
-                    : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30'}`}
+                  className={`flex-1 py-2 rounded-xl text-[11px] font-bold transition-all border ${sandboxEnabled ? 'bg-red-500/20 border-red-500/30 text-red-300' : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'}`}
                 >
-                  {sandboxEnabled ? 'Yes, Disable' : 'Yes, Enable'}
+                  Yes, Toggle
                 </button>
               </div>
             </motion.div>

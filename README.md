@@ -172,6 +172,9 @@ While the legal license is MIT, the author (javier20dev25) requests that all use
 2.  **Legitimate & Good Use Only**: Sentinel is a tool for defense. It must only be used for legitimate security engineering, auditing, and defensive research. Any malicious use is strictly prohibited by our code of conduct.
 3.  **Mandatory Attribution**: Any product or service built using Sentinel's code must clearly display a link to this repository and satisfy the "Powered by Sentinel" attribution in a visible part of the product's interface or website.
 
+**Code of Conduct**: All participants are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+**Security Reports**: Use [GitHub Security Advisories](https://github.com/javier20dev25/Sentinel/security/advisories/new) to report vulnerabilities privately.
+
 ---
 
 *Sentinel: Because your code deserves an uncompromising guardian.*
