@@ -443,21 +443,75 @@ sandbox
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
         const repos = db.getRepositories().filter(r => r.local_path);
-        if (repos.length === 0) process.exit(1);
+        
+        if (repos.length === 0) {
+            console.error('❌ No local repository linked.');
+            if (program.opts().json) respondAgent(false, null, 'No local repository linked');
+            return;
+        }
 
         const repo = repos[0];
         if (options.auto) {
             const result = gh.pushSandboxConfig(repo.local_path);
             if (result.success) {
                 db.setSandboxConsent(repo.id, true);
-                console.log('✅ Sandbox pushed!');
+                console.log('✅ Sandbox pushed to GitHub automatically!');
+                if (program.opts().json) respondAgent(true, { status: 'pushed', path: result.path });
+            } else {
+                console.error(`❌ Failed to push Sandbox Config: ${result.error}`);
+                if (program.opts().json) respondAgent(false, null, result.error);
             }
         } else {
             const template = gh.getSandboxTemplateContent();
             fs.writeFileSync('sentinel-sandbox.yml', template);
-            console.log('✅ Template saved to sentinel-sandbox.yml');
+            console.log('✅ Template saved to sentinel-sandbox.yml locally.');
+            console.log('   ⚠️  NOTE: Run with --auto to push this to GitHub Actions automatically.');
+            if (program.opts().json) respondAgent(true, { status: 'generated_locally', file: 'sentinel-sandbox.yml', note: 'Manual push required, or use --auto' });
         }
     });
+
+// ─── sentinel prs ───
+program
+    .command('prs')
+    .argument('[repo]', 'Optional: specific repo name (owner/repo)')
+    .description('List open Pull Requests for linked repositories.')
+    .action((repoArg) => {
+        const db = require('../backend/lib/db');
+        const gh = require('../backend/lib/gh_bridge');
+        const repos = db.getRepositories();
+        
+        let targets = repos;
+        if (repoArg) targets = repos.filter(r => r.github_full_name === repoArg);
+        
+        if (targets.length === 0) {
+            console.log('📭 No repositories found.');
+            if (program.opts().json) respondAgent(true, { prs: [] });
+            return;
+        }
+
+        let allPrs = [];
+        targets.forEach(r => {
+            const prs = gh.listPRs(r.github_full_name) || [];
+            if (prs.length > 0) {
+                prs.forEach(pr => allPrs.push({ repo: r.github_full_name, ...pr }));
+            }
+        });
+
+        if (program.opts().json) {
+            respondAgent(true, { count: allPrs.length, prs: allPrs });
+        } else {
+            if (allPrs.length === 0) {
+                console.log('\n📭 No open PRs found for the selected repositories.\n');
+                return;
+            }
+            console.log(`\n🛡️  Sentinel — Open Pull Requests [${allPrs.length}]\n`);
+            allPrs.forEach(pr => {
+                console.log(`  [#${pr.number}] ${pr.repo} — ${pr.title}`);
+                console.log(`         Author: ${pr.author?.login || 'unknown'} | Updated: ${pr.updatedAt || 'unknown'}\n`);
+            });
+        }
+    });
+
 
 // ─── sentinel packs ───
 program
