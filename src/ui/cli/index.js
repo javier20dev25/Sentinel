@@ -623,6 +623,23 @@ program
     });
 
 function run(args = process.argv) {
+    if (args.length === 2) {
+        console.log('\n================================================================');
+        console.log('                 🛡️  SENTINEL SECURITY GUARDIAN               ');
+        console.log('================================================================\n');
+        console.log('¡Hola! Sentinel detectó que no ingresaste ningún comando.\n');
+        console.log('👤 ¿ERES UN DESARROLLADOR HUMANO?');
+        console.log('   Si quieres usar la interfaz gráfica (Dashboard Web), ejecuta:');
+        console.log('   👉  sentinel open\n');
+        console.log('🤖 ¿ERES UN AGENTE DE IA?');
+        console.log('   Sentinel está optimizado para ti. Usa la CLI pasándole la bandera');
+        console.log('   --json al final de comandos para obtener respuestas estructuradas.');
+        console.log('   Ejemplo: sentinel prepush --json\n');
+        console.log('Para ver todos los comandos de la terminal, ejecuta:');
+        console.log('   👉  sentinel --help\n');
+        console.log('================================================================\n');
+        process.exit(0);
+    }
     program.parse(args);
 }
 
