@@ -593,34 +593,129 @@ program
 // ─── sentinel status ───
 program
     .command('status')
+    .description('Show security status of all monitored repositories.')
     .action(() => {
         const db = require('../backend/lib/db');
-        db.getRepositories().forEach(r => console.log(`${r.status === 'SAFE' ? '🟢' : '🔴'} ${r.github_full_name}`));
+        const repos = db.getRepositories();
+        if (repos.length === 0) {
+            console.log('📭 No repositories linked yet. Use "sentinel link <path> <owner/repo>" to get started.');
+            if (program.opts().json) respondAgent(true, { repositories: [], total: 0 });
+            return;
+        }
+        const summary = repos.map(r => ({
+            id: r.id,
+            name: r.github_full_name,
+            path: r.local_path || null,
+            status: r.status || 'UNKNOWN',
+            last_scan: r.last_scan_at || null
+        }));
+        const safe = summary.filter(r => r.status === 'SAFE').length;
+        const infected = summary.filter(r => r.status === 'INFECTED').length;
+        if (program.opts().json) {
+            respondAgent(true, { repositories: summary, total: repos.length, safe, infected });
+        } else {
+            console.log(`\n🛡️  Sentinel Status — ${repos.length} repo(s) monitored\n`);
+            summary.forEach(r => {
+                const icon = r.status === 'SAFE' ? '🟢' : (r.status === 'INFECTED' ? '🔴' : '⚪');
+                console.log(`  ${icon} ${r.name} [${r.status}]`);
+            });
+            console.log(`\n  Summary: ${safe} safe, ${infected} infected\n`);
+        }
     });
 
 // ─── sentinel link ───
 program
     .command('link <path> <repo>')
+    .description('Link a local directory to a GitHub repository for Sentinel monitoring.')
     .action((p, r) => {
         const db = require('../backend/lib/db');
-        const rp = path.resolve(p); const rid = db.addRepository(rp, r); if (rid) db.updateRepoPath(rid, rp);
-        console.log('✅ Linked.');
+        try {
+            const resolvedPath = path.resolve(p);
+            if (!fs.existsSync(resolvedPath)) {
+                console.error(`❌ Path does not exist: ${resolvedPath}`);
+                if (program.opts().json) respondAgent(false, null, `Path does not exist: ${resolvedPath}`);
+                return;
+            }
+            const repoId = db.addRepository(resolvedPath, r);
+            if (repoId) {
+                db.updateRepoPath(repoId, resolvedPath);
+                console.log(`✅ Linked "${r}" → ${resolvedPath}`);
+                if (program.opts().json) respondAgent(true, { repo_id: repoId, github_name: r, local_path: resolvedPath });
+            } else {
+                console.error('❌ Failed to link. The repository may already exist.');
+                if (program.opts().json) respondAgent(false, null, 'Failed to link repository');
+            }
+        } catch (e) {
+            console.error(`❌ Error linking repository: ${e.message}`);
+            if (program.opts().json) respondAgent(false, null, e.message);
+        }
     });
 
 // ─── sentinel list ───
 program
     .command('list')
+    .description('List all repositories monitored by Sentinel.')
     .action(() => {
-        require('../backend/lib/db').getRepositories().forEach(r => console.log(`- ${r.github_full_name}`));
+        const db = require('../backend/lib/db');
+        const repos = db.getRepositories();
+        if (repos.length === 0) {
+            console.log('📭 No repositories linked yet.');
+            if (program.opts().json) respondAgent(true, { repositories: [] });
+            return;
+        }
+        if (program.opts().json) {
+            const data = repos.map(r => ({
+                id: r.id,
+                name: r.github_full_name,
+                path: r.local_path || null,
+                status: r.status || 'UNKNOWN'
+            }));
+            respondAgent(true, { repositories: data });
+        } else {
+            repos.forEach(r => {
+                const icon = r.status === 'SAFE' ? '🟢' : (r.status === 'INFECTED' ? '🔴' : '⚪');
+                console.log(`  ${icon} ${r.github_full_name} ${r.local_path ? '(' + r.local_path + ')' : ''}`);
+            });
+        }
     });
 
 // ─── sentinel scan ───
 program
     .command('scan')
-    .action(() => {
+    .argument('[repo]', 'Optional: specific repo name (owner/repo) to scan')
+    .description('Scan linked repositories for security threats in open PRs.')
+    .action((repo) => {
         const db = require('../backend/lib/db');
-        db.getRepositories().forEach(r => performManualScan(r.id, r.github_full_name));
+        const repos = db.getRepositories();
+        let targets = repos;
+        if (repo) {
+            targets = repos.filter(r => r.github_full_name === repo);
+            if (targets.length === 0) {
+                console.error(`❌ Repository "${repo}" not found. Use "sentinel list" to see linked repos.`);
+                if (program.opts().json) respondAgent(false, null, `Repository not found: ${repo}`);
+                return;
+            }
+        }
+        if (targets.length === 0) {
+            console.log('📭 No repositories to scan. Link one first with "sentinel link".');
+            if (program.opts().json) respondAgent(true, { scanned: 0, results: [] });
+            return;
+        }
+        const results = [];
+        targets.forEach(r => {
+            try {
+                performManualScan(r.id, r.github_full_name);
+                results.push({ repo: r.github_full_name, scanned: true, error: null });
+            } catch (e) {
+                console.error(`  ⚠️  Error scanning ${r.github_full_name}: ${e.message}`);
+                results.push({ repo: r.github_full_name, scanned: false, error: e.message });
+            }
+        });
+        if (program.opts().json) {
+            respondAgent(true, { scanned: results.length, results });
+        }
     });
+
 
 function run(args = process.argv) {
     if (args.length === 2) {
