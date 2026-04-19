@@ -603,7 +603,7 @@ program
     .command('link <path> <repo>')
     .action((p, r) => {
         const db = require('../backend/lib/db');
-        db.linkRepository(path.resolve(p), r);
+        const rp = path.resolve(p); const rid = db.addRepository(rp, r); if (rid) db.updateRepoPath(rid, rp);
         console.log('✅ Linked.');
     });
 
