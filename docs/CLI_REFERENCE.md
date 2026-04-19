@@ -15,7 +15,7 @@ The `sentinel` command-line interface provides developers with a streamlined way
 
 ### `sentinel heal`
 Automated incident response to contain leaks or threats.
-- **`--leaks`**: Automatically removes protected files from outbound commits. Handles both staged files (`git reset`) and already-committed files (`git reset HEAD~1 --soft` + re-commit) without losing other staged work.
+- **`--leaks`**: Automatically removes protected files from the **staging area**. For files already inside commits, it provides a safe manual guide (`git reset HEAD~1`) to avoid destructive history rewrites.
 - **`--threats`**: Unstages detected threats and moves them to `.sentinel/quarantine/` for analysis.
 
 ### `sentinel protected`
@@ -26,8 +26,8 @@ Manage sensitive folders and files for the current repository.
 
 ### `sentinel hook-install`
 Installs the **Sentinel Security Skill** (Git Hook) in the current repository.
-- **Idempotent**: Safe to run multiple times; it won't duplicate hook entries.
-- **Function**: Automatically triggers an advisory scan during `git push`.
+- **Smart-Block**: Unlike previous versions, this hook now **blocks** the push if threats are detected. Users can bypass the block by running `SENTINEL_BYPASS=1 git push`.
+- **Function**: Automatically triggers a mandatory security scan during `git push`.
 
 ---
 

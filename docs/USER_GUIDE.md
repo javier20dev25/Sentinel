@@ -28,17 +28,18 @@ Upon the first launch of the **Sentinel Web Edition**, you will be prompted to s
 
 ---
 
-## 🛡️ Asset Guard (SAG) - Advisory Mode
+## 🛡️ Asset Guard (SAG) - Smart-Blocking Mode
 **Asset Guard** monitors Git operations to prevent the accidental leakage of sensitive files (keys, .env, private configs).
 
 ### How it works:
 1. **Selection**: Use `sentinel protected add <path>` to mark folders or files as sensitive.
 2. **Analysis**: Sentinel checks staged changes AND unpushed commits for prohibited files.
-3. **Advisory**: Instead of "hard blocking" which can break Windows Git workflows, Sentinel provides a **Security Advisory**.
-4. **Visibility**: If a leak is found, the CLI will output a clear report and a legal disclaimer. The responsibility to proceed or fix (using `sentinel heal`) stays with the developer or AI agent.
+3. **Smart-Block**: Sentinel now **blocks** the push if a leak is found. This provides a hard stop to prevent accidental exposure of secrets.
+4. **Bypass**: If the threat is false positive or the user assumes responsibility, they can bypass the block with `SENTINEL_BYPASS=1 git push`.
+5. **Visibility**: If a leak is found, the CLI outputs a clear report and instructions on how to fix it via `sentinel heal`.
 
 > [!TIP]
-> Use `sentinel heal --leaks` to automatically remove protected files from your staging area or current commit if they were included by accident.
+> Use `sentinel heal --leaks` to automatically unstage protected files from your staging area. For files already in commits, follow the interactive guide provided by the command.
 
 ---
 

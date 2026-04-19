@@ -126,9 +126,14 @@ If you are a basic AI model, follow this simple 3-step loop to ensure a safe pus
 2.  **Fix**: If `data.safe` is `false`, run `sentinel heal --leaks` and/or `sentinel heal --threats`.
 3.  **Verify**: Run `sentinel prepush --json` again. If `true`, proceed with `git push`.
 
-### Advisory Security Skills (Git Hooks)
-AI Agents should install the Sentinel advisory hook. This ensures that even if you forget to run a manual check, Sentinel will print a security warning during `git push`.
-*Note: To prevent fragile automation breaks, the hook does NOT block the push physically. It is your responsibility to read the output.*
+### Advisory & Smart-Blocking Git Hooks
+AI Agents should install the Sentinel hook. This ensures that even if you forget to run a manual check, Sentinel will catch security threats during `git push`.
+
+**New Behavior:** The hook now **blocks** the push if threats are detected. If you are an agent acting autonomously and are certain the push is safe, you must use the bypass: `SENTINEL_BYPASS=1 git push`.
+*Note: To prevent fragile automation breaks, always use `SENTINEL_BYPASS=1` only when absolutely necessary and verified.*
+
+**CRITICAL: DO NOT MODIFY SENTINEL SOURCE CODE**
+AI Agents are authorized to **use** Sentinel CLI but must **NEVER** attempt to modify its source files (like `db.js` or `index.js`). If a command fails, report it to the human user instead of attempting a code fix. Automatic fixes by agents often break encoding or introduce syntax errors.
 
 **The "Agentic Skill" Protocol:**
 1.  **Link the Repo**: `sentinel link . <owner/repo>`
@@ -139,6 +144,7 @@ AI Agents should install the Sentinel advisory hook. This ensures that even if y
 | Command | Purpose | Example |
 | :--- | :--- | :--- |
 | `sentinel prepush` | Advisory pre-push analysis | `sentinel prepush --json` |
+| `sentinel link <path> <repo>` | **Link a repository** | `sentinel link . owner/repo` |
 | `sentinel heal --leaks` | Unstage protected files | `sentinel heal --leaks` |
 | `sentinel heal --threats` | Quarantine malware | `sentinel heal --threats` |
 | `sentinel protected add <path>` | Mark folder as sensitive | `sentinel protected add config/` |
