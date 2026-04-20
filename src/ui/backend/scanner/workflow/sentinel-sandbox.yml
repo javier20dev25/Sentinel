@@ -125,9 +125,17 @@ jobs:
           cp package-lock.json /tmp/before-lock.json 2>/dev/null || echo "{}" > /tmp/before-lock.json
           ss -tunp 2>/dev/null > /tmp/netstat-before.txt || echo "netstat not available" > /tmp/netstat-before.txt
 
-      - name: "📦 npm ci --ignore-scripts"
+      - name: "📦 npm ci (Honeypot Detonation)"
         run: |
-          npm ci --ignore-scripts --no-audit | tee /tmp/npm-install-output.txt || true
+          # We purposefully DO NOT use --ignore-scripts here. This is a Sandbox.
+          # We want malicious postinstall scripts to detonate so X-Ray catches them!
+          npm ci --no-audit | tee /tmp/npm-install-output.txt || true
+          
+          # Force execution of any suspicious ad-hoc JS files that might be entrypoints
+          if [ -f "tests/payloads/obfuscated_xray.js" ]; then
+             echo "Running test payload explicitly..." >> /tmp/npm-install-output.txt
+             node tests/payloads/obfuscated_xray.js >> /tmp/npm-install-output.txt 2>&1 || true
+          fi
         env:
           NO_COLOR: "1"
 
