@@ -759,20 +759,40 @@ program
 // ─── sentinel protected ───
 program
     .command('protected')
-    .argument('[action]', 'list|add', 'list')
-    .argument('[target]', 'path')
+    .argument('[action]', 'list|add|remove', 'list')
+    .argument('[target]', 'path or ID')
     .action((action, target) => {
         const db = require('../backend/lib/db');
         const repo = db.getRepositories().find(r => r.local_path && normalizeAbsPath(r.local_path) === normalizeAbsPath(process.cwd()));
-        if (!repo) return;
+        if (!repo) {
+            if (program.opts().json) respondAgent(false, null, 'No linked repository found for current directory');
+            else console.error('❌ Could not determine linked repository for the current directory.');
+            return;
+        }
 
         if (action === 'add' && target) {
             const rel = path.relative(repo.local_path, path.resolve(target)).replace(/\\/g, '/');
             db.addProtectedFile(repo.id, rel);
-            console.log(`✅ ${rel} is now protected.`);
+            if (program.opts().json) {
+                respondAgent(true, { status: 'added', path: rel });
+            } else {
+                console.log(`✅ ${rel} is now protected.`);
+            }
+        } else if (action === 'remove' && target) {
+            db.removeProtectedFile(target);
+            if (program.opts().json) {
+                respondAgent(true, { status: 'removed', id: target });
+            } else {
+                console.log(`✅ Protection ID ${target} removed.`);
+            }
         } else {
             const files = db.getProtectedFiles(repo.id);
-            files.forEach(f => console.log(`- ${f.file_path}`));
+            if (program.opts().json) {
+                respondAgent(true, { protected_files: files });
+            } else {
+                if (files.length === 0) console.log('📭 No protected files.');
+                files.forEach(f => console.log(`[ID: ${f.id}] - ${f.file_path}`));
+            }
         }
     });
 
