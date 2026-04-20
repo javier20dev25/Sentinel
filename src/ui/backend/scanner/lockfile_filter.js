@@ -13,6 +13,17 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
+let sentinelSpec = { dependency_risk: { versioning: { unpinned: { patterns: ['latest', '*'], weight: 60, severity: 'HIGH' }, floating: { patterns: ['^', '~'], weight: 20, severity: 'WARNING' } }, typosquatting: { common_anomalies: ['lodasb', 'reaact', 'exprss', 'jquey', 'nodemoon'], heuristics: ['contains_space', 'double_underscore'], weight: 90, severity: 'CRITICAL' } } };
+try {
+    const specPath = path.join(__dirname, 'rules', 'sentinel-spec.json');
+    sentinelSpec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+} catch (e) {
+    console.warn(`[SENTINEL] Could not load formal Sentinel Spec for lockfile analysis: ${e.message}`);
+}
+
 // Registros oficiales conocidos. Cualquier otro es sospechoso.
 const TRUSTED_REGISTRIES = [
     'registry.npmjs.org',
@@ -96,23 +107,32 @@ function analyzeLockfile(lockfileContent, packageJsonContent = null) {
                 let severity = 'INFO';
                 
                 // 1. Unpinned Versions
-                if (depVersion === 'latest' || depVersion === '*') {
-                    score += 60;
-                    reasons.push('versioning: used "latest" or "*"');
-                    severity = 'HIGH';
-                } else if (depVersion.startsWith('^') || depVersion.startsWith('~')) {
-                    score += 20;
-                    reasons.push('versioning: floating version (use exact pin)');
-                    severity = 'WARNING';
+                const versConfig = sentinelSpec.dependency_risk?.versioning || {};
+                const unpinnedConfig = versConfig.unpinned || { patterns: ['latest', '*'], weight: 60, severity: 'HIGH' };
+                const floatingConfig = versConfig.floating || { patterns: ['^', '~'], weight: 20, severity: 'WARNING' };
+                
+                if (unpinnedConfig.patterns.some(p => depVersion === p || depVersion.startsWith(p) && p !== '*')) {
+                    score += unpinnedConfig.weight;
+                    reasons.push('versioning: used unpinned explicit version');
+                    severity = unpinnedConfig.severity;
+                } else if (floatingConfig.patterns.some(p => depVersion.startsWith(p))) {
+                    score += floatingConfig.weight;
+                    reasons.push('versioning: floating version');
+                    severity = floatingConfig.severity;
                 }
 
-                // 2. Typosquatting markers (suspicious names like lodasb, reaact)
-                // Usamos heurística simple contra nombres estándar.
-                const commonTypos = ['lodasb', 'reaact', 'exprss', 'jquey', 'nodemoon'];
-                if (commonTypos.includes(depName.toLowerCase()) || depName.includes(' ') || depName.includes('__')) {
-                    score += 90;
+                // 2. Typosquatting markers (suspicious names)
+                const typoConfig = sentinelSpec.dependency_risk?.typosquatting || { common_anomalies: [], heuristics: [], weight: 90, severity: 'CRITICAL' };
+                const commonTypos = typoConfig.common_anomalies || [];
+                let hasTypo = commonTypos.includes(depName.toLowerCase());
+                
+                if (typoConfig.heuristics?.includes('contains_space') && depName.includes(' ')) hasTypo = true;
+                if (typoConfig.heuristics?.includes('double_underscore') && depName.includes('__')) hasTypo = true;
+
+                if (hasTypo) {
+                    score += typoConfig.weight;
                     reasons.push('typosquatting: suspicious package name');
-                    severity = 'CRITICAL';
+                    severity = typoConfig.severity;
                 }
                 
                 // Only alert if there is a risk

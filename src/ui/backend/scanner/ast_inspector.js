@@ -30,6 +30,17 @@ try {
     walk  = null;
 }
 
+const path = require('path');
+const fs = require('fs');
+
+let sentinelSpec = { data_flow: { ast_taint_tracking: { sources: [], sinks: [] }, geofencing: { indicators: [] } } };
+try {
+    const specPath = path.join(__dirname, 'rules', 'sentinel-spec.json');
+    sentinelSpec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+} catch (e) {
+    console.warn(`[SENTINEL] Could not load formal Sentinel Spec: ${e.message}`);
+}
+
 // ── Categorías de funciones por rol en ataques ─────────────────────────────
 
 /** Funciones que aportan datos del exterior ("sources") */
@@ -175,8 +186,9 @@ function analyze(code, filePath = 'unknown') {
                 state.hasExecCall = true;
                 state.execCallCtx.push(snip(node));
 
-                // Alerta estructural por eval() o exec()
-                if (callName === 'eval' || callName === 'exec') {
+                // Alerta estructural por exec/eval (depende de config JSON)
+                const configSinks = sentinelSpec.data_flow?.ast_taint_tracking?.sinks || [];
+                if (configSinks.some(sinkTerm => callName.includes(sinkTerm))) {
                     // Phase 3: Data Flow Analysis (Lite)
                     // Verificar si el argumento viene de una fuente de input externa explícita
                     let isTainted = false;
@@ -184,8 +196,8 @@ function analyze(code, filePath = 'unknown') {
                     if (node.arguments && node.arguments.length > 0) {
                         const arg = node.arguments[0];
                         argsText = snip(arg);
-                        // Heurística básica de Taint: si el argumento incluye 'req', 'body', 'input', 'argv'
-                        if (['req', 'body', 'input', 'argv', 'query'].some(t => argsText.includes(t))) {
+                        const configSources = sentinelSpec.data_flow?.ast_taint_tracking?.sources || [];
+                        if (configSources.some(t => argsText.includes(t))) {
                             isTainted = true;
                         }
                     }
