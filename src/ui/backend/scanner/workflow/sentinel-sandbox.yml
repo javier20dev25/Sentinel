@@ -159,7 +159,7 @@ jobs:
           echo "| WASM Files | $(grep -v 'No WASM' /tmp/wasm-files.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "| Executables | $(grep -v 'No Execs' /tmp/executables.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
 
-      - name: "💬 Post Security Summary to PR"
+      - name: "💬 Post Security Summary to PR & Developer Alert"
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
@@ -168,9 +168,26 @@ jobs:
              const wasm = fs.readFileSync('/tmp/wasm-files.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No WASM')).length;
              const execs = fs.readFileSync('/tmp/executables.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No Execs')).length;
              
-             if (wasm > 0 || execs > 0) {
-               const body = `## 🛡️ Sentinel: Threat Detected!
-               Anomalies found in PR #${context.issue.number}. WASM: ${wasm}, Execs: ${execs}.`;
+             // Check X-Ray Logs for interception
+             let xrayIntercepted = false;
+             try {
+                const logs = fs.readFileSync('/tmp/npm-install-output.txt', 'utf8');
+                if (logs.includes('[SENTINEL-XRAY] 🚨 INTERCEPTED EVAL PAYLOAD 🚨') || logs.includes('INTERCEPTED OS COMMAND')) {
+                  xrayIntercepted = true;
+                }
+             } catch(e) {}
+             
+             if (wasm > 0 || execs > 0 || xrayIntercepted) {
+               const body = `## 🚨 Sentinel Security Alert: Active Malware Detected! 🚨\n\n` + 
+                            `Sentinel Sandbox has detected high-risk behaviors in this Pull Request.\n\n` +
+                            `> [!CAUTION]\n` +
+                            `> **DO NOT** test this PR locally. Proceeding may compromise your local environment.\n\n` +
+                            `**Threat Telemetry:**\n` +
+                            `- X-Ray Engine Interception: ${xrayIntercepted ? '🔥 YES (Obfuscation Payload Decrypted)' : 'No'}\n` +
+                            `- WASM Binaries Found: ${wasm}\n` +
+                            `- Executables Found: ${execs}\n\n` +
+                            `*This is an automated message triggered by Sentinel X-Ray Sandbox.*`;
+               
                github.rest.issues.createComment({
                  issue_number: context.issue.number,
                  owner: context.repo.owner,
