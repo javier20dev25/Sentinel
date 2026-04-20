@@ -43,15 +43,21 @@ sentinel hook-install --json
 ```
 From now on, every `git push` will be intercepted by Sentinel. If threats are found, the push will be **blocked**. To bypass in emergencies: `SENTINEL_BYPASS=1 git push`.
 
-### Step 5: Run a Security Scan
-Scan the repository for threats in open Pull Requests.
+### Step 5: Advanced Threat Hunting (Sandbox & PRs)
+Sentinel connects with GitHub to scan open Pull Requests and run dynamic isolated analysis (Sandbox).
+1. List open Pull Requests:
 ```bash
-sentinel scan owner/repo-name --json
+sentinel prs owner/repo-name --json
 ```
-Or scan all linked repos at once:
+2. Generate the Sandbox workflow locally. **IMPORTANT**: If you want to push it directly to GitHub without hitting a "wall", use the `--auto` flag!
 ```bash
-sentinel scan --json
+sentinel sandbox sync --auto --json
 ```
+3. Audit all PRs and link them with Sandbox telemetry:
+```bash
+sentinel sandbox audit-prs owner/repo-name --json
+```
+*Note: If the sandbox hasn't finished running on GitHub Actions, `sandbox_status` will notify you. Wait a few moments before trying again.*
 
 ### Step 6: Pre-Push Verification
 Before pushing new code, always verify:
@@ -78,16 +84,20 @@ Once Sentinel is set up, your day-to-day workflow is simple:
 
 | Command | Purpose | JSON Support |
 | :--- | :--- | :---: |
-| `sentinel status` | View all repos & their security state | ✅ |
-| `sentinel link <path> <repo>` | Connect a local folder to GitHub | ✅ |
-| `sentinel list` | List all monitored repositories | ✅ |
-| `sentinel protected add <path>` | Mark a folder/file as sensitive | ✅ |
-| `sentinel protected list` | View protected paths | ✅ |
-| `sentinel hook-install` | Install the pre-push security hook | ✅ |
-| `sentinel prepush` | Analyze commits before pushing | ✅ |
-| `sentinel heal --leaks` | Safely unstage protected files | ✅ |
-| `sentinel scan [repo]` | Scan for threats in PRs | ✅ |
-| `sentinel analyze --local` | Analyze the local working directory | ✅ |
+| `status` | View all repos & their security state | ✅ |
+| `link <path> <repo>` | Connect a local folder to GitHub | ✅ |
+| `list` | List all monitored repositories | ✅ |
+| `protected add <path>` | Mark a folder/file as sensitive | ✅ |
+| `protected remove <id>`| Unprotect a folder using its ID from `list` | ✅ |
+| `protected list` | View protected paths and their IDs | ✅ |
+| `hook-install` | Install the pre-push security hook | ✅ |
+| `prepush` | Analyze commits before pushing | ✅ |
+| `heal --leaks` | Safely unstage protected files | ✅ |
+| `scan [repo]` | Run full rule engine over PRs | ✅ |
+| `prs [repo]` | Fetch a list of open PRs | ✅ |
+| `sandbox sync --auto` | Generate & auto-push the sandbox workflow | ✅ |
+| `sandbox audit-prs` | Download & evaluate Sandbox telemetry for PRs | ✅ |
+| `analyze --local` | Analyze the local working directory | ✅ |
 
 ---
 
