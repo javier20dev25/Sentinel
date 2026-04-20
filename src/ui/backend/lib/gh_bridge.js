@@ -218,8 +218,8 @@ class GitHubBridge {
                 'pr', 'list',
                 '--repo', repoFullName,
                 '--state', 'open',
-                '--limit', '20',
-                '--json', 'number,title,author,updatedAt'
+                '--limit', '10',
+                '--json', 'number,title,author,updatedAt,headRefName'
             ], {
                 encoding: 'utf-8',
                 timeout: 10000

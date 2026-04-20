@@ -470,6 +470,126 @@ sandbox
         }
     });
 
+sandbox
+    .command('audit-prs')
+    .argument('[repo]', 'Optional: specific repo name (owner/repo)')
+    .description('Audit open PRs by automatically linking them with Sandbox telemetry.')
+    .action(async (repoArg) => {
+        const db = require('../backend/lib/db');
+        const gh = require('../backend/lib/gh_bridge');
+        const ci = require('../backend/lib/ci_sandbox');
+        const fs = require('fs');
+        const repos = db.getRepositories();
+        
+        let targets = repos;
+        if (repoArg) targets = repos.filter(r => r.github_full_name === repoArg);
+        
+        if (targets.length === 0) {
+            console.error('❌ No linked repositories found.');
+            if (program.opts().json) respondAgent(false, null, 'No linked repositories found.');
+            return;
+        }
+
+        if (!program.opts().json) console.log('🔍 Fetching open Pull Requests and checking Sandbox telemetry...\n');
+        const results = [];
+
+        for (const repo of targets) {
+            const prs = gh.listPRs(repo.github_full_name) || [];
+            const recentPrs = prs.slice(0, 5);
+
+            for (const pr of recentPrs) {
+                const branch = pr.headRefName;
+                const runResult = {
+                    pr_number: pr.number,
+                    pr_title: pr.title,
+                    repo: repo.github_full_name,
+                    branch: branch,
+                    sandbox_run_found: false,
+                    sandbox_status: null,
+                    telemetry_analysis: null,
+                    error: null
+                };
+
+                if (branch) {
+                    const run = ci.getSandboxRunForBranch(repo.github_full_name, branch);
+                    if (run && run.id) {
+                        runResult.sandbox_run_found = true;
+                        runResult.sandbox_status = run.conclusion || run.status;
+                        
+                        if (run.status === 'completed') {
+                            const artifacts = await ci.downloadSandboxArtifacts(repo.github_full_name, run.id);
+                            if (!artifacts.error && artifacts.tempDir) {
+                                const analysis = await ci.analyzeTelemetry(artifacts.tempDir);
+                                runResult.telemetry_analysis = analysis;
+                                ci.cleanupTempDir(artifacts.tempDir);
+                            } else {
+                                runResult.error = artifacts.error || 'Failed to download artifacts';
+                            }
+                        }
+                    }
+                }
+                results.push(runResult);
+            }
+        }
+
+        if (program.opts().json) {
+            respondAgent(true, { audited_prs: results.length, data: results });
+        } else {
+            console.log('🛡️  Sentinel Sandbox PR Audit Report');
+            console.log('─'.repeat(50));
+            let mdContent = '# Sentinel Sandbox PR Audit Report\n\n';
+            
+            if (results.length === 0) {
+                console.log('📭 No open PRs found to audit.');
+                mdContent += '**Result:** No open PRs found to audit.\n';
+            } else {
+                results.forEach(res => {
+                    const header = `📦 PR #${res.pr_number} (${res.repo}): ${res.pr_title}`;
+                    console.log(`\n${header}`);
+                    console.log(`   Branch: ${res.branch}`);
+                    mdContent += `## ${header}\n- **Branch:** ${res.branch}\n`;
+                    
+                    if (!res.sandbox_run_found) {
+                        console.log('   ⚪  Sandbox Run: Not Found (Sandbox might not be installed or triggered yet)');
+                        mdContent += '- **Sandbox Run:** Not Found\n';
+                    } else if (res.sandbox_status !== 'success' && res.sandbox_status !== 'failure') {
+                        console.log(`   ⏳  Sandbox Run: In Progress / Queued [Status: ${res.sandbox_status}]`);
+                        mdContent += `- **Sandbox Run:** In Progress / Queued [Status: ${res.sandbox_status}]\n`;
+                    } else {
+                        const icon = res.telemetry_analysis?.safe ? '🟢' : '🔴';
+                        console.log(`   ${icon}  Sandbox Run: Completed (${res.sandbox_status})`);
+                        mdContent += `- **Sandbox Run:** Completed (${res.sandbox_status})\n`;
+                        
+                        if (res.telemetry_analysis) {
+                            console.log(`       Safe: ${res.telemetry_analysis.safe}`);
+                            console.log(`       Threats Found: ${res.telemetry_analysis.threats.length}`);
+                            mdContent += `- **Safe:** ${res.telemetry_analysis.safe}\n- **Threats Found:** ${res.telemetry_analysis.threats.length}\n\n`;
+                            
+                            res.telemetry_analysis.threats.forEach(t => {
+                                console.log(`         - [${t.severity}] ${t.rule}: ${t.file}`);
+                                mdContent += `  - **[${t.severity}] ${t.rule}**: \`${t.file}\`\n`;
+                            });
+                        } else if (res.error) {
+                            console.log(`       ⚠️  Error analyzing telemetry: ${res.error}`);
+                            mdContent += `- **Error:** \`${res.error}\`\n`;
+                        }
+                    }
+                    console.log(`   [Action] -> To close manually, run: gh pr close ${res.pr_number} --repo ${res.repo} -c "Closed due to security concerns"`);
+                    mdContent += `\n**Manual Action:**\n\`\`\`bash\ngh pr close ${res.pr_number} --repo ${res.repo} -c "Closed due to security concerns"\n\`\`\`\n\n`;
+                });
+            }
+            console.log('\n' + '─'.repeat(50));
+            
+            try {
+                fs.writeFileSync('sentinel-report.md', mdContent);
+                console.log('✅ A detailed Markdown report has been saved to "sentinel-report.md"');
+            } catch (e) {
+                console.log('⚠️  Failed to write sentinel-report.md to disk.');
+            }
+        }
+    });
+
+
 // ─── sentinel prs ───
 program
     .command('prs')
@@ -524,9 +644,21 @@ program
             const packData = JSON.parse(fs.readFileSync(file, 'utf8'));
             const repo = db.getRepositories().find(r => r.local_path && path.resolve(r.local_path) === path.resolve(process.cwd()));
             if (repo) {
-                db.installPack(repo.id, packData, true);
-                console.log('✅ Pack loaded.');
+                try {
+                    db.installPack(repo.id, packData, true);
+                    console.log('✅ Pack loaded.');
+                    if (program.opts().json) respondAgent(true, { status: 'loaded', repo: repo.github_full_name });
+                } catch (e) {
+                    console.error(`❌ Error loading pack: ${e.message}`);
+                    if (program.opts().json) respondAgent(false, null, e.message);
+                }
+            } else {
+                console.error('❌ Could not determine linked repository for the current directory.');
+                if (program.opts().json) respondAgent(false, null, 'No linked repository found for current directory');
             }
+        } else {
+            console.error('❌ Invalid or missing arguments.');
+            if (program.opts().json) respondAgent(false, null, 'Invalid arguments for packs command');
         }
     });
 

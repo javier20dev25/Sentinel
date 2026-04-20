@@ -247,6 +247,36 @@ async function triggerSandboxRun(ownerRepo, branch = 'main', token = null) {
 }
 
 /**
+ * Fetch the latest Sentinel Sandbox workflow run for a specific branch.
+ *
+ * @param {string} ownerRepo - "owner/repo"
+ * @param {string} branch - Branch name
+ * @param {string} [token] - GitHub Token
+ * @returns {object|null} - Run object or null
+ */
+function getSandboxRunForBranch(ownerRepo, branch, token = null) {
+    if (!isValidOwnerRepo(ownerRepo) || !branch) return null;
+    const { execFileSync } = require('child_process');
+    try {
+        const output = execFileSync('gh', [
+            'api', `/repos/${ownerRepo}/actions/workflows/${WORKFLOW_FILENAME}/runs`,
+            '--field', `branch=${branch}`,
+            '--jq', '.workflow_runs[0]'
+        ], { 
+            encoding: 'utf-8', 
+            timeout: 10000,
+            stdio: ['pipe', 'pipe', 'ignore'],
+            env: token ? { ...process.env, GH_TOKEN: token } : process.env
+        });
+        
+        const runs = JSON.parse(output);
+        return runs && runs.id ? runs : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Verifica el estado actual de un run de GitHub Actions.
  *
  * @param {string}  ownerRepo - "owner/repo"
@@ -546,6 +576,7 @@ module.exports = {
     checkWorkflowInstalled,
     triggerSandboxRun,
     getSandboxRunStatus,
+    getSandboxRunForBranch,
     waitForSandboxRun,
     downloadSandboxArtifacts,
     analyzeTelemetry,
