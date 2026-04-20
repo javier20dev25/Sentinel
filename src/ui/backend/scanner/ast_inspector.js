@@ -143,6 +143,20 @@ function analyze(code, filePath = 'unknown') {
                 ['CI', 'GITHUB_ACTIONS', 'TRAVIS', 'CIRCLECI', 'JENKINS_URL'].includes(node.property.name)) {
                 state.ciCheckDetected = true;
             }
+
+            // Phase 3: Geofencing / Locale Spoofing Detection
+            // Detect access to Timezone, Locale, or Language
+            if ((root === 'process' && node.object.property?.name === 'env' && ['TZ', 'LANG', 'LC_ALL'].includes(node.property?.name)) ||
+                (node.object.name === 'navigator' && ['language', 'languages', 'geolocation'].includes(node.property?.name)) ||
+                (node.object.name === 'Intl' && node.property?.name === 'DateTimeFormat')) {
+                threats.push({
+                    type: 'GEOFENCING_LOCALE_CHECK',
+                    severity: 'HIGH',
+                    riskLevel: 8,
+                    message: `Código inspeccionando la ubicación regional (Language/TZ) en '${filePath}'. Frecuentemente usado por malware para evadir detonación en ciertos países.`,
+                    evidence: snip(node)
+                });
+            }
         },
 
         // ── 2. CallExpression: detectar sources y sinks ──────────────────────
@@ -161,14 +175,29 @@ function analyze(code, filePath = 'unknown') {
                 state.hasExecCall = true;
                 state.execCallCtx.push(snip(node));
 
-                // Alerta inmediata por eval()
-                if (callName === 'eval') {
+                // Alerta estructural por eval() o exec()
+                if (callName === 'eval' || callName === 'exec') {
+                    // Phase 3: Data Flow Analysis (Lite)
+                    // Verificar si el argumento viene de una fuente de input externa explícita
+                    let isTainted = false;
+                    let argsText = '';
+                    if (node.arguments && node.arguments.length > 0) {
+                        const arg = node.arguments[0];
+                        argsText = snip(arg);
+                        // Heurística básica de Taint: si el argumento incluye 'req', 'body', 'input', 'argv'
+                        if (['req', 'body', 'input', 'argv', 'query'].some(t => argsText.includes(t))) {
+                            isTainted = true;
+                        }
+                    }
+
                     threats.push({
                         type: 'DYNAMIC_EXECUTION',
-                        severity: 'HIGH',
-                        riskLevel: 8,
-                        message: `Uso de 'eval()' detectado en '${filePath}'. Vector clásico para ejecutar payloads descargados de red.`,
-                        evidence: snip(node)
+                        severity: isTainted ? 'CRITICAL' : 'HIGH',
+                        riskLevel: isTainted ? 10 : 8,
+                        message: isTainted 
+                            ? `[DATA FLOW] Taint detectado! Entrada externa fluye directamente a '${callName}()' en '${filePath}'. VECTOR RCE CRÍTICO.`
+                            : `Uso de '${callName}()' detectado en '${filePath}'. Vector clásico para ejecutar payloads descargados de red.`,
+                        evidence: `Source/Arg: ${argsText || snip(node)}`
                     });
                 }
             }

@@ -73,8 +73,10 @@ function analyzeLockfile(lockfileContent, packageJsonContent = null) {
         }];
     }
 
-    // Parse package.json para comparar dep declarations
+    // Parse package.json para comparar dep declarations y evaluar Score
     let declaredDeps = new Set();
+    let pkgDepsObj = {};
+
     if (packageJsonContent) {
         try {
             pkg = JSON.parse(packageJsonContent);
@@ -85,8 +87,49 @@ function analyzeLockfile(lockfileContent, packageJsonContent = null) {
                 ...pkg.peerDependencies
             };
             declaredDeps = new Set(Object.keys(allDeps));
+            pkgDepsObj = allDeps;
+
+            // Phase 1: Dependency Risk Scoring Matrix en package.json
+            for (const [depName, depVersion] of Object.entries(pkgDepsObj)) {
+                let score = 0;
+                let reasons = [];
+                let severity = 'INFO';
+                
+                // 1. Unpinned Versions
+                if (depVersion === 'latest' || depVersion === '*') {
+                    score += 60;
+                    reasons.push('versioning: used "latest" or "*"');
+                    severity = 'HIGH';
+                } else if (depVersion.startsWith('^') || depVersion.startsWith('~')) {
+                    score += 20;
+                    reasons.push('versioning: floating version (use exact pin)');
+                    severity = 'WARNING';
+                }
+
+                // 2. Typosquatting markers (suspicious names like lodasb, reaact)
+                // Usamos heurística simple contra nombres estándar.
+                const commonTypos = ['lodasb', 'reaact', 'exprss', 'jquey', 'nodemoon'];
+                if (commonTypos.includes(depName.toLowerCase()) || depName.includes(' ') || depName.includes('__')) {
+                    score += 90;
+                    reasons.push('typosquatting: suspicious package name');
+                    severity = 'CRITICAL';
+                }
+                
+                // Only alert if there is a risk
+                if (score > 0) {
+                    alerts.push({
+                        type: 'DEPENDENCY_RISK_SCORE',
+                        severity: severity,
+                        riskLevel: Math.min(Math.round(score / 10), 10),
+                        message: `Dependency Risk Matrix: ${depName} scored ${score}/100.`,
+                        evidence: reasons.join(', '),
+                        package: depName,
+                        score: score
+                    });
+                }
+            }
         } catch (e) {
-            // Si no podemos parsear package.json, solo analizamos el lockfile
+            // Si no podemos parsear package.json, ignoramos su análisis
         }
     }
 

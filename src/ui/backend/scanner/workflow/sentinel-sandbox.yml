@@ -85,6 +85,40 @@ jobs:
         with:
           node-version: "20"
 
+      - name: "🧬 Setup Sentinel X-Ray Toolkit & Profile Spoofing"
+        run: |
+          # 1. Profile Locale Spoofing based on SENTINEL_SANDBOX_PROFILE
+          PROFILE="${SENTINEL_SANDBOX_PROFILE:-safe}"
+          if [ "$PROFILE" = "aggressive" ] || [ "$PROFILE" = "evasion-detect" ]; then
+            echo "TZ=Europe/Moscow" >> $GITHUB_ENV
+            echo "LANG=ru_RU.UTF-8" >> $GITHUB_ENV
+            echo "LC_ALL=ru_RU.UTF-8" >> $GITHUB_ENV
+            echo "[SENTINEL] Active Profile: $PROFILE (Spoofing TZ/LANG to RU)"
+          else
+            echo "TZ=UTC" >> $GITHUB_ENV
+            echo "[SENTINEL] Active Profile: Safe (No spoofing)"
+          fi
+
+          # 2. Inject X-Ray Hooking Engine
+          cat << 'EOF' > /tmp/sentinel-xray.js
+          const originalEval = global.eval;
+          global.eval = function (code) {
+              console.log("\n[SENTINEL-XRAY] 🚨 INTERCEPTED EVAL PAYLOAD 🚨");
+              console.log(code, "\n");
+              return originalEval(code);
+          };
+          const originalFunction = global.Function;
+          global.Function = new Proxy(originalFunction, {
+              construct(target, args) {
+                  console.log("\n[SENTINEL-XRAY] 🚨 INTERCEPTED 'new Function' PAYLOAD 🚨");
+                  console.log(args[args.length - 1], "\n");
+                  return new target(...args);
+              }
+          });
+          EOF
+          # Export to node process
+          echo "NODE_OPTIONS=--require /tmp/sentinel-xray.js" >> $GITHUB_ENV
+
       - name: "📸 Snapshot pre-instalación"
         run: |
           echo "=== SENTINEL PRE-INSTALL SNAPSHOT ===" > /tmp/sentinel-pre.txt

