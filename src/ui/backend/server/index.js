@@ -164,6 +164,29 @@ app.post('/api/settings', (req, res) => {
     res.json({ success: true });
 });
 
+// ─── Security Specification (Spec) Management ───
+app.get('/api/system/spec', (req, res) => {
+    try {
+        const specPath = path.join(__dirname, '..', 'scanner', 'rules', 'sentinel-spec.json');
+        if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'Spec file not found' });
+        const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+        res.json(spec);
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
+app.post('/api/system/spec', (req, res) => {
+    try {
+        const spec = req.body;
+        const specPath = path.join(__dirname, '..', 'scanner', 'rules', 'sentinel-spec.json');
+        fs.writeFileSync(specPath, JSON.stringify(spec, null, 2));
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: sanitizeForLog(e.message) });
+    }
+});
+
 // ─── System Requirements ───
 
 /** Check if all required tools are installed */

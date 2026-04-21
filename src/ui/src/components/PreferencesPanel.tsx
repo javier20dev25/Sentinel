@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Bell, Clock, Save, CheckCircle2, HardDrive, Trash2, Loader2, Globe, BrainCircuit } from 'lucide-react';
+import { Info, Bell, Clock, Save, CheckCircle2, HardDrive, Trash2, Loader2, Globe, BrainCircuit, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../lib/api';
 import { SecurityHardener } from './SecurityHardener';
@@ -22,6 +22,12 @@ export const PreferencesPanel: React.FC = () => {
   const [saved, setSaved] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [memoryMessage, setMemoryMessage] = useState('');
+  
+  // Spec Editor
+  const [spec, setSpec] = useState<any>(null);
+  const [editingSpec, setEditingSpec] = useState(false);
+  const [specLoading, setSpecLoading] = useState(false);
+  const [specSaved, setSpecSaved] = useState(false);
 
   // Fetch from backend on mount
   React.useEffect(() => {
@@ -30,9 +36,15 @@ export const PreferencesPanel: React.FC = () => {
         const { data } = await api.get('/api/settings');
         if (data.ai_provider) setAiProvider(data.ai_provider);
         if (data.ai_model) setAiModel(data.ai_model);
-        // We don't fetch the key back for security, but we know it exists if data.has_key is true
+        
+        // Load Spec
+        setSpecLoading(true);
+        const { data: specData } = await api.get('/api/system/spec');
+        setSpec(specData);
       } catch (e) {
         console.error("Failed to load settings", e);
+      } finally {
+        setSpecLoading(false);
       }
     }
     loadSettings();
@@ -237,16 +249,6 @@ export const PreferencesPanel: React.FC = () => {
 
       {/* Section: Memory Management */}
       <div className="glass rounded-[28px] border border-white/5 p-7 space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-            <HardDrive className="w-5 h-5 text-purple-400" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-white">Memory Management</h3>
-            <p className="text-xs text-zinc-500">Free up system resources and cache</p>
-          </div>
-        </div>
-
         <div className="flex items-center justify-between py-1 bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
           <div>
             <p className="text-sm font-semibold text-white">Clear App Cache</p>
@@ -266,6 +268,61 @@ export const PreferencesPanel: React.FC = () => {
             </motion.button>
           </div>
         </div>
+      </div>
+
+      {/* Section: Security Specifications */}
+      <div className="glass rounded-[28px] border border-white/5 p-7 space-y-5">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <ShieldAlert className="w-5 h-5 text-red-500" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-bold text-white">Detection Specifications</h3>
+            <p className="text-xs text-zinc-500">Edit the core ruleset and risk scores (sentinel-spec.json)</p>
+          </div>
+          <button 
+            onClick={() => setEditingSpec(!editingSpec)}
+            className="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            {editingSpec ? 'Close Editor' : 'Open Editor'}
+          </button>
+        </div>
+
+        {editingSpec && (
+          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+             <div className="relative">
+                <textarea
+                  value={spec ? JSON.stringify(spec, null, 2) : ''}
+                  onChange={(e) => {
+                    try {
+                      const newSpec = JSON.parse(e.target.value);
+                      setSpec(newSpec);
+                    } catch(err) {
+                      // Allow invalid JSON while typing, but don't parse
+                    }
+                  }}
+                  className="w-full h-80 bg-black/60 border border-white/10 rounded-2xl p-5 font-mono text-[11px] text-zinc-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 custom-scrollbar"
+                  spellCheck={false}
+                />
+             </div>
+             <div className="flex justify-end gap-3">
+                <button 
+                  onClick={async () => {
+                    try {
+                      await api.post('/api/system/spec', spec);
+                      setSpecSaved(true);
+                      setTimeout(() => setSpecSaved(false), 3000);
+                    } catch(e) { alert('Invalid Spec JSON'); }
+                  }}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                    specSaved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500 text-white'
+                  }`}
+                >
+                  {specSaved ? 'Applied Successfully' : 'Apply Spec Changes'}
+                </button>
+             </div>
+          </div>
+        )}
       </div>
 
       {/* Info Banner */}

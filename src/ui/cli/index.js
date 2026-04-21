@@ -166,12 +166,12 @@ function performManualScan(repoId, githubName) {
 }
 
 /**
- * Shared logic for local analysis (used by 'analyze', 'heal', and 'prepush').
+ * Local Analysis Engine (Git Diff or Full Scan)
  */
 function performLocalAnalysis(options = {}) {
     const gh = require('../backend/lib/gh_bridge');
     const db = require('../backend/lib/db');
-    const { scanFile } = require('../backend/scanner/index');
+    const scanner = require('../backend/scanner/index'); // Reuse backend scanner
     const { execFileSync } = require('child_process');
     const cwd = process.cwd();
 
@@ -179,6 +179,21 @@ function performLocalAnalysis(options = {}) {
     const repo = repos.find(r => r.local_path && normalizeAbsPath(r.local_path) === normalizeAbsPath(cwd));
     
     let violations = [];
+    let scannedFiles = [];
+
+    if (options.all) {
+        // Full Directory Scan
+        const fullResults = scanner.scanDirectory(cwd);
+        return {
+            success: true,
+            alerts: [], // Direct access to details below
+            details: fullResults.details,
+            threats: fullResults.threats,
+            filesScanned: fullResults.filesScanned,
+            repo
+        };
+    }
+
     if (repo) {
         try {
             const statusOutput = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf-8', timeout: 5000 });
@@ -235,7 +250,7 @@ function performLocalAnalysis(options = {}) {
         diff = gh.getLocalDiff(cwd) || '';
     }
 
-    const results = scanFile(options.isHook ? 'outgoing.diff' : 'local.diff', diff);
+    const results = scanner.scanFile(options.isHook ? 'outgoing.diff' : 'local.diff', diff);
 
     return {
         success: true,
@@ -248,9 +263,45 @@ function performLocalAnalysis(options = {}) {
 // ─── CLI COMMAND DEFINITIONS ───
 
 program
-    .version('1.0.0')
-    .description('Sentinel Security CLI')
-    .option('--json', 'Output structured JSON for AI and automation');
+    .name('sentinel')
+    .version('3.1.0')
+    .description('Sentinel Security Guardian — Enterprise SAST & Sandbox Engine')
+    .option('--json', 'Machine-readable output (JSON)')
+    .hook('preAction', () => {
+        // Ensure rules are loaded before any action that might use them
+        const scanner = require('../backend/scanner/index');
+        try { scanner.loadRules(); } catch (e) {}
+    });
+
+// ─── sentinel analyze ───
+program
+    .command('analyze')
+    .description('Scan current repository for threats (local diff by default).')
+    .option('--local', 'Scan local diff (unstaged changes)')
+    .option('--all', 'Scan ENTIRE local directory (for AI agent full audits)')
+    .action((options) => {
+        const analysis = performLocalAnalysis(options);
+        
+        if (program.opts().json) {
+            respondAgent(true, analysis);
+        } else {
+            console.log(`\n🛡️  Sentinel Local Analysis Report [${options.all ? 'FULL SCAN' : 'DIFF SCAN'}]`);
+            console.log('─'.repeat(50));
+            
+            if (options.all) {
+                console.log(`Files Scanned: ${analysis.filesScanned}`);
+                console.log(`Threats Found: ${analysis.threats}`);
+                analysis.details.forEach(d => console.log(`  🚨 ${d}`));
+            } else {
+                if (analysis.alerts.length === 0) {
+                    console.log('✅ No threats found in recent changes.');
+                } else {
+                    analysis.alerts.forEach(a => console.log(`  🚨 [${a.riskLevel}] ${a.ruleName}: ${a.description}`));
+                }
+            }
+            console.log('─'.repeat(50));
+        }
+    });
 
 // ─── sentinel prepush (Advisory Pre-Push Analysis) ───
 program
@@ -369,6 +420,36 @@ program
         if (program.opts().json) respondAgent(true, { status: 'installed', path: hookPath });
     });
 
+// ─── sentinel audit (One-shot Directory Audit) ───
+program
+    .command('audit')
+    .argument('[path]', 'Directory to audit', '.')
+    .description('Perform a deep, one-shot security audit of a local directory.')
+    .action(async (dirPath) => {
+        const scanner = require('../backend/scanner/index');
+        const results = scanner.scanDirectory(path.resolve(dirPath));
+        
+        if (program.opts().json) {
+            respondAgent(true, results);
+        } else {
+            console.log('\n🛡️  Sentinel One-Shot Audit Report');
+            console.log('─'.repeat(40));
+            console.log(`Target: ${path.resolve(dirPath)}`);
+            console.log(`Files Scanned: ${results.filesScanned}`);
+            console.log(`Threats Found: ${results.threats}`);
+            console.log('─'.repeat(40));
+            
+            if (results.threats > 0) {
+                results.details.forEach(detail => console.log(`  🚨 ${detail}`));
+                console.log('\n❌ Audit failed. Security threats identified.');
+                process.exit(1);
+            } else {
+                console.log('\n✅ Audit clean. No threats identified.');
+                process.exit(0);
+            }
+        }
+    });
+
 // ─── sentinel open ───
 program
     .command('open')
@@ -439,6 +520,7 @@ sandbox
     .command('sync')
     .description('Install or update sandbox workflow')
     .option('--auto', 'Auto-install via git push')
+    .option('--branch <name>', 'Create a new branch for the sandbox update (for protected repos)')
     .action(async (options) => {
         const db = require('../backend/lib/db');
         const gh = require('../backend/lib/gh_bridge');
@@ -451,15 +533,16 @@ sandbox
         }
 
         const repo = repos[0];
-        if (options.auto) {
-            const result = gh.pushSandboxConfig(repo.local_path);
-            if (result.success) {
+        if (options.auto || options.branch) {
+            const pushResult = gh.pushSandboxConfig(repo.local_path, options.branch);
+            if (pushResult.success) {
                 db.setSandboxConsent(repo.id, true);
-                console.log('✅ Sandbox pushed to GitHub automatically!');
-                if (program.opts().json) respondAgent(true, { status: 'pushed', path: result.path });
+                const msg = options.branch ? `✅ Sandbox pushed to branch: ${options.branch}` : '✅ Sandbox pushed to GitHub automatically!';
+                console.log(msg);
+                if (program.opts().json) respondAgent(true, { status: 'pushed', path: pushResult.path, branch: options.branch });
             } else {
-                console.error(`❌ Failed to push Sandbox Config: ${result.error}`);
-                if (program.opts().json) respondAgent(false, null, result.error);
+                console.error(`❌ Failed to push Sandbox Config: ${pushResult.error}`);
+                if (program.opts().json) respondAgent(false, null, pushResult.error);
             }
         } else {
             const template = gh.getSandboxTemplateContent();
@@ -662,22 +745,7 @@ program
         }
     });
 
-// ─── sentinel analyze ───
-program
-    .command('analyze')
-    .option('--local', 'Scan local diff')
-    .action(() => {
-        const analysis = performLocalAnalysis();
-        if (analysis.violations.length > 0) {
-            console.log('⚠️ Protected files detected!');
-            analysis.violations.forEach(v => console.log(`   - ${v}`));
-        }
-        if (analysis.alerts.length > 0) {
-            console.log(`🚨 Found ${analysis.alerts.length} threats!`);
-        } else {
-            console.log('✅ Clean.');
-        }
-    });
+
 
 // ─── sentinel heal ───
 program
@@ -793,6 +861,87 @@ program
                 if (files.length === 0) console.log('📭 No protected files.');
                 files.forEach(f => console.log(`[ID: ${f.id}] - ${f.file_path}`));
             }
+        }
+    });
+
+// ─── sentinel config ───
+const configCmd = program.command('config').description('Manage Sentinel security specifications and weights');
+
+configCmd
+    .command('view')
+    .description('View the current security specification details.')
+    .action(() => {
+        const specPath = path.join(__dirname, '..', 'backend', 'scanner', 'rules', 'sentinel-spec.json');
+        if (!fs.existsSync(specPath)) {
+            console.error('❌ Security specification file not found.');
+            if (program.opts().json) respondAgent(false, null, 'Spec file not found');
+            return;
+        }
+        try {
+            const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+            if (program.opts().json) {
+                respondAgent(true, spec);
+            } else {
+                console.log('\n🛡️  Sentinel Security Specification\n');
+                console.log(JSON.stringify(spec, null, 2));
+                console.log('\nLocation:', specPath);
+            }
+        } catch (e) {
+            console.error(`❌ Error reading specification: ${e.message}`);
+            if (program.opts().json) respondAgent(false, null, e.message);
+        }
+    });
+
+configCmd
+    .command('set <path> <value>')
+    .description('Update a security weight or configuration (e.g. "dependency_risk.versioning.unpinned.weight" "75").')
+    .action((keyPath, value) => {
+        const specPath = path.join(__dirname, '..', 'backend', 'scanner', 'rules', 'sentinel-spec.json');
+        try {
+            const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+            const keys = keyPath.split('.');
+            let current = spec;
+            
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (!current[keys[i]]) current[keys[i]] = {};
+                current = current[keys[i]];
+            }
+            
+            // Try to parse value as number or boolean if possible
+            let parsedValue = value;
+            if (value.toLowerCase() === 'true') parsedValue = true;
+            else if (value.toLowerCase() === 'false') parsedValue = false;
+            else if (!isNaN(Number(value))) parsedValue = Number(value);
+            
+            current[keys[keys.length - 1]] = parsedValue;
+            
+            fs.writeFileSync(specPath, JSON.stringify(spec, null, 2));
+            console.log(`✅ Updated ${keyPath} to: ${parsedValue}`);
+            if (program.opts().json) respondAgent(true, { path: keyPath, newValue: parsedValue });
+        } catch (e) {
+            console.error(`❌ Error updating specification: ${e.message}`);
+            if (program.opts().json) respondAgent(false, null, e.message);
+        }
+    });
+
+configCmd
+    .command('reset')
+    .description('Restore security specifications to factory defaults.')
+    .action(() => {
+        const specPath = path.join(__dirname, '..', 'backend', 'scanner', 'rules', 'sentinel-spec.json');
+        const defaultPath = path.join(__dirname, '..', 'backend', 'scanner', 'rules', 'sentinel-spec.default.json');
+        
+        try {
+            if (fs.existsSync(defaultPath)) {
+                fs.copyFileSync(defaultPath, specPath);
+                console.log('✅ Security specifications restored to factory defaults.');
+                if (program.opts().json) respondAgent(true, { status: 'restored' });
+            } else {
+                throw new Error('Default specification backup not found.');
+            }
+        } catch (e) {
+            console.error(`❌ Reset failed: ${e.message}`);
+            if (program.opts().json) respondAgent(false, null, e.message);
         }
     });
 
@@ -933,11 +1082,13 @@ function run(args = process.argv) {
         console.log('   Si quieres usar la interfaz gráfica (Dashboard Web), ejecuta:');
         console.log('   👉  sentinel open\n');
         console.log('🤖 ¿ERES UN AGENTE DE IA?');
-        console.log('   Sentinel está optimizado para ti. Usa la CLI pasándole la bandera');
-        console.log('   --json al final de comandos para obtener respuestas estructuradas.');
-        console.log('   Ejemplo: sentinel prepush --json\n');
-        console.log('Para ver todos los comandos de la terminal, ejecuta:');
-        console.log('   👉  sentinel --help\n');
+        console.log('   Sentinel está optimizado para flujos automatizados.');
+        console.log('   Usa la bandera --json al final de cualquier comando.');
+        console.log('');
+        console.log('   Comandos clave para Agentes:');
+        console.log('   👉  sentinel audit [ruta] --json     (Escaneo directo y profundo)');
+        console.log('   👉  sentinel analyze --all --json     (Análisis total del repositorio)');
+        console.log('   👉  sentinel config view --json       (Consultar heurísticas actuales)\n');
         console.log('================================================================\n');
         process.exit(0);
     }

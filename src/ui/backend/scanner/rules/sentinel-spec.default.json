@@ -35,28 +35,9 @@
     },
     "geofencing": {
       "indicators": [
-        {
-          "object": "process.env",
-          "properties": [
-            "TZ",
-            "LANG",
-            "LC_ALL"
-          ]
-        },
-        {
-          "object": "navigator",
-          "properties": [
-            "language",
-            "languages",
-            "geolocation"
-          ]
-        },
-        {
-          "object": "Intl",
-          "properties": [
-            "DateTimeFormat"
-          ]
-        }
+        { "object": "process.env", "properties": ["TZ", "LANG", "LC_ALL"] },
+        { "object": "navigator", "properties": ["language", "languages", "geolocation"] },
+        { "object": "Intl", "properties": ["DateTimeFormat"] }
       ],
       "scoring": {
         "severity": "HIGH",
@@ -67,41 +48,20 @@
   "dependency_risk": {
     "versioning": {
       "unpinned": {
-        "patterns": [
-          "latest",
-          "*"
-        ],
-        "weight": 75,
+        "patterns": ["latest", "*"],
+        "weight": 60,
         "severity": "HIGH"
       },
       "floating": {
-        "patterns": [
-          "^",
-          "~"
-        ],
+        "patterns": ["^", "~"],
         "weight": 20,
         "severity": "WARNING"
       }
     },
     "typosquatting": {
-      "known_targets": [
-        "lodash",
-        "react",
-        "express",
-        "jquery",
-        "nodemon"
-      ],
-      "common_anomalies": [
-        "lodasb",
-        "reaact",
-        "exprss",
-        "jquey",
-        "nodemoon"
-      ],
-      "heuristics": [
-        "contains_space",
-        "double_underscore"
-      ],
+      "known_targets": ["lodash", "react", "express", "jquery", "nodemon"],
+      "common_anomalies": ["lodasb", "reaact", "exprss", "jquey", "nodemoon"],
+      "heuristics": ["contains_space", "double_underscore"],
       "weight": 90,
       "severity": "CRITICAL"
     }

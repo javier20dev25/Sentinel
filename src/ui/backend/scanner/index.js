@@ -284,7 +284,9 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
                     if (scan.alerts.length > 0) {
                         results.threats += scan.alerts.length;
                         scan.alerts.forEach(alert => {
-                            results.details.push(`${item}: ${alert.ruleName} (${alert.category})`);
+                            const name = alert.ruleName || alert.id || 'Unknown Threat';
+                            const cat = alert.category || 'general';
+                            results.details.push(`${item}: ${name} (${cat})`);
                         });
                     }
                 } catch (e) {

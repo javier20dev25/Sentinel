@@ -125,17 +125,9 @@ jobs:
           cp package-lock.json /tmp/before-lock.json 2>/dev/null || echo "{}" > /tmp/before-lock.json
           ss -tunp 2>/dev/null > /tmp/netstat-before.txt || echo "netstat not available" > /tmp/netstat-before.txt
 
-      - name: "📦 npm ci (Honeypot Detonation)"
+      - name: "📦 npm ci --ignore-scripts (Baseline mode)"
         run: |
-          # We purposefully DO NOT use --ignore-scripts here. This is a Sandbox.
-          # We want malicious postinstall scripts to detonate so X-Ray catches them!
-          npm ci --no-audit | tee /tmp/npm-install-output.txt || true
-          
-          # Force execution of any suspicious ad-hoc JS files that might be entrypoints
-          if [ -f "tests/payloads/obfuscated_xray.js" ]; then
-             echo "Running test payload explicitly..." >> /tmp/npm-install-output.txt
-             node tests/payloads/obfuscated_xray.js >> /tmp/npm-install-output.txt 2>&1 || true
-          fi
+          npm ci --ignore-scripts --no-audit | tee /tmp/npm-install-output.txt || true
         env:
           NO_COLOR: "1"
 
@@ -166,40 +158,3 @@ jobs:
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| WASM Files | $(grep -v 'No WASM' /tmp/wasm-files.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "| Executables | $(grep -v 'No Execs' /tmp/executables.txt | wc -l) |" >> $GITHUB_STEP_SUMMARY
-
-      - name: "💬 Post Security Summary to PR & Developer Alert"
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        uses: actions/github-script@v7
-        with:
-          script: |
-             const fs = require('fs');
-             const wasm = fs.readFileSync('/tmp/wasm-files.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No WASM')).length;
-             const execs = fs.readFileSync('/tmp/executables.txt', 'utf8').split('\n').filter(l => l.trim() && !l.includes('No Execs')).length;
-             
-             // Check X-Ray Logs for interception
-             let xrayIntercepted = false;
-             try {
-                const logs = fs.readFileSync('/tmp/npm-install-output.txt', 'utf8');
-                if (logs.includes('[SENTINEL-XRAY] 🚨 INTERCEPTED EVAL PAYLOAD 🚨') || logs.includes('INTERCEPTED OS COMMAND')) {
-                  xrayIntercepted = true;
-                }
-             } catch(e) {}
-             
-             if (wasm > 0 || execs > 0 || xrayIntercepted) {
-               const body = `## 🚨 Sentinel Security Alert: Active Malware Detected! 🚨\n\n` + 
-                            `Sentinel Sandbox has detected high-risk behaviors in this Pull Request.\n\n` +
-                            `> [!CAUTION]\n` +
-                            `> **DO NOT** test this PR locally. Proceeding may compromise your local environment.\n\n` +
-                            `**Threat Telemetry:**\n` +
-                            `- X-Ray Engine Interception: ${xrayIntercepted ? '🔥 YES (Obfuscation Payload Decrypted)' : 'No'}\n` +
-                            `- WASM Binaries Found: ${wasm}\n` +
-                            `- Executables Found: ${execs}\n\n` +
-                            `*This is an automated message triggered by Sentinel X-Ray Sandbox.*`;
-               
-               github.rest.issues.createComment({
-                 issue_number: context.issue.number,
-                 owner: context.repo.owner,
-                 repo: context.repo.repo,
-                 body: body
-               });
-             }

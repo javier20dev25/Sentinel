@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldAlert, ShieldCheck, GitBranch, BrainCircuit, 
   Loader2, Bot, Play, X, Check, Star, RefreshCcw, 
-  AlertTriangle, Filter, FileCode2
+  AlertTriangle, Filter, FileCode2, ArrowRight
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { LiveScannerTerminal } from './LiveScannerTerminal';
@@ -222,10 +222,47 @@ export const ThreatLog: React.FC<ThreatLogProps> = ({ repos }) => {
                           >
                              {/* Evidence Snippet */}
                              {log.evidence && log.evidence.length > 0 && log.evidence[0].evidence && (
-                               <div className="space-y-2">
+                               <div className="space-y-3">
                                  <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-black uppercase tracking-widest">
                                    <FileCode2 className="w-3.5 h-3.5" /> Raw Evidence
                                  </div>
+                                 
+                                 {/* Taint Flow Visualization */}
+                                 {log.description.includes('[DATA FLOW]') && (
+                                   <div className="flex items-center gap-4 bg-red-500/5 border border-red-500/10 p-5 rounded-2xl overflow-hidden relative">
+                                      <div className="absolute top-0 right-0 w-32 h-full bg-red-500/5 blur-2xl -z-10" />
+                                      
+                                      <div className="flex flex-col items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                                           <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Source</span>
+                                      </div>
+
+                                      <div className="flex-1 flex items-center justify-center relative">
+                                         <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/40 via-red-500/40 to-red-500/40" />
+                                         <motion.div 
+                                           animate={{ x: [0, 50, 0] }}
+                                           transition={{ duration: 3, repeat: Infinity }}
+                                           className="absolute left-0 w-2 h-2 rounded-full bg-white/40 blur-[2px]"
+                                         />
+                                         <ArrowRight className="w-4 h-4 text-red-500/60" />
+                                      </div>
+
+                                      <div className="flex flex-col items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
+                                           <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-red-500">Sink</span>
+                                      </div>
+
+                                      <div className="ml-4 flex-1">
+                                         <p className="text-[10px] font-bold text-zinc-300">Analysis: Critical Path Identified</p>
+                                         <p className="text-[9px] text-zinc-500 leading-tight mt-1">Untrusted input from network/filesystem reaches a dangerous execution sink.</p>
+                                      </div>
+                                   </div>
+                                 )}
+
                                  <div className="bg-black/60 rounded-xl p-4 border border-white/5 font-mono text-[11px] text-zinc-400 leading-relaxed overflow-x-auto whitespace-pre">
                                    {log.evidence[0].evidence}
                                  </div>

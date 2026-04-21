@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, User, ExternalLink, Terminal, ChevronDown, ChevronUp } from 'lucide-react';
+import { RiskGauge } from './RiskGauge';
+import { api } from '../lib/api';
 
 interface SupplyChainAlert {
   script: string;
@@ -33,8 +35,11 @@ export const SupplyChainView: React.FC = () => {
 
   const fetchLogs = async () => {
     try {
-      const response = await (window as any).electron.ipcRenderer.invoke('get-logs', 'all');
-      const supplyLogs = response.filter((l: ScanLog) => l.event_type === 'SUPPLY_CHAIN_ALERT');
+      // Using shared API layer for consistency
+      const { data: response } = await api.get('/api/audit/logs?repoId=all');
+      const supplyLogs = response.filter((l: ScanLog) => 
+        l.event_type.includes('SUPPLY_CHAIN') || l.description.includes('Risk Matrix')
+      );
       setLogs(supplyLogs);
     } catch (err) {
       console.error('Failed to fetch supply chain logs:', err);
@@ -67,16 +72,26 @@ export const SupplyChainView: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-400" />
             Supply Chain Shield
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Monitoreo en tiempo real de scripts de ciclo de vida y reputación de colaboradores.
+            Hybrid Sandbox analysis of life-cycle scripts, unpinned dependencies, and typosquatting vectors.
           </p>
         </div>
+        
+        {logs.length > 0 && (
+          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center">
+            <RiskGauge 
+              score={Math.round(logs.reduce((acc, curr) => acc + curr.risk_level * 10, 0) / logs.length)} 
+              size={140}
+              label="Fleet Risk"
+            />
+          </div>
+        )}
       </div>
 
       {logs.length === 0 ? (

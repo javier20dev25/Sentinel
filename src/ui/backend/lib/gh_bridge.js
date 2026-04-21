@@ -360,8 +360,10 @@ class GitHubBridge {
 
     /**
      * Push the Sentinel sandbox workflow config to the repo via git.
+     * @param {string} localPath - Path to local repo
+     * @param {string} branch - (Optional) Branch name to create and push to
      */
-    pushSandboxConfig(localPath) {
+    pushSandboxConfig(localPath, branch = null) {
         if (!isValidLocalPath(localPath)) return { success: false, error: 'Invalid path' };
         const fs = require('fs');
         const path = require('path');
@@ -370,11 +372,20 @@ class GitHubBridge {
         const destPath = path.join(destDir, 'sentinel-sandbox.yml');
 
         try {
+            if (branch) {
+                // Create and checkout new branch
+                execFileSync('git', ['checkout', '-b', branch], { cwd: localPath });
+            }
             fs.mkdirSync(destDir, { recursive: true });
             fs.copyFileSync(templatePath, destPath);
             execFileSync('git', ['add', destPath], { cwd: localPath });
             execFileSync('git', ['commit', '-m', 'chore: add sentinel sandbox'], { cwd: localPath });
-            execFileSync('git', ['push'], { cwd: localPath });
+            
+            if (branch) {
+                execFileSync('git', ['push', 'origin', branch], { cwd: localPath });
+            } else {
+                execFileSync('git', ['push'], { cwd: localPath });
+            }
             return { success: true, path: destPath };
         } catch (e) {
             return { success: false, error: e.message };
