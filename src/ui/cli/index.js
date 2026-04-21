@@ -262,9 +262,12 @@ function performLocalAnalysis(options = {}) {
 
 // ─── CLI COMMAND DEFINITIONS ───
 
+const renderer = require('./renderer');
+const pc = require('picocolors');
+
 program
     .name('sentinel')
-    .version('3.1.0')
+    .version('3.6.0')
     .description('Sentinel Security Guardian — Enterprise SAST & Sandbox Engine')
     .option('--json', 'Machine-readable output (JSON)')
     .hook('preAction', () => {
@@ -273,33 +276,113 @@ program
         try { scanner.loadRules(); } catch (e) {}
     });
 
-// ─── sentinel analyze ───
+// ─── sentinel scan (v3.6 Unified Scanner) ───
 program
-    .command('analyze')
-    .description('Scan current repository for threats (local diff by default).')
-    .option('--local', 'Scan local diff (unstaged changes)')
-    .option('--all', 'Scan ENTIRE local directory (for AI agent full audits)')
-    .action((options) => {
-        const analysis = performLocalAnalysis(options);
+    .command('scan')
+    .description('Scan current repository or specific path for threats.')
+    .argument('[path]', 'Directory or file to scan', '.')
+    .option('--ci', 'CI Mode: Minimal silent output with deterministic exit codes')
+    .option('--debug', 'Verbose mode: Print raw breakdown metrics')
+    .action((targetPath, options) => {
+        const gh = require('../backend/lib/gh_bridge');
+        const scanner = require('../backend/scanner/index');
+        const db = require('../backend/lib/db');
+        const target = normalizeAbsPath(targetPath);
+        
+        let results = null;
+        const stats = fs.statSync(target, { throwIfNoEntry: false });
+        
+        if (stats && stats.isFile()) {
+            const content = fs.readFileSync(target, 'utf8');
+            const scan = scanner.scanFile(path.basename(target), content);
+            scan.alerts.forEach(a => { a._file = path.basename(target); a._fullPath = target; });
+            results = {
+                threats: scan.alerts.length,
+                filesScanned: 1,
+                rawAlerts: scan.alerts
+            };
+        } else {
+            results = scanner.scanDirectory(target);
+        }
+
+        if (program.opts().json) {
+            respondAgent(true, results);
+        } else if (options.ci) {
+            // Modo CI (0=Limpio, 1=Warnings/Suspicious, 2=Critical Block)
+            let criticalCount = 0;
+            let warningCount = 0;
+            if (results.rawAlerts) {
+                criticalCount = results.rawAlerts.filter(a => a.severity === 'CRITICAL' || a.riskLevel >= 80).length;
+                warningCount = results.rawAlerts.filter(a => a.riskLevel < 80).length;
+            }
+            
+            if (criticalCount > 0) process.exit(2);
+            else if (warningCount > 0) process.exit(1);
+            else process.exit(0);
+        } else {
+            renderer.renderHierarchicalReport(results.rawAlerts || [], results.filesScanned);
+            if (options.debug && results.rawAlerts) {
+                console.log('\n[DEBUG] Raw Breakdown:');
+                results.rawAlerts.forEach(a => console.dir(a._rawRecord, {depth: null}));
+            }
+        }
+    });
+
+// ─── sentinel explain (v3.6) ───
+program
+    .command('explain')
+    .description('Explain the logic and heuristics behind a flagged file.')
+    .argument('<file>', 'File path to explain')
+    .action((file) => {
+        const scanner = require('../backend/scanner/index');
+        const stat = fs.statSync(file, { throwIfNoEntry: false });
+        if (!stat || !stat.isFile()) {
+            console.error(pc.red(`❌ Target is not a file: ${file}`));
+            process.exit(1);
+        }
+        
+        const content = fs.readFileSync(file, 'utf8');
+        const scan = scanner.scanFile(path.basename(file), content);
         
         if (program.opts().json) {
-            respondAgent(true, analysis);
+            respondAgent(true, scan.alerts);
         } else {
-            console.log(`\n🛡️  Sentinel Local Analysis Report [${options.all ? 'FULL SCAN' : 'DIFF SCAN'}]`);
-            console.log('─'.repeat(50));
-            
-            if (options.all) {
-                console.log(`Files Scanned: ${analysis.filesScanned}`);
-                console.log(`Threats Found: ${analysis.threats}`);
-                analysis.details.forEach(d => console.log(`  🚨 ${d}`));
-            } else {
-                if (analysis.alerts.length === 0) {
-                    console.log('✅ No threats found in recent changes.');
-                } else {
-                    analysis.alerts.forEach(a => console.log(`  🚨 [${a.riskLevel}] ${a.ruleName}: ${a.description}`));
-                }
+            if (scan.alerts.length === 0) {
+                 console.log(pc.green(`✅ File is SAFE. No heuristics triggered.`));
+                 return;
             }
-            console.log('─'.repeat(50));
+            // Explain top threat
+            const topThreat = scan.alerts.sort((a,b) => b.riskLevel - a.riskLevel)[0];
+            topThreat._file = file;
+            renderer.renderExplain(topThreat);
+        }
+    });
+
+// ─── sentinel trace (v3.6) ───
+program
+    .command('trace')
+    .description('Print execution flow and transformations detected on the file.')
+    .argument('<file>', 'File path to trace')
+    .action((file) => {
+        const scanner = require('../backend/scanner/index');
+        const stat = fs.statSync(file, { throwIfNoEntry: false });
+        if (!stat || !stat.isFile()) {
+            console.error(pc.red(`❌ Target is not a file: ${file}`));
+            process.exit(1);
+        }
+        
+        const content = fs.readFileSync(file, 'utf8');
+        const scan = scanner.scanFile(path.basename(file), content);
+        
+        if (program.opts().json) {
+            respondAgent(true, scan.alerts);
+        } else {
+             if (scan.alerts.length === 0) {
+                 console.log(pc.green(`✅ File is SAFE. No traces built.`));
+                 return;
+            }
+            const topThreat = scan.alerts.sort((a,b) => b.riskLevel - a.riskLevel)[0];
+            renderer.renderTrace(topThreat);
         }
     });
 
@@ -1034,44 +1117,7 @@ program
         }
     });
 
-// ─── sentinel scan ───
-program
-    .command('scan')
-    .argument('[repo]', 'Optional: specific repo name (owner/repo) to scan')
-    .description('Scan linked repositories for security threats in open PRs.')
-    .action((repo) => {
-        const db = require('../backend/lib/db');
-        const repos = db.getRepositories();
-        let targets = repos;
-        if (repo) {
-            targets = repos.filter(r => r.github_full_name === repo);
-            if (targets.length === 0) {
-                console.error(`❌ Repository "${repo}" not found. Use "sentinel list" to see linked repos.`);
-                if (program.opts().json) respondAgent(false, null, `Repository not found: ${repo}`);
-                return;
-            }
-        }
-        if (targets.length === 0) {
-            console.log('📭 No repositories to scan. Link one first with "sentinel link".');
-            if (program.opts().json) respondAgent(true, { scanned: 0, results: [] });
-            return;
-        }
-        const results = [];
-        targets.forEach(r => {
-            try {
-                performManualScan(r.id, r.github_full_name);
-                results.push({ repo: r.github_full_name, scanned: true, error: null });
-            } catch (e) {
-                console.error(`  ⚠️  Error scanning ${r.github_full_name}: ${e.message}`);
-                results.push({ repo: r.github_full_name, scanned: false, error: e.message });
-            }
-        });
-        if (program.opts().json) {
-            respondAgent(true, { scanned: results.length, results });
-        }
-    });
-
-
+// Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
 function run(args = process.argv) {
     if (args.length === 2) {
         console.log('\n================================================================');
@@ -1086,9 +1132,9 @@ function run(args = process.argv) {
         console.log('   Usa la bandera --json al final de cualquier comando.');
         console.log('');
         console.log('   Comandos clave para Agentes:');
-        console.log('   👉  sentinel audit [ruta] --json     (Escaneo directo y profundo)');
-        console.log('   👉  sentinel analyze --all --json     (Análisis total del repositorio)');
-        console.log('   👉  sentinel config view --json       (Consultar heurísticas actuales)\n');
+        console.log('   👉  sentinel scan <ruta> --json      (Análisis total con engine v3.6 adaptativo)');
+        console.log('   👉  sentinel config view --json      (Consultar heurísticas actuales)');
+        console.log('   👉  sentinel explain <file> --json   (Dump raw del ConfidenceScorer)\n');
         console.log('================================================================\n');
         process.exit(0);
     }

@@ -171,6 +171,15 @@ class ConfidenceScorer {
         record.score = Math.round(finalScore);
         record.diversity = diversity;
         record.isComposite = isCompositeMode;
+        
+        record.metrics = {
+             rawScore,
+             finalScore,
+             effectiveCap,
+             residualFactor,
+             maxWeight,
+             restWeight
+        };
     }
 
     evaluateFile(file) {
@@ -184,8 +193,12 @@ class ConfidenceScorer {
 
         const threat = this._generateThreat(file, record);
         
+        // Inject immutability for CLI Explain Tools & Forensic Mode
+        threat._rawRecord = JSON.parse(JSON.stringify(record));
+        threat.intentFingerprint = this._generateFingerprint(record);
+
         if (isNearMiss) {
-            threat.nearMissIntelligence = this._generateFingerprint(record);
+            threat.nearMissIntelligence = threat.intentFingerprint;
             threat.category = 'near-miss-audit';
         }
 
@@ -236,14 +249,14 @@ class ConfidenceScorer {
         }
 
         const logicPath = record.signals.map(s => s.type).join(' → ');
-
+        
         return {
             ruleName: `Adaptive Engine [${category}][Score: ${record.score}/100]`,
             category: 'behavior-graph',
             riskLevel: record.score, 
             severity: severity,
             description: record.killSwitch 
-                ? `[KILL SWITCH] Amenaza determinística detectada. Bloqueo inmediata.`
+                ? `[KILL SWITCH] Amenaza determinística detectada. Bloqueo inmediato.`
                 : `Combinación de señales detectada con confianza ${record.score}/100.`,
             evidence: `Cadena Causal: [ ${logicPath} ]\nSignals:\n` + 
                       record.signals.map(s => ` - ${s.type}: ${s.evidence}`).join('\n')

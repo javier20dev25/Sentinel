@@ -195,7 +195,10 @@ function scanFile(filename, content, authorMeta = null) {
                     description: t.description,
                     line: (t.evidence || '').substring(0, 400),
                     evidence: t.evidence,
-                    severity: t.severity
+                    severity: t.severity,
+                    // [3.6] Exporting Immutable Logic Core for Explain CLI & Telemetry
+                    _rawRecord: t._rawRecord,
+                    intentFingerprint: t.intentFingerprint
                 })));
             }
         } catch (e) {
@@ -277,7 +280,8 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
     const results = {
         threats: 0,
         filesScanned: 0,
-        details: []
+        details: [],
+        rawAlerts: [] // [3.6] Export Immutable Payload para CLI UX
     };
 
     if (!fs.existsSync(dirPath) || depth < 0) return results;
@@ -297,6 +301,7 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
                 results.threats += subResults.threats;
                 results.filesScanned += subResults.filesScanned;
                 results.details.push(...subResults.details);
+                results.rawAlerts.push(...(subResults.rawAlerts || []));
             } else if (stats.isFile()) {
                 // [3.2] Binary asset inspection (WASM, EXE, DLL, etc.)
                 if (isBinaryAsset(item)) {
@@ -329,6 +334,10 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
                             const name = alert.ruleName || alert.id || 'Unknown Threat';
                             const cat = alert.category || 'general';
                             results.details.push(`${item}: ${name} (${cat})`);
+                            
+                            // Adosar el nombre de archivo a cada alert para el CLI render
+                            const fileAlert = { ...alert, _file: item, _fullPath: fullPath };
+                            results.rawAlerts.push(fileAlert);
                         });
                     }
                 } catch (e) {
