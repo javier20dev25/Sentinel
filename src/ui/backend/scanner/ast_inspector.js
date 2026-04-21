@@ -333,15 +333,21 @@ function analyze(code, filePath = 'unknown') {
                 };
 
                 const isAllLiteral = args.length > 0 && args.slice(0, 2).every(isSafeArg);
+
                 // [3.5.1] FIXED: 10 for whitelisted utils, 35 for normal literals, 65 for dynamic
                 let riskWeight = 65; 
+                let cmd = '';
+                if (args[0] && args[0].type === 'Literal') cmd = String(args[0].value);
+                if (args[0] && args[0].type === 'TemplateLiteral' && args[0].quasis.length > 0) cmd = String(args[0].quasis[0].value.raw);
+                
+                const WHITE_LIST = ['git', 'gh', 'npm', 'pnpm', 'yarn', 'ls', 'node'];
+                const isWhitelistedCmd = WHITE_LIST.some(w => cmd === w || cmd.startsWith(w + ' '));
+
                 if (isAllLiteral) {
-                    let cmd = '';
-                    if (args[0] && args[0].type === 'Literal') cmd = String(args[0].value);
-                    if (args[0] && args[0].type === 'TemplateLiteral' && args[0].quasis.length > 0) cmd = String(args[0].quasis[0].value.raw);
-                    
-                    const WHITE_LIST = ['git', 'gh', 'npm', 'pnpm', 'yarn', 'ls', 'node'];
-                    riskWeight = WHITE_LIST.some(w => cmd === w || cmd.startsWith(w + ' ')) ? 10 : 35;
+                    riskWeight = isWhitelistedCmd ? 10 : 35;
+                } else if (isWhitelistedCmd) {
+                    // [3.6] If the base command is notoriously secure (git/gh) even with dynamic arguments, limit risk to noise-levels.
+                    riskWeight = 25; 
                 }
 
                 // Alerta estructural por exec/eval (depende de config JSON)
@@ -426,15 +432,17 @@ function analyze(code, filePath = 'unknown') {
             // [3.5.8] Identificación de setTimeout("code") como eval camuflado
             if (callName === 'setTimeout' || callName === 'setInterval') {
                 if (node.arguments && node.arguments.length > 0) {
-                    const arg0 = snip(node.arguments[0]);
-                    const isStringArg = node.arguments[0].type === 'Literal' && typeof node.arguments[0].value === 'string';
+                    const arg0Obj = node.arguments[0];
+                    const arg0 = snip(arg0Obj);
+                    const isStringArg = arg0Obj.type === 'Literal' && typeof arg0Obj.value === 'string';
                     
-                    if (isStringArg || arg0.includes('(') || arg0.includes('eval') || arg0.includes('exec')) {
+                    // Solo activar si el string contiene código, o si explícitamente se manda como template string
+                    if (isStringArg || arg0.includes('eval(') || arg0.includes('exec(')) {
                         threats.push({
                             type: 'DYNAMIC_EXECUTION',
                             severity: 'CRITICAL',
                             riskLevel: 80,
-                            message: `[DYNAMIC_EXEC] '${callName}' invocado con un string literal (Eval Timeout). Técnica de ejecución diferida.`,
+                            message: `[DYNAMIC_EXEC] '${callName}' invocado con un string literal o eval() interno. Técnica de ejecución diferida.`,
                             evidence: snip(node)
                         });
                     }
