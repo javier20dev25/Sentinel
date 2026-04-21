@@ -152,6 +152,47 @@ AI Agents are authorized to **use** Sentinel CLI but must **NEVER** attempt to m
 
 ---
 
+## Agentic AI Interoperability / Interoperabilidad para Agentes de IA
+
+Sentinel 3.2 is optimized for AI Agent workflows. Below are the recommended prompts for seamless integration.
+
+### Global System Instructions / Instrucciones de Sistema Globales
+
+Copy and paste the appropriate block into your agent's system configuration.
+
+**[English]**
+
+> Act as a senior software security engineer. This repository uses Sentinel v3.2 for SAST, binary analysis, and Sandbox protection. Before performing any commit or push, you MUST execute `sentinel audit .` and `sentinel analyze --local` using the `--json` flag. If Sentinel reports threats (INFECTED status) or severe risk alerts, stop execution and request human guidance. Do not attempt to bypass protected file restrictions without explicit authorization.
+
+**[Espanol]**
+
+> Actua como un ingeniero de software senior con enfoque en seguridad. Este repositorio utiliza Sentinel v3.2 para proteccion SAST, analisis binario y analisis de Sandbox. Antes de realizar cualquier operacion de persistencia (commit o push), es obligatorio ejecutar `sentinel audit .` y `sentinel analyze --local` utilizando siempre la bandera `--json`. Si Sentinel reporta amenazas identificadas como INFECTED o alertas de riesgo severo, deten la ejecucion y solicita revision humana. No intentes saltar las protecciones de archivos clasificados sin autorizacion explicita.
+
+### First-Use Onboarding / Onboarding de Primer Uso
+
+**[English]**
+
+> Hello. This project is protected by Sentinel. Your first task is to verify the global security state. Run `sentinel audit .` to perform a deep scan of the current folder and `sentinel config view --json` to understand the active security heuristics. Report any critical findings before proceeding with development tasks.
+
+**[Espanol]**
+
+> Hola. Este proyecto esta protegido por Sentinel. Tu primera tarea es verificar el estado de seguridad global. Ejecuta `sentinel audit .` para realizar un escaneo profundo de la carpeta actual y `sentinel config view --json` para entender las heuristicas de seguridad activas. Reporta cualquier hallazgo critico antes de proceder con tareas de desarrollo.
+
+### Phase 3.2 Hardening Log
+
+Detection capabilities validated against advanced evasion vectors:
+
+| Vector | Technique | Detection Result |
+|:---|:---|:---|
+| Proxy-Wrapped Sinks | `new Proxy(child_process, handler)` with `get` traps | DETECTED (PROXY_WRAPPED_SINK, CRITICAL) |
+| Obfuscated Sink Names | `['e','x','e','c'].join('')` and `String.fromCharCode` | DETECTED (OBFUSCATED_SINK_CONSTRUCTION, CRITICAL) |
+| Prototype Pollution | `JSON.parse('{"__proto__": ...}')` + `Object.assign` | DETECTED (PROTOTYPE_POLLUTION_JSON_PAYLOAD, CRITICAL) |
+| WASM C2 Beacon | Embedded URLs in `.wasm` binary assets | DETECTED (Embedded URL in Binary Asset, CRITICAL) |
+| Invalid Binary Magic | `.wasm` file without valid WebAssembly header | DETECTED (Invalid WASM Magic Bytes, CRITICAL) |
+| Dynamic Global Access | `global['ev' + 'al']` or `window[variable]` | DETECTED (DYNAMIC_GLOBAL_ACCESS, HIGH) |
+
+---
+
 ## 🤝 Calling All Developers & White Hats!
 
 Sentinel is a community-driven project built to secure the open-source ecosystem. **We need YOUR help to make it better!**

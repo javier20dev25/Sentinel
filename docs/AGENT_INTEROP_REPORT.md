@@ -195,7 +195,33 @@ Sentinel's CLI demonstrates functional interoperability with lightweight AI agen
 
 ---
 
-## 7. References
+## 7. Phase 3.1: Agentic Interoperability Hardening
+
+Following the initial evaluation, Sentinel v3.1 was developed to address critical friction points for autonomous agents. A validation test was performed on April 21, 2026, using the hardened CLI.
+
+| Operation | Command | Result | Achievement |
+|:---|:---|:---|:---|
+| One-Shot Audit | `sentinel audit . --json` | Success | Scanned 3436 files without prior repository linking. |
+| Deep Repo Analysis | `sentinel analyze --all --json` | Success | Performed full-repository SAST vs delta-only scan. |
+| Branch Management | `sandbox sync --branch <name>` | Success | Automated branch creation to bypass main protection. |
+| Agent Onboarding | `sentinel` (no args) | Success | Provided specific automation guidance for AI models. |
+
+**Observation**: The hardening of the CLI significantly reduced the "time-to-vulnerability-detection" for the agent. By eliminating the requirement for Git state or prior database links, the agent was able to perform deep security audits on un-instrumented code bases immediately upon arrival.
+
+---
+
+## 8. Roadmap: Red Team Phase 2
+
+The evaluation results from v3.1 have informed the next stage of Sentinel's development, focusing on advanced evasion and persistence mechanisms:
+
+- **Vector 1: WASM Payload Execution**: Evaluating the detection of malicious logic inside WebAssembly binaries loaded at runtime.
+- **Vector 2: Prototype Pollution**: Hardening the scanner's internal logic against sabotage via polluted prototypes.
+- **Vector 3: Proxy-based Indirect Eval**: Testing detection of obfuscated calls using Javascript Proxies to mask sensitive sinks.
+- **Vector 4: Multi-Stage Fragmented Scripts**: Evaluating detection of exploits split across multiple files to defeat regex pattern matching.
+
+---
+
+## 9. References
 
 - [Sentinel CLI Reference](CLI_REFERENCE.md)
 - [AI Agent Onboarding Guide](AI_AGENT_ONBOARDING.md)

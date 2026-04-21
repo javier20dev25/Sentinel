@@ -18,6 +18,7 @@ const { analyzeLifecycleScripts, analyzeTransitiveDeps } = require('./lifecycle_
 const { analyzeLockfile, analyzePnpmLockfile } = require('./lockfile_filter');
 const { analyzeNpmrc, analyzeYarnrcYml } = require('./config_integrity');
 const astInspector = require('./ast_inspector');
+const { analyzeBinary, isBinaryAsset } = require('./detector_binary');
 const { isValidRuleFilename, isPathWithinRoot } = require('../lib/sanitizer');
 
 let compiledRules = [];
@@ -174,7 +175,18 @@ function scanFile(filename, content, authorMeta = null) {
     if (isJsFile && !isPkgManagerFile) {
         try {
             const astAlerts = astInspector.analyze(content, filename);
-            results.alerts.push(...astAlerts.filter(a => a.severity !== 'INFO'));
+            results.alerts.push(...astAlerts
+                .filter(a => a.severity !== 'INFO')
+                .map(a => ({
+                    ruleName: a.type || a.ruleName || 'AST Threat',
+                    category: a.category || 'ast-behavior',
+                    riskLevel: a.riskLevel || 8,
+                    description: a.message || a.description,
+                    line: (a.evidence || '').substring(0, 400),
+                    evidence: a.evidence,
+                    severity: a.severity
+                }))
+            );
         } catch (e) {
             // AST analysis is non-fatal
             console.warn(`[AST] Analysis failed for ${filename}: ${e.message}`);
@@ -276,6 +288,26 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
                 results.filesScanned += subResults.filesScanned;
                 results.details.push(...subResults.details);
             } else if (stats.isFile()) {
+                // [3.2] Binary asset inspection (WASM, EXE, DLL, etc.)
+                if (isBinaryAsset(item)) {
+                    try {
+                        const buffer = fs.readFileSync(fullPath);
+                        const binaryAlerts = analyzeBinary(buffer, item);
+                        results.filesScanned++;
+                        if (binaryAlerts.length > 0) {
+                            results.threats += binaryAlerts.length;
+                            binaryAlerts.forEach(alert => {
+                                const name = alert.ruleName || 'Binary Threat';
+                                const cat = alert.category || 'binary-analysis';
+                                results.details.push(`${item}: ${name} (${cat})`);
+                            });
+                        }
+                    } catch (e) {
+                        // Skip unreadable binary files
+                    }
+                    continue;
+                }
+
                 try {
                     const content = fs.readFileSync(fullPath, 'utf8');
                     const scan = scanFile(item, content);

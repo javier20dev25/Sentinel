@@ -1,5 +1,5 @@
 /**
- * Sentinel: Advanced AST Inspector (SENTINEL 2.0)
+ * Sentinel: Advanced AST Inspector (SENTINEL 3.2)
  *
  * Analiza la estructura AST del código JavaScript para detectar:
  *   1. Patrón Source→Sink: fetch/curl → eval/Function → child_process
@@ -8,6 +8,10 @@
  *   4. Dynamic execution (eval, new Function, vm.runInNewContext)
  *   5. Ofuscación de alto nivel (hexadecimal masivo, high-entropy strings)
  *   6. CI Environment detection (comportamiento diferente en CI vs local = evasión)
+ *   7. [3.2] Proxy Trap detection (new Proxy wrapping sensitive modules)
+ *   8. [3.2] Obfuscated sink calls (string join/concat/fromCharCode → eval/exec)
+ *   9. [3.2] Enhanced Prototype Pollution (Object.defineProperty on prototype)
+ *  10. [3.2] Dynamic global property access (global[x], window[x])
  *
  * CLAVE: Este análisis es inmune a cambios de nombres de variables u ofuscación
  * de strings, porque analiza la ESTRUCTURA del código, no su texto literal.
@@ -53,6 +57,12 @@ const EXEC_SINKS      = new Set(['eval', 'exec', 'execSync', 'execFile', 'execFi
                                    'Function', 'setTimeout', 'setInterval', 'setImmediate']);
 const NETWORK_SINKS   = new Set(['fetch', 'post', 'put', 'send', 'request', 'write']);
 const FS_WRITE_SINKS  = new Set(['writeFile', 'writeFileSync', 'appendFile', 'appendFileSync', 'createWriteStream']);
+
+/** [3.2] Modules that are dangerous when wrapped in a Proxy */
+const PROXY_DANGEROUS_MODULES = new Set(['child_process', 'fs', 'http', 'https', 'net', 'dgram', 'dns', 'tls', 'vm', 'worker_threads']);
+
+/** [3.2] Sink names that attackers try to construct dynamically */
+const OBFUSCATED_SINK_NAMES = ['eval', 'exec', 'execSync', 'spawn', 'Function', 'writeFile', 'writeFileSync', 'execFile'];
 
 /** Paths de archivos sensibles que nunca deben leer paquetes npm */
 const SENSITIVE_PATHS = ['.env', '.ssh', '.aws', 'id_rsa', 'id_ed25519', '.npmrc', '.npmtoken',
@@ -130,12 +140,27 @@ function analyze(code, filePath = 'unknown') {
         networkCallCtx:   [],     // Fragmentos de llamadas de red
         execCallCtx:      [],     // Fragmentos de llamadas de ejecución
         ciCheckDetected:  false,  // ¿Código detecta si está en CI?
+        proxyWrapDetected: false, // [3.2] ¿Se usa Proxy sobre módulos sensibles?
+        obfuscatedSinkDetected: false, // [3.2] ¿Se construyen nombres de sink dinámicamente?
+        requireMap: {},           // [3.2] Maps variable names to required module names (e.g. cp -> child_process)
     };
 
     // Snippet helper (truncado para evitar ruido)
     const snip = (node) => code.substring(node.start, Math.min(node.end, node.start + 200)).trim();
 
     walk.simple(ast, {
+
+        // ── 0. [3.2] VariableDeclarator: track require() bindings ────────────
+        VariableDeclarator(node) {
+            // const cp = require('child_process') -> state.requireMap['cp'] = 'child_process'
+            if (node.id && node.id.type === 'Identifier' &&
+                node.init && node.init.type === 'CallExpression' &&
+                node.init.callee && node.init.callee.name === 'require' &&
+                node.init.arguments && node.init.arguments.length > 0 &&
+                node.init.arguments[0].type === 'Literal') {
+                state.requireMap[node.id.name] = node.init.arguments[0].value;
+            }
+        },
 
         // ── 1. MemberExpression: detectar process.env.X ─────────────────────
         MemberExpression(node) {
@@ -225,7 +250,7 @@ function analyze(code, filePath = 'unknown') {
             }
         },
 
-        // ── 3. NewExpression: new Function(...) ──────────────────────────────
+        // ── 3. NewExpression: new Function(...) AND new Proxy(...) ─────────────
         NewExpression(node) {
             if (node.callee && node.callee.name === 'Function') {
                 state.hasExecCall = true;
@@ -236,6 +261,47 @@ function analyze(code, filePath = 'unknown') {
                     message: `'new Function()' detectado en '${filePath}'. Técnica avanzada para ejecutar strings como código (evasión de eslint/linters).`,
                     evidence: snip(node)
                 });
+            }
+
+            // [3.2] Proxy Trap Detection: new Proxy(child_process, handler)
+            if (node.callee && node.callee.name === 'Proxy' && node.arguments && node.arguments.length >= 2) {
+                const targetArg = node.arguments[0];
+                let targetName = '';
+                if (targetArg.type === 'Identifier') {
+                    // Resolve via requireMap: const cp = require('child_process') -> cp -> child_process
+                    targetName = state.requireMap[targetArg.name] || targetArg.name;
+                } else if (targetArg.type === 'CallExpression' && targetArg.callee) {
+                    // new Proxy(require('child_process'), ...)
+                    const reqArg = targetArg.arguments && targetArg.arguments[0];
+                    if (targetArg.callee.name === 'require' && reqArg && reqArg.type === 'Literal') {
+                        targetName = reqArg.value;
+                    }
+                }
+
+                // Check if the proxy target is a known dangerous module
+                const isDangerous = PROXY_DANGEROUS_MODULES.has(targetName);
+
+                // Also check the handler for suspicious trap functions (get, apply)
+                const handler = node.arguments[1];
+                let hasSuspiciousTrap = false;
+                if (handler && handler.type === 'ObjectExpression' && handler.properties) {
+                    hasSuspiciousTrap = handler.properties.some(p => {
+                        const key = p.key && (p.key.name || p.key.value);
+                        return ['get', 'apply', 'construct'].includes(key);
+                    });
+                }
+
+                if (isDangerous || hasSuspiciousTrap) {
+                    state.proxyWrapDetected = true;
+                    threats.push({
+                        type: 'PROXY_WRAPPED_SINK',
+                        severity: 'CRITICAL',
+                        riskLevel: 10,
+                        message: `[PROXY EVASION] '${filePath}' wraps ${isDangerous ? `dangerous module '${targetName}'` : 'an object'} in a Proxy with ${hasSuspiciousTrap ? 'get/apply/construct traps' : 'handler'}. ` +
+                            `This is a known technique to bypass static analysis of exec/spawn/writeFile calls.`,
+                        evidence: snip(node)
+                    });
+                }
             }
         },
 
@@ -284,8 +350,117 @@ function analyze(code, filePath = 'unknown') {
                     evidence: val.substring(0, 200)
                 });
             }
-        }
+
+            // [3.2] Detect __proto__ string literals used in property access
+            if (val === '__proto__' || val === 'constructor') {
+                threats.push({
+                    type: 'PROTOTYPE_POLLUTION_VECTOR',
+                    severity: 'HIGH',
+                    riskLevel: 8,
+                    message: `[PROTOTYPE POLLUTION] String literal '${val}' used in '${filePath}'. Potential prototype pollution payload.`,
+                    evidence: snip(node)
+                });
+            }
+
+            // [3.2] Detect __proto__ embedded in JSON strings (e.g. JSON.parse('{"__proto__": ...}'))
+            if (val.length > 10 && val.includes('__proto__')) {
+                threats.push({
+                    type: 'PROTOTYPE_POLLUTION_JSON_PAYLOAD',
+                    severity: 'CRITICAL',
+                    riskLevel: 9,
+                    message: `[PROTOTYPE POLLUTION] String containing '__proto__' key detected in '${filePath}'. ` +
+                        `When parsed by JSON.parse() and merged with Object.assign/spread, this pollutes the global prototype chain.`,
+                    evidence: val.substring(0, 200)
+                });
+            }
+        },
+
+        // ── 5. [3.2] AssignmentExpression: Prototype Pollution via direct assignment ──
+        AssignmentExpression(node) {
+            // Detect: Object.prototype.x = ... or obj.__proto__.x = ...
+            if (node.left && node.left.type === 'MemberExpression') {
+                const propName = node.left.property && (node.left.property.name || node.left.property.value);
+                const objCode = snip(node.left.object || node.left);
+
+                if (objCode.includes('Object.prototype') || objCode.includes('__proto__')) {
+                    threats.push({
+                        type: 'PROTOTYPE_POLLUTION_ASSIGNMENT',
+                        severity: 'CRITICAL',
+                        riskLevel: 9,
+                        message: `[PROTOTYPE POLLUTION] Direct assignment to Object.prototype or __proto__ in '${filePath}'. ` +
+                            `This can corrupt the runtime environment for all objects in the process.`,
+                        evidence: snip(node)
+                    });
+                }
+            }
+        },
+
+        // ── 6. [3.2] Obfuscated Sink Detection: array.join() / String.fromCharCode ──
+        //    Catches patterns like: ['e','x','e','c'].join('') or global[varName]
+        MemberExpression_post(node) { /* handled in CallExpression below */ }
     });
+
+    // ── [3.2] Regex-based Obfuscated Sink Detection (post-walk) ───────────────
+    // These patterns cannot be caught by AST alone because they construct
+    // function names from string operations at runtime.
+
+    // Pattern: ['e','x','e','c'].join('') or similar array-to-string sink construction
+    const joinPattern = /\[\s*['"]([a-zA-Z])['"]\s*(?:,\s*['"]([a-zA-Z])['"]\s*){2,}\]\s*\.\s*join\s*\(/g;
+    let joinMatch;
+    while ((joinMatch = joinPattern.exec(code)) !== null) {
+        // Reconstruct what the join would produce
+        const arrayContent = joinMatch[0];
+        const chars = arrayContent.match(/['"]([a-zA-Z])['"]/g);
+        if (chars) {
+            const reconstructed = chars.map(c => c.replace(/['"]/g, '')).join('');
+            if (OBFUSCATED_SINK_NAMES.some(sink => reconstructed.toLowerCase() === sink.toLowerCase())) {
+                state.obfuscatedSinkDetected = true;
+                threats.push({
+                    type: 'OBFUSCATED_SINK_CONSTRUCTION',
+                    severity: 'CRITICAL',
+                    riskLevel: 10,
+                    message: `[SINK OBFUSCATION] Array.join() in '${filePath}' reconstructs dangerous function name '${reconstructed}'. ` +
+                        `This is a known evasion technique to hide calls to exec/eval/spawn from static scanners.`,
+                    evidence: arrayContent.substring(0, 200)
+                });
+            }
+        }
+    }
+
+    // Pattern: String.fromCharCode(101, 120, 101, 99) → "exec"
+    const fromCharPattern = /String\.fromCharCode\s*\(([0-9,\s]+)\)/g;
+    let fccMatch;
+    while ((fccMatch = fromCharPattern.exec(code)) !== null) {
+        try {
+            const nums = fccMatch[1].split(',').map(n => parseInt(n.trim(), 10));
+            const reconstructed = String.fromCharCode(...nums);
+            if (OBFUSCATED_SINK_NAMES.some(sink => reconstructed.includes(sink))) {
+                state.obfuscatedSinkDetected = true;
+                threats.push({
+                    type: 'OBFUSCATED_SINK_CHARCODE',
+                    severity: 'CRITICAL',
+                    riskLevel: 10,
+                    message: `[SINK OBFUSCATION] String.fromCharCode() in '${filePath}' reconstructs dangerous name '${reconstructed}'.`,
+                    evidence: fccMatch[0].substring(0, 200)
+                });
+            }
+        } catch (e) { /* malformed charcode, skip */ }
+    }
+
+    // Pattern: global['ev' + 'al'] or global[variable] dynamic property access
+    const dynamicGlobalPattern = /(?:global|window|globalThis|self)\s*\[\s*(?:['"][a-z]+['"]\s*\+|[a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+    let dgMatch;
+    while ((dgMatch = dynamicGlobalPattern.exec(code)) !== null) {
+        state.obfuscatedSinkDetected = true;
+        threats.push({
+            type: 'DYNAMIC_GLOBAL_ACCESS',
+            severity: 'HIGH',
+            riskLevel: 9,
+            message: `[SINK OBFUSCATION] Dynamic property access on global object in '${filePath}'. ` +
+                `Pattern like global[x] is used to call functions by computed name, evading static analysis.`,
+            evidence: dgMatch[0].substring(0, 200)
+        });
+    }
 
     // ── POST-WALK: Detección de cadenas Source→Sink ───────────────────────────
 
@@ -295,9 +470,9 @@ function analyze(code, filePath = 'unknown') {
             type: 'NETWORK_TO_EXEC_CHAIN',
             severity: 'CRITICAL',
             riskLevel: 10,
-            message: `[CADENA CRÍTICA] '${filePath}' descarga datos de red Y los ejecuta en el mismo contexto. ` +
-                     `Patrón típico de dropper de dos etapas.`,
-            evidence: `Network: ${state.networkCallCtx.slice(0, 2).join(' | ')} → Exec: ${state.execCallCtx.slice(0, 2).join(' | ')}`
+            message: `[CADENA CRITICA] '${filePath}' descarga datos de red Y los ejecuta en el mismo contexto. ` +
+                     `Patron tipico de dropper de dos etapas.`,
+            evidence: `Network: ${state.networkCallCtx.slice(0, 2).join(' | ')} -> Exec: ${state.execCallCtx.slice(0, 2).join(' | ')}`
         });
     }
 
@@ -307,8 +482,8 @@ function analyze(code, filePath = 'unknown') {
             type: 'CREDENTIAL_EXFILTRATION',
             severity: 'CRITICAL',
             riskLevel: 10,
-            message: `[EXFILTRACIÓN] '${filePath}' lee variables de entorno sensibles (${state.sensitiveEnvVars.join(', ')}) ` +
-                     `y realiza llamadas de red en el mismo contexto. Patrón de robo de credenciales.`,
+            message: `[EXFILTRACION] '${filePath}' lee variables de entorno sensibles (${state.sensitiveEnvVars.join(', ')}) ` +
+                     `y realiza llamadas de red en el mismo contexto. Patron de robo de credenciales.`,
             evidence: `Env vars: [${state.sensitiveEnvVars.join(', ')}] + Network calls detected`
         });
     }
@@ -319,8 +494,8 @@ function analyze(code, filePath = 'unknown') {
             type: 'FILE_EXFILTRATION',
             severity: 'CRITICAL',
             riskLevel: 9,
-            message: `[EXFILTRACIÓN] '${filePath}' accede a paths de archivos sensibles y realiza llamadas de red. ` +
-                     `Posible robo de llaves SSH, tokens o archivos de configuración.`,
+            message: `[EXFILTRACION] '${filePath}' accede a paths de archivos sensibles y realiza llamadas de red. ` +
+                     `Posible robo de llaves SSH, tokens o archivos de configuracion.`,
             evidence: `Sensitive path access + network call in same module`
         });
     }
@@ -331,8 +506,8 @@ function analyze(code, filePath = 'unknown') {
             type: 'CI_ENVIRONMENT_EVASION',
             severity: 'HIGH',
             riskLevel: 8,
-            message: `[EVASIÓN] '${filePath}' detecta el entorno CI (process.env.CI/GITHUB_ACTIONS) ` +
-                     `y también ejecuta código o llama a red. Táctica clásica de malware que se comporta diferente en CI.`,
+            message: `[EVASION] '${filePath}' detecta el entorno CI (process.env.CI/GITHUB_ACTIONS) ` +
+                     `y tambien ejecuta codigo o llama a red. Tactica clasica de malware que se comporta diferente en CI.`,
             evidence: `CI check + exec/network calls detected simultaneously`
         });
     }
