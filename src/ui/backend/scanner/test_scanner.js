@@ -68,6 +68,14 @@ const secretPayloads = [
   { name: 'stripe.js', content: 'const stripe = require("stripe")("sk_live_" + "DUMMY_STRIPE_TOKEN_SENTINEL_TEST");' },
 ];
 
+// 5. Adaptive Confidence Analysis (Sentinel 3.3)
+const adaptivePayload = `
+const secret = "ZXZhbCgnY29uc29sZS5sb2coImV4cGxvaXQiKScp"; 
+const action = Buffer.from(secret, "base64").toString();
+global[action]();
+`;
+const adaptiveTest = scanFile('adaptive_v33_exploit.js', adaptivePayload);
+
 const secretResults = secretPayloads.map(p => scanFile(p.name, p.content));
 console.log("\n=== SENTINEL SCAN RESULTS ===\n");
 
@@ -93,6 +101,7 @@ printResults(packedObfuscationTest);
 printResults(polyShellTest);
 printResults(taintTest);
 printResults(injectionTest);
+printResults(adaptiveTest);
 
 console.log("\n=== SECRET DETECTION TESTS ===\n");
 secretResults.forEach(r => printResults(r));

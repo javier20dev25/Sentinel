@@ -18,6 +18,8 @@ const { analyzeLifecycleScripts, analyzeTransitiveDeps } = require('./lifecycle_
 const { analyzeLockfile, analyzePnpmLockfile } = require('./lockfile_filter');
 const { analyzeNpmrc, analyzeYarnrcYml } = require('./config_integrity');
 const astInspector = require('./ast_inspector');
+const ConfidenceScorer = require('./confidence_scorer');
+const TriggerLevelOrchestrator = require('./trigger_levels');
 const { analyzeBinary, isBinaryAsset } = require('./detector_binary');
 const { isValidRuleFilename, isPathWithinRoot } = require('../lib/sanitizer');
 
@@ -168,28 +170,36 @@ function scanFile(filename, content, authorMeta = null) {
         results.alerts.push(...analyzeNpmrc(content, filename));
     }
 
-    // 6. AST Behavior Analysis (Sentinel 2.0) — Source→Sink chain detection
-    // Run on JS/TS/MJS files but NOT on package manager manifests (already handled above)
+    // 6. Adaptive AST & Semantic Analysis (Sentinel 3.3)
+    // Reemplaza el análisis AST binario por el motor de Confidence Scoring y Trigger Levels.
     const isJsFile = filename.match(/\.(js|mjs|cjs|ts|mts|cts)$/i);
     const isPkgManagerFile = filename.match(/(package(-lock)?\.json|lockfile|yarn\.lock|\.npmrc|\.yarnrc)/i);
+    
     if (isJsFile && !isPkgManagerFile) {
         try {
-            const astAlerts = astInspector.analyze(content, filename);
-            results.alerts.push(...astAlerts
-                .filter(a => a.severity !== 'INFO')
-                .map(a => ({
-                    ruleName: a.type || a.ruleName || 'AST Threat',
-                    category: a.category || 'ast-behavior',
-                    riskLevel: a.riskLevel || 8,
-                    description: a.message || a.description,
-                    line: (a.evidence || '').substring(0, 400),
-                    evidence: a.evidence,
-                    severity: a.severity
-                }))
-            );
+            // Inicializar motor adaptativo para este archivo
+            const scorer = new ConfidenceScorer();
+            const orchestrator = new TriggerLevelOrchestrator(scorer);
+
+            // Ejecutar pipeline adaptativo (Trigger Levels 1 & 2)
+            orchestrator.analyze(content, filename);
+
+            // Extraer amenazas basadas en el Confidence Score acumulado
+            const semanticThreats = scorer.evaluateAll();
+            
+            if (semanticThreats.length > 0) {
+                results.alerts.push(...semanticThreats.map(t => ({
+                    ruleName: t.ruleName,
+                    category: t.category,
+                    riskLevel: t.riskLevel,
+                    description: t.description,
+                    line: (t.evidence || '').substring(0, 400),
+                    evidence: t.evidence,
+                    severity: t.severity
+                })));
+            }
         } catch (e) {
-            // AST analysis is non-fatal
-            console.warn(`[AST] Analysis failed for ${filename}: ${e.message}`);
+            console.warn(`[Adaptive Engine] Analysis failed for ${filename}: ${e.message}`);
         }
     }
 

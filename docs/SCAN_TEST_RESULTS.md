@@ -1,6 +1,19 @@
-# 🧪 Sentinel Scan Test Results (v3.0)
+# 🧪 Sentinel Scan Test Results (v3.2)
 
-> This document contains the real-time output from the Sentinel Security Engine's latest validation suite. These tests verify the engine's ability to detect high-complexity malware, obfuscation, and data-flow vulnerabilities.
+> This document contains the real-time output from the Sentinel Security Engine's latest validation suite. These tests verify the engine's ability to detect high-complexity malware, advanced evasion (Level 2), and data-flow vulnerabilities.
+
+## 🔴 Red Team Phase 2: Advanced Evasion (Hardening v3.2)
+
+Validation date: April 21, 2026. Focus: Bypassing static JS analysis via Proxy traps, WASM stealth, and Prototype sabotage.
+
+| Target | Technique | Status | Detection Signature |
+| :--- | :--- | :--- | :--- |
+| `proxy_evasion.js` | new Proxy(module, handler) to hide exec | DETECTED | PROXY_WRAPPED_SINK |
+| `pollution.js` | Corrupting Object.prototype via JSON.parse | DETECTED | PROTOTYPE_POLLUTION_JSON_PAYLOAD |
+| `core_optimizer.wasm` | C2 Beacons & malformed headers in WASM | DETECTED | Embedded URL in Binary Asset |
+| `obfuscated.js` | Array.join/CharCode sink reconstruction | DETECTED | OBFUSCATED_SINK_CONSTRUCTION |
+
+---
 
 ## 🛡️ Static Analysis Engine (SAST)
 
