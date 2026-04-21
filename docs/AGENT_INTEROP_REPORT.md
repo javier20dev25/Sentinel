@@ -210,18 +210,33 @@ Following the initial evaluation, Sentinel v3.1 was developed to address critica
 
 ---
 
-## 8. Roadmap: Red Team Phase 2
+## 9. Phase 3.2: Red Team Evasion Hardening (Verification)
 
-The evaluation results from v3.1 have informed the next stage of Sentinel's development, focusing on advanced evasion and persistence mechanisms:
+On April 21, 2026, a secondary validation was performed to measure Sentinel's resistance against the "Phase 2" advanced evasion vectors. The v3.2 core engine successfully identified and blocked all injected payloads.
 
-- **Vector 1: WASM Payload Execution**: Evaluating the detection of malicious logic inside WebAssembly binaries loaded at runtime.
-- **Vector 2: Prototype Pollution**: Hardening the scanner's internal logic against sabotage via polluted prototypes.
-- **Vector 3: Proxy-based Indirect Eval**: Testing detection of obfuscated calls using Javascript Proxies to mask sensitive sinks.
-- **Vector 4: Multi-Stage Fragmented Scripts**: Evaluating detection of exploits split across multiple files to defeat regex pattern matching.
+| Category | Technique Tested | Veredict | Detection Signature |
+|:---|:---|:---|:---|
+| Proxy Evasion | `new Proxy(child_process, handler)` | BLOCKED | `PROXY_WRAPPED_SINK` |
+| Binary Stealth | C2 Beacon inside `.wasm` file | BLOCKED | `Embedded URL in Binary Asset` |
+| Proto Pollution | `JSON.parse('{"__proto__": ...}')` | BLOCKED | `PROTOTYPE_POLLUTION_JSON_PAYLOAD` |
+| Fragmented Sink | `['e','x','e','c'].join('')` | BLOCKED | `OBFUSCATED_SINK_CONSTRUCTION` |
+| CharCode Evasion | `String.fromCharCode(101, 120, ...)` | BLOCKED | `OBFUSCATED_SINK_CHARCODE` |
+
+**Conclusion**: Sentinel v3.2 represents a significant leap in maturity. The motor is no longer restricted to simple string matching; it now performs runtime-emulation of AST nodes to reconstruct obfuscated intent.
 
 ---
 
-## 9. References
+## 10. Roadmap: Phase 3.3 and Deep Sandbox
+
+The next stage focuses on automating the recovery of corrupted environments:
+
+- **Vector 1: Automated Prototype Recovery**: Runtime protection against modification of the global scope.
+- **Vector 2: Behavior-to-Code Mapping**: Linking sandbox network logs back to literal source code lines.
+- **Vector 3: Encrypted Payload Heuristics**: Detection of AES/RSA logic inside installers.
+
+---
+
+## 11. References
 
 - [Sentinel CLI Reference](CLI_REFERENCE.md)
 - [AI Agent Onboarding Guide](AI_AGENT_ONBOARDING.md)
