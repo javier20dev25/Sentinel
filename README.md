@@ -2,6 +2,21 @@
 
 Sentinel is an enterprise-grade, auditable security decision engine for CI/CD pipelines. It identifies high-side offensive operations, supply chain anomalies, and binary masquerading before code is merged.
 
+## The Problem: Decision Latency in the AI Era
+Artificial Intelligence is drastically accelerating code generation. As we transition into a future where most code is AI-assisted, the security bottleneck is no longer **generating** code, but **deciding what to accept** into your production pipeline.
+
+Relying on AI agents to audit AI-generated code introduces new frictions:
+- **Scaling Costs**: Reviewing every PR with LLM-based agents causes token consumption and operational costs to grow exponentially with code volume.
+- **Non-Determinism**: AI-based security audits can be inconsistent, occasionally missing sophisticated evasion techniques or producing hallucinations.
+- **Pipeline Latency**: Critical CI/CD workflows require low-latency, deterministic verdicts that large models cannot always provide.
+
+## The Sentinel Philosophy: Deterministic Verification
+Sentinel does not try to be "intelligent" in the way an LLM is; it is a **Deterministic Decision Layer**. 
+
+While developers may feel safe using AI for 99% of their workflow, the risk of malicious code injection—whether through subtle prompt injection or compromised transitive dependencies—is at an all-time high. Sentinel acts as a high-fidelity gatekeeper that identifies malicious intent fingerprints (SARB) and policy violations with mathematical precision, without the overhead or unpredictability of agentic AI auditors. 
+
+**It is the predictable "NO" gate for an unpredictable era.**
+
 ## Core Capabilities
 - **Adaptive Security Gates**: Context-aware escalation from Fast PR checks to deep Forensic audits.
 - **Intent Fingerprinting**: Mathematical scoring of source code signals through the SARB engine.
