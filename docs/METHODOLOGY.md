@@ -56,3 +56,18 @@ These profiles are deterministically applied, allowing researchers to observe di
 
 ## 4. Mitigation of Homoglyph and Unicode Evasion
 The engine scans for specific directional formatting characters (e.g., `\u202A` to `\u202E`, Zero-Width Spaces) associated with Trojan Source attacks (CVE-2021-42574). These BiDi overrides manipulate the visual rendering of the code, making malicious logic appear as benign comments to human reviewers. Detection occurs at the bytecode level, prioritizing raw character matrices over visually rendered diffs.
+
+## 5. High-Velocity Heuristic Partitioning (Fast Mode)
+
+To facilitate near-instantaneous feedback during ingestion or pre-commit hooks, Sentinel implements a High-Velocity Heuristic Partitioning strategy (`--fast`). This approach optimizes throughput by performing a non-exhaustive, targeted scan of the most critical threat vectors.
+
+### 5.1 Hybrid Filtering Logic
+The Fast Mode logic deviates from standard full-depth scans by applying a two-tier hybrid filter:
+- **Severity Thresholding**: The engine restricts rule execution to heuristics with a calibrated risk score of `severity >= 8`. This effectively isolates critical-impact findings while skipping low-confidence or informational signals.
+- **Deterministic Allowlist**: To prevent false negatives resulting from score recalibrations, specific high-order families are mandatorily included. This includes all rules within the `EXEC`, `NET`, `EXFIL`, and `obfuscation` namespaces.
+
+### 5.2 Computational Optimizations
+Latency is further reduced through structural and search optimizations:
+- **Depth Restriction**: Recursive directory traversal is capped at `depth=1` to focus on project-root entry points and primary source manifests.
+- **Entropy Skip**: High-entropy data calculations (sensitive in massive files) are bypassed in favor of pattern-based secret discovery.
+- **Sandbox Isolation**: Dynamic execution analysis is disabled, prioritizing static structural analysis for sub-second response times.

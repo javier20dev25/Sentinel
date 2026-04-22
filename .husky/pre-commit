@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "[pre-commit] Running Level 1 (Lightweight) SARB Checks..."
+# Ejecutamos simplemente un check the sintanxis y quizás un run básico
+npx lint-staged
+node src/ui/backend/scanner/test_scanner.js
+echo "[pre-commit] Level 1 passed. Level 2 (Full Benchmark) will be enforced by CI."

@@ -49,6 +49,33 @@ We actively seek contributions in the following areas:
 
 ---
 
-## 4. Compliance
+## 4. Licensing & Commercial Redistribution
 
-Sentinel is designed to assist with security compliance (e.g., SOC2, ISO 27001) by providing a local audit trail. However, Sentinel is a tool, not a certification. Users are responsible for their own security posture.
+Sentinel operates under a balanced intellectual property model designed to support the developer community while protecting commercial value.
+
+### Business Source License 1.1
+- **Individual/Dev Use**: Sentinel is free to use, modify, and distribute for non-production development, research, and open-source community contributions.
+- **Enterprise Internal Use**: Use within internal company pipelines is permitted for security auditing purposes.
+- **Commercial Restriction**: The redistribution of Sentinel as part of a paid product, the provisioning of Sentinel as a managed service (SaaS), or its use in revenue-generating commercial audits is prohibited without an explicit commercial license.
+
+### Commercial Licensing Contact
+Organizations wishing to integrate Sentinel into their commercial offerings or supply chain platforms must formalize a license agreement. Contact the Licensor at the official project repository for terms.
+
+---
+
+## 5. Release Governance & Operational Benchmarking
+
+Sentinel enforces technical governance during the research and development lifecycle:
+
+### Operational Benchmarking
+Any alteration to the detection engine is measured against a strict local Benchmark Suite. A release candidate or contribution is only considered valid if:
+- It achieves a 0% False Positive rate on clean tooling files.
+- It maintains 100% True Positive recall on known adversarial evasion vectors.
+
+### Governance Audit Standards
+All detection rules must be traceable. This means every diagnostic output must include:
+- A standardized `rule_id` under the `SARB-` namespace.
+- A human-readable `explanation` of the detection logic.
+- The `rulepack_version` identifier representing the active security baseline.
+
+This policy ensures that Sentinel remains a consistent and auditable decision engine for enterprise security operations.

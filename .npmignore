@@ -1,0 +1,37 @@
+# Sentinel: NPM Ignore Specification
+
+# Development Configuration
+.github/
+.vscode/
+.git/
+.gitignore
+.npmignore
+husky/
+.husky/
+
+# UI & Frontend (Lightweight CLI Policy)
+src/ui/src/
+src/ui/public/
+src/ui/dist/
+src/ui/vite.config.ts
+src/ui/tsconfig.json
+src/ui/index.html
+backend/server/index.js # Exclude if UI-only server is not needed for CLI
+
+# Logs & Database
+*.log
+local_sentinel.db
+local_sentinel.db-journal
+
+# Tests & Artifacts
+tests/
+scripts/gate_smoke_test/
+node_modules/
+dist/
+build/
+*.tgz
+*.zip
+
+# OS Junk
+.DS_Store
+Thumbs.db

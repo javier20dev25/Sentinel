@@ -1,0 +1,30 @@
+name: Sentinel Operational Benchmark
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+
+jobs:
+  benchmark-gate:
+    name: Sentinel Release Benchmark
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Enforcement Gate (FPR & TR Evaluation)
+        run: node scripts/benchmark_suite.js

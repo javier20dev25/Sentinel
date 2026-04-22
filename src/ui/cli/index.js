@@ -20,6 +20,13 @@ function normalizePath(p) {
 }
 
 /**
+ * Handles terminal coloring suppression based on --no-color or environment.
+ */
+function useColors() {
+    return !program.opts().noColor && process.stdout.isTTY;
+}
+
+/**
  * Normalizes an absolute path (for repo local_path comparison).
  */
 function normalizeAbsPath(p) {
@@ -267,9 +274,10 @@ const pc = require('picocolors');
 
 program
     .name('sentinel')
-    .version('3.6.0')
-    .description('Sentinel Security Guardian — Enterprise SAST & Sandbox Engine')
+    .version('3.6.1')
+    .description('Sentinel Security Guardian — Enterprise SAST & Decision Engine')
     .option('--json', 'Machine-readable output (JSON)')
+    .option('--no-color', 'Disable terminal colors (useful for log files/CI)')
     .hook('preAction', () => {
         // Ensure rules are loaded before any action that might use them
         const scanner = require('../backend/scanner/index');
@@ -283,47 +291,96 @@ program
     .argument('[path]', 'Directory or file to scan', '.')
     .option('--ci', 'CI Mode: Minimal silent output with deterministic exit codes')
     .option('--debug', 'Verbose mode: Print raw breakdown metrics')
+    .option('--fast', 'Fast Mode: Skip deep analysis and sandbox (Speed priority)')
+    .option('--mode <type>', 'Analysis mode: local or sandbox', 'local')
+    .option('--source <type>', 'Event source: cli or github-action', 'cli')
     .action((targetPath, options) => {
         const gh = require('../backend/lib/gh_bridge');
         const scanner = require('../backend/scanner/index');
         const db = require('../backend/lib/db');
+        const Orchestrator = require('../backend/scanner/gate_orchestrator');
         const target = normalizeAbsPath(targetPath);
         
-        let results = null;
-        const stats = fs.statSync(target, { throwIfNoEntry: false });
+        const computeConfidence = (execution) => execution === 'isolated' ? 92 : 65;
         
+        let fileList = [];
+        const stats = fs.statSync(target, { throwIfNoEntry: false });
+        if (stats && stats.isDirectory()) {
+            fileList = fs.readdirSync(target);
+        } else {
+            fileList = [target];
+        }
+
+        // 1. Auto-Escalation Logic
+        const gateInfo = Orchestrator.resolveGateLevel(fileList);
+        const activeLevel = options.gateLevel || (options.fast ? 0 : gateInfo.level);
+        options.gateLevel = activeLevel;
+
+        if (!options.ci && !program.opts().json) {
+            console.log(pc.bold(pc.cyan(`\n[Sentinel] Mode: ${Orchestrator.getLevelLabel(activeLevel)}`)));
+            if (activeLevel > 0) console.log(pc.dim(`Reason: ${gateInfo.reason}`));
+        }
+
+        let results = null;
         if (stats && stats.isFile()) {
             const content = fs.readFileSync(target, 'utf8');
-            const scan = scanner.scanFile(path.basename(target), content);
+            const scan = scanner.scanFile(path.basename(target), content, null, options);
             scan.alerts.forEach(a => { a._file = path.basename(target); a._fullPath = target; });
+            const executionMode = options.fast ? 'none' : (options.mode === 'sandbox' ? 'isolated' : 'none');
             results = {
+                version: "3.6.1",
+                rulepack_version: "2026.04",
+                context: {
+                    analysis_mode: options.mode,
+                    execution: executionMode,
+                    source: options.source,
+                    gate_level: activeLevel
+                },
+                summary: {
+                    confidence_score: computeConfidence(executionMode),
+                    confidence_source: "engine"
+                },
                 threats: scan.alerts.length,
                 filesScanned: 1,
                 rawAlerts: scan.alerts
             };
         } else {
-            results = scanner.scanDirectory(target);
+            // Directory Scan
+            results = scanner.scanDirectory(target, options);
+            const executionMode = options.fast ? 'none' : (options.mode === 'sandbox' ? 'isolated' : 'none');
+            results.version = "3.6.1";
+            results.rulepack_version = "2026.04";
+            results.context = {
+                analysis_mode: options.mode,
+                execution: executionMode,
+                source: options.source,
+                gate_level: activeLevel
+            };
+            results.summary = {
+                confidence_score: computeConfidence(executionMode),
+                confidence_source: "engine"
+            };
         }
+
+        // 2. Classify Results for Semantic Exit Codes
+        const securityFindings = (results.rawAlerts || []).filter(a => a.classification === 'SECURITY');
+        const policyViolations = (results.rawAlerts || []).filter(a => a.classification === 'POLICY');
 
         if (program.opts().json) {
             respondAgent(true, results);
         } else if (options.ci) {
-            // Modo CI (0=Limpio, 1=Warnings/Suspicious, 2=Critical Block)
-            let criticalCount = 0;
-            let warningCount = 0;
-            if (results.rawAlerts) {
-                criticalCount = results.rawAlerts.filter(a => a.severity === 'CRITICAL' || a.riskLevel >= 80).length;
-                warningCount = results.rawAlerts.filter(a => a.riskLevel < 80).length;
-            }
-            
-            if (criticalCount > 0) process.exit(2);
-            else if (warningCount > 0) process.exit(1);
-            else process.exit(0);
+            // Semantic Exit Code Contract [0-3]
+            if (results.threats === 0) process.exit(0);
+            if (securityFindings.length > 0) process.exit(1);
+            if (policyViolations.length > 0) process.exit(2);
+            process.exit(0);
         } else {
-            renderer.renderHierarchicalReport(results.rawAlerts || [], results.filesScanned);
-            if (options.debug && results.rawAlerts) {
-                console.log('\n[DEBUG] Raw Breakdown:');
-                results.rawAlerts.forEach(a => console.dir(a._rawRecord, {depth: null}));
+            renderer.renderHierarchicalReport(results.rawAlerts || [], results.filesScanned, { gateLevel: activeLevel, noColor: program.opts().noColor });
+            
+            // Terminal Final Verdict / Exit Code
+            if (results.threats > 0) {
+                if (securityFindings.length > 0) process.exit(1);
+                process.exit(2);
             }
         }
     });
@@ -503,31 +560,41 @@ program
         if (program.opts().json) respondAgent(true, { status: 'installed', path: hookPath });
     });
 
-// ─── sentinel audit (One-shot Directory Audit) ───
+// ─── sentinel audit (One-shot Directory Audit / Forensic) ───
 program
     .command('audit')
     .argument('[path]', 'Directory to audit', '.')
+    .option('--forensic', 'Enable deepest forensic scan (scans hidden files, node_modules)')
     .description('Perform a deep, one-shot security audit of a local directory.')
-    .action(async (dirPath) => {
+    .action(async (dirPath, options) => {
         const scanner = require('../backend/scanner/index');
-        const results = scanner.scanDirectory(path.resolve(dirPath));
+        const Orchestrator = require('../backend/scanner/gate_orchestrator');
+        
+        const finalPath = path.resolve(dirPath);
+        const scanOptions = { 
+            gateLevel: options.forensic ? 4 : 1,
+            forensic: options.forensic
+        };
+
+        if (!program.opts().json) {
+            console.log(pc.bold(pc.magenta(`\n🛡️  Sentinel Audit Initiation`)));
+            console.log(pc.dim('─'.repeat(40)));
+            console.log(`Mode: ${Orchestrator.getLevelLabel(scanOptions.gateLevel)}`);
+            console.log(`Target: ${finalPath}\n`);
+        }
+
+        const results = scanner.scanDirectory(finalPath, scanOptions);
         
         if (program.opts().json) {
             respondAgent(true, results);
         } else {
-            console.log('\n🛡️  Sentinel One-Shot Audit Report');
-            console.log('─'.repeat(40));
-            console.log(`Target: ${path.resolve(dirPath)}`);
-            console.log(`Files Scanned: ${results.filesScanned}`);
-            console.log(`Threats Found: ${results.threats}`);
-            console.log('─'.repeat(40));
+            renderer.renderHierarchicalReport(results.rawAlerts || [], results.filesScanned, { gateLevel: scanOptions.gateLevel });
             
             if (results.threats > 0) {
-                results.details.forEach(detail => console.log(`  🚨 ${detail}`));
-                console.log('\n❌ Audit failed. Security threats identified.');
-                process.exit(1);
+                const securityCount = (results.rawAlerts || []).filter(a => a.classification === 'SECURITY').length;
+                process.exit(securityCount > 0 ? 1 : 2);
             } else {
-                console.log('\n✅ Audit clean. No threats identified.');
+                console.log(pc.green('✅ Audit clean. No threats identified.'));
                 process.exit(0);
             }
         }

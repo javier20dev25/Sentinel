@@ -22,6 +22,8 @@ const ConfidenceScorer = require('./confidence_scorer');
 const TriggerLevelOrchestrator = require('./trigger_levels');
 const { analyzeBinary, isBinaryAsset } = require('./detector_binary');
 const { isValidRuleFilename, isPathWithinRoot } = require('../lib/sanitizer');
+const GateOrchestrator = require('./gate_orchestrator');
+const { detectMasquerading } = require('./magic_bytes');
 
 let compiledRules = [];
 
@@ -96,12 +98,16 @@ function safeRegexTest(regex, string, timeoutMs = 50) {
     }
 }
 
-function scanFile(filename, content, authorMeta = null) {
+function scanFile(filename, content, authorMeta = null, options = { mode: 'local' }) {
+    const SAFE_MODE = options.mode !== 'sandbox';
+    const ALLOW_DYNAMIC = !SAFE_MODE;
+
     const results = {
         filename,
         timestamp: new Date().toISOString(),
         alerts: [],
-        authorMeta // Store for downstream consumers
+        authorMeta, // Store for downstream consumers
+        gateLevel: options.gateLevel || 0
     };
 
     // 1. Run Dynamic YAML Rules
@@ -113,6 +119,11 @@ function scanFile(filename, content, authorMeta = null) {
 
     linesToScan.forEach((line, index) => {
         compiledRules.forEach(rule => {
+            if (options.fast) {
+                const isCriticalScore = (rule.severity || 0) >= 8;
+                const isCriticalFamily = rule.id && (rule.id.includes('EXEC') || rule.id.includes('NET') || rule.id.includes('EXFIL') || rule.id.includes('obfuscation'));
+                if (!isCriticalScore && !isCriticalFamily) return;
+            }
             try {
                 rule.regex.lastIndex = 0; // reset
                 // PERFORMANCE: Avoid vm context for every line test. 
@@ -124,10 +135,14 @@ function scanFile(filename, content, authorMeta = null) {
                     const snippet = lines.slice(start, end).map((l, i) => `${start + i + 1}: ${l}`).join('\n');
 
                     results.alerts.push({
+                        rule_id: `SARB-STATIC-${Math.floor(Math.random() * 899 + 100)}`,
                         ruleName: rule.name,
                         category: rule.category || 'general',
+                        classification: 'SECURITY', // Static heuristics are always security findings
                         riskLevel: rule.severity || 5,
                         description: rule.description,
+                        explanation: `Sentinel matched static YAML heuristic pattern: ${rule.regex.source}`,
+                        matched_patterns: [rule.regex.source],
                         line: line.trim().substring(0, 400),
                         evidence: snippet.substring(0, 2000), // Max snippet length
                         line_number: index + 1
@@ -140,30 +155,49 @@ function scanFile(filename, content, authorMeta = null) {
     });
 
     // 2. Run Hardcoded/Heuristic Detectors
-    results.alerts.push(...detectInvisibleChars(content));
-    results.alerts.push(...detectHighEntropy(content));
+    const heuristicAlerts = detectInvisibleChars(content);
+    heuristicAlerts.forEach(a => a.classification = 'SECURITY');
+    results.alerts.push(...heuristicAlerts);
+
+    if (!options.fast) {
+        const entropyAlerts = detectHighEntropy(content);
+        entropyAlerts.forEach(a => a.classification = 'SECURITY');
+        results.alerts.push(...entropyAlerts);
+    }
 
     // 3. Package Manager checks — lifecycle scripts (npm / pnpm / yarn / bun)
     if (filename.match(/(package\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb)$/i)) {
-        results.alerts.push(...analyzeLifecycleScripts(content, authorMeta));
+        const policyAlerts = analyzeLifecycleScripts(content, authorMeta);
+        policyAlerts.forEach(a => a.classification = 'POLICY'); // Lifecycle scripts are policy violations
+        results.alerts.push(...policyAlerts);
     }
 
     // 4. Lockfile Integrity Guardian (Sentinel 2.0)
     if (filename.match(/package-lock\.json$/i)) {
-        results.alerts.push(...analyzeLockfile(content, null));
-        // Transitive dependency analysis — catches attacks 2+ levels deep
-        results.alerts.push(...analyzeTransitiveDeps(content, authorMeta));
+        const lockAlerts = analyzeLockfile(content, null);
+        lockAlerts.forEach(a => a.classification = 'POLICY');
+        results.alerts.push(...lockAlerts);
+        
+        const transitiveAlerts = analyzeTransitiveDeps(content, authorMeta);
+        transitiveAlerts.forEach(a => a.classification = 'POLICY');
+        results.alerts.push(...transitiveAlerts);
     }
     if (filename.match(/pnpm-lock\.yaml$/i)) {
-        results.alerts.push(...analyzePnpmLockfile(content));
+        const pnpmAlerts = analyzePnpmLockfile(content);
+        pnpmAlerts.forEach(a => a.classification = 'POLICY');
+        results.alerts.push(...pnpmAlerts);
     }
 
     // 5. Config Integrity Monitor (Sentinel 2.0)
     if (filename.match(/\.npmrc(\.local)?$/i) || filename === '.npmrc') {
-        results.alerts.push(...analyzeNpmrc(content, filename));
+        const npmrcAlerts = analyzeNpmrc(content, filename);
+        npmrcAlerts.forEach(a => a.classification = 'POLICY');
+        results.alerts.push(...npmrcAlerts);
     }
     if (filename.match(/\.yarnrc\.yml$/i)) {
-        results.alerts.push(...analyzeYarnrcYml(content, filename));
+        const yarnrcAlerts = analyzeYarnrcYml(content, filename);
+        yarnrcAlerts.forEach(a => a.classification = 'POLICY');
+        results.alerts.push(...yarnrcAlerts);
     }
     if (filename.match(/\.yarnrc$/i)) {
         // Classic Yarn 1 format (INI-like) — reuse npmrc parser
@@ -188,18 +222,34 @@ function scanFile(filename, content, authorMeta = null) {
             const semanticThreats = scorer.evaluateAll();
             
             if (semanticThreats.length > 0) {
-                results.alerts.push(...semanticThreats.map(t => ({
-                    ruleName: t.ruleName,
-                    category: t.category,
-                    riskLevel: t.riskLevel,
-                    description: t.description,
-                    line: (t.evidence || '').substring(0, 400),
-                    evidence: t.evidence,
-                    severity: t.severity,
-                    // [3.6] Exporting Immutable Logic Core for Explain CLI & Telemetry
-                    _rawRecord: t._rawRecord,
-                    intentFingerprint: t.intentFingerprint
-                })));
+                results.alerts.push(...semanticThreats.map((t, idx) => {
+                    // Governance: SARB ID Injection
+                    let sarbFamily = 'HEUR';
+                    if (t.intentFingerprint?.intent_signature?.includes('EXECUTION')) sarbFamily = 'EXEC';
+                    else if (t.intentFingerprint?.intent_signature?.includes('EVASION')) sarbFamily = 'EVASION';
+                    else if (t.intentFingerprint?.intent_signature?.includes('NETWORK')) sarbFamily = 'NET';
+                    else if (t.intentFingerprint?.intent_signature?.includes('EXFILTRATION')) sarbFamily = 'EXFIL';
+                    
+                    const ruleId = `SARB-${sarbFamily}-${Math.floor(Math.random() * 899 + 100)}`;
+                    const matchedPatterns = t._rawRecord?.signals?.map(s => s.type) || [];
+                    const evidenceClean = (t.evidence || '').substring(0, 400);
+
+                    return {
+                        rule_id: ruleId,
+                        ruleName: t.ruleName,
+                        category: t.category || 'semantic',
+                        classification: 'SECURITY',
+                        riskLevel: t.riskLevel,
+                        description: t.description,
+                        explanation: `Sentinel adaptive engine caught ${sarbFamily} behavior chaining ${matchedPatterns.join(' -> ')}. Trigger limit breached at score ${t.riskLevel}.`,
+                        matched_patterns: matchedPatterns,
+                        line: evidenceClean,
+                        evidence: t.evidence,
+                        severity: t.severity,
+                        _rawRecord: t._rawRecord,
+                        intentFingerprint: t.intentFingerprint
+                    };
+                }));
             }
         } catch (e) {
             console.warn(`[Adaptive Engine] Analysis failed for ${filename}: ${e.message}`);
@@ -248,6 +298,7 @@ function detectWorkflowEvasionPatterns(content, filename) {
         alerts.push({
             ruleName: 'Workflow Logging Disabled',
             category: 'ci-evasion',
+            classification: 'POLICY',
             riskLevel: 8,
             description: `${filename} desactiva el logging de runner. Técnica usada para suprimir telemetría durante exfiltración.`,
             line: 'See workflow logging configuration',
@@ -260,6 +311,7 @@ function detectWorkflowEvasionPatterns(content, filename) {
         alerts.push({
             ruleName: 'Conditional CI Evasion in Workflow',
             category: 'ci-evasion',
+            classification: 'POLICY',
             riskLevel: 7,
             description: `${filename} tiene condiciones if: basadas en el entorno CI/runner. Puede usarse para comportarse diferente según el entorno, evadiendo sandbox.`,
             line: 'Conditional if: block detected',
@@ -271,22 +323,33 @@ function detectWorkflowEvasionPatterns(content, filename) {
 }
 
 
-function scanLocalFile(filepath, content) {
+function scanLocalFile(filepath, content, options = { mode: 'local' }) {
     // For CLI wrapper
-    return scanFile(path.basename(filepath), content);
+    return scanFile(path.basename(filepath), content, null, options);
 }
 
-function scanDirectory(dirPath, repoId = null, depth = 5) {
+function scanDirectory(dirPath, repoId = null, depth = 5, options = { mode: 'local' }) {
+    if (typeof repoId === 'object' && repoId !== null) {
+        // Handle case where options was passed as second argument
+        options = repoId;
+        repoId = null;
+    }
+
+    const SAFE_MODE = options.mode !== 'sandbox';
+    const finalDepth = options.fast ? 1 : depth;
+    const isForensic = options.gateLevel === 4 || options.forensic;
+    
     const results = {
         threats: 0,
         filesScanned: 0,
         details: [],
-        rawAlerts: [] // [3.6] Export Immutable Payload para CLI UX
+        rawAlerts: [],
+        gateLevel: options.gateLevel || 0
     };
 
-    if (!fs.existsSync(dirPath) || depth < 0) return results;
+    if (!fs.existsSync(dirPath) || finalDepth < 0) return results;
 
-    const excluded = ['node_modules', '.git', 'dist', 'build', '.next', 'out', 'vendor'];
+    const excluded = isForensic ? ['.git'] : ['node_modules', '.git', 'dist', 'build', '.next', 'out', 'vendor'];
     
     try {
         const items = fs.readdirSync(dirPath);
@@ -297,24 +360,48 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
             const stats = fs.statSync(fullPath);
 
             if (stats.isDirectory()) {
-                const subResults = scanDirectory(fullPath, repoId, depth - 1);
+                const subResults = scanDirectory(fullPath, repoId, finalDepth - 1, options);
                 results.threats += subResults.threats;
                 results.filesScanned += subResults.filesScanned;
                 results.details.push(...subResults.details);
                 results.rawAlerts.push(...(subResults.rawAlerts || []));
             } else if (stats.isFile()) {
-                // [3.2] Binary asset inspection (WASM, EXE, DLL, etc.)
+                // [3.3] Binary asset & Masquerading check
+                const buffer = fs.readFileSync(fullPath);
+                
+                // 1. Check for masquerading (extension mismatch)
+                const actualExt = detectMasquerading(buffer, path.extname(item));
+                if (actualExt) {
+                    results.threats++;
+                    const alert = {
+                        ruleName: 'Binary Masquerading',
+                        category: 'artifact-gate',
+                        classification: 'POLICY',
+                        riskLevel: 9,
+                        severity: 'CRITICAL',
+                        description: `Archivo '${item}' parece ser un ${actualExt} pero usa una extensión falsa. Técnica típica de droppers de malware.`,
+                        evidence: `Declared: ${path.extname(item)} | Detected: ${actualExt}`,
+                        _file: item,
+                        _fullPath: fullPath
+                    };
+                    results.rawAlerts.push(alert);
+                    results.details.push(`${item}: Binary Masquerading (artifact-gate)`);
+                }
+
                 if (isBinaryAsset(item)) {
                     try {
-                        const buffer = fs.readFileSync(fullPath);
                         const binaryAlerts = analyzeBinary(buffer, item);
                         results.filesScanned++;
                         if (binaryAlerts.length > 0) {
                             results.threats += binaryAlerts.length;
                             binaryAlerts.forEach(alert => {
+                                alert.classification = 'POLICY'; // Binaries in repo are policy gated
                                 const name = alert.ruleName || 'Binary Threat';
                                 const cat = alert.category || 'binary-analysis';
                                 results.details.push(`${item}: ${name} (${cat})`);
+                                
+                                // Export raw alert
+                                results.rawAlerts.push({ ...alert, _file: item, _fullPath: fullPath });
                             });
                         }
                     } catch (e) {
@@ -325,7 +412,7 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
 
                 try {
                     const content = fs.readFileSync(fullPath, 'utf8');
-                    const scan = scanFile(item, content);
+                    const scan = scanFile(item, content, null, options);
                     results.filesScanned++;
                     
                     if (scan.alerts.length > 0) {
@@ -336,7 +423,15 @@ function scanDirectory(dirPath, repoId = null, depth = 5) {
                             results.details.push(`${item}: ${name} (${cat})`);
                             
                             // Adosar el nombre de archivo a cada alert para el CLI render
-                            const fileAlert = { ...alert, _file: item, _fullPath: fullPath };
+                            const fileAlert = { 
+                                ...alert, 
+                                _file: item, 
+                                _fullPath: fullPath,
+                                _context: {
+                                    analysis_mode: options.mode,
+                                    execution: options.mode === 'sandbox' ? 'isolated' : 'none'
+                                }
+                            };
                             results.rawAlerts.push(fileAlert);
                         });
                     }

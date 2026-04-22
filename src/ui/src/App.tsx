@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Shield, Settings, History, RefreshCcw, Activity,
-  Bell, LogOut, Loader2, Terminal, GitBranch, Lock as LockIcon
+  Bell, LogOut, Loader2, Terminal, GitBranch, Lock as LockIcon, FileJson
 } from 'lucide-react';
 import OnboardingScreen from './components/OnboardingScreen';
 import RepoSelector from './components/RepoSelector';
@@ -19,6 +19,7 @@ import { AuditTrailView } from './components/AuditTrailView';
 import { SupplyChainView } from './components/SupplyChainView';
 import { DependencyExplorer } from './components/DependencyExplorer';
 import { SandboxMonitor } from './components/SandboxMonitor';
+import { JsonReplayScanner } from './components/VisualReports/JsonReplayScanner';
 import { useLanguage } from './contexts/LanguageContext';
 
 // SECURITY: Access Electron APIs via contextBridge (preload.js)
@@ -55,6 +56,7 @@ const App: React.FC = () => {
     { id: 'safepush', icon: GitBranch, label: 'Safe Push' },
     { id: 'settings', icon: Settings, label: t('settings') },
     { id: 'cli', icon: Terminal, label: t('cli_reference') || 'CLI & Agents' },
+    { id: 'reports', icon: FileJson, label: 'Visual Reports' },
     { id: 'controls', icon: Activity, label: t('control_center') || 'Process Manager' },
   ];
 
@@ -186,6 +188,7 @@ const App: React.FC = () => {
     threats: t('threat_logs'),
     settings: t('settings'),
     cli: t('cli_reference') || 'CLI & Agents',
+    reports: 'Visual Reports',
     controls: t('control_center') || 'Process Manager'
   };
 
@@ -459,8 +462,9 @@ const App: React.FC = () => {
                 </div>
               )}
               {activeTab === 'settings' && <PreferencesPanel />}
-            {activeTab === 'cli' && <CLIReference />}
-            {activeTab === 'controls' && <SecurityControls />}
+              {activeTab === 'cli' && <CLIReference />}
+              {activeTab === 'reports' && <JsonReplayScanner />}
+              {activeTab === 'controls' && <SecurityControls />}
             </motion.div>
           </AnimatePresence>
         </div>

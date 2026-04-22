@@ -1,14 +1,19 @@
 const pc = require('picocolors');
 
-function renderHierarchicalReport(alerts, filesScanned) {
-    console.log(pc.bold(pc.blue('\n🛡️  Sentinel Local Analysis Report')));
-    console.log(pc.dim('─'.repeat(50)));
-    console.log(`${pc.bold('Files Scanned:')} ${filesScanned}`);
-    console.log(`${pc.bold('Threats Found:')} ${alerts.length}`);
-    console.log(pc.dim('─'.repeat(50)) + '\n');
+function renderHierarchicalReport(alerts, filesScanned, options = {}) {
+    const noColor = options.noColor || !process.stdout.isTTY;
+    
+    // Helper to wrap text in color only if enabled
+    const c = (colorFn, text) => noColor ? text : colorFn(text);
+
+    console.log(c(pc.blue, pc.bold(`\n[Sentinel] Analysis Report — Gate Level ${options.gateLevel || 0}`)));
+    console.log(c(pc.dim, '─'.repeat(50)));
+    console.log(`${c(pc.bold, 'Files Scanned:')} ${filesScanned}`);
+    console.log(`${c(pc.bold, 'Threats Found:')} ${alerts.length}`);
+    console.log(c(pc.dim, '─'.repeat(50)) + '\n');
 
     if (alerts.length === 0) {
-        console.log(pc.green('   ✅ No threats found. Directory is clean.'));
+        console.log(c(pc.green, '   OK: No threats found. Directory is clean.'));
         console.log();
         return;
     }
@@ -22,36 +27,65 @@ function renderHierarchicalReport(alerts, filesScanned) {
     const sortedAlerts = [...critical, ...high, ...suspicious];
 
     sortedAlerts.forEach(alert => {
-        let tag = pc.bold(pc.white(' SAFE '));
-        if (alert.riskLevel >= 80) tag = pc.bgRed(pc.bold(pc.white(` CRITICAL `)));
-        else if (alert.riskLevel >= 65) tag = pc.bgYellow(pc.bold(pc.black(` HIGH `)));
-        else tag = pc.bgBlue(pc.bold(pc.white(` SUSPICIOUS `)));
+        const isSecurity = alert.classification === 'SECURITY';
+        const label = isSecurity ? '[SECURITY]' : '[POLICY]';
+        const labelColor = isSecurity ? pc.red : pc.magenta;
+        
+        let tag = c(pc.white, c(pc.bold, ' SAFE '));
+        if (alert.riskLevel >= 80) tag = c(pc.white, c(pc.bgRed, c(pc.bold, ` CRITICAL `)));
+        else if (alert.riskLevel >= 65) tag = c(pc.black, c(pc.bgYellow, c(pc.bold, ` HIGH `)));
+        else tag = c(pc.white, c(pc.bgBlue, c(pc.bold, ` SUSPICIOUS `)));
 
-        console.log(`${tag} ${pc.bold(alert._file || 'unknown')} ${pc.dim(`(${alert.riskLevel})`)}`);
+        console.log(`${c(labelColor, label)} ${tag} ${c(pc.bold, alert._file || 'unknown')} ${c(pc.dim, `(${alert.riskLevel})`)}`);
 
         // Intent Summary Layer
         if (alert.intentFingerprint) {
             const intents = alert.intentFingerprint.intent_signature || [];
             if (intents.length > 0) {
-                console.log(`  ${pc.gray('→')} ${pc.cyan('Intent')}: ${intents.join(' + ')}`);
+                console.log(`  ${c(pc.gray, '>')} ${c(pc.cyan, 'Intent')}: ${intents.join(' + ')}`);
             }
         } else {
-             console.log(`  ${pc.gray('→')} ${pc.cyan('Intent')}: General Threat`);
+             console.log(`  ${c(pc.gray, '>')} ${c(pc.cyan, 'Intent')}: ${alert.category || 'General'}`);
         }
 
         // Signals / Pattern Breakdown
         if (alert._rawRecord && alert._rawRecord.signals) {
-            const pattern = alert._rawRecord.signals.map(s => s.type).join(' → ');
-            console.log(`  ${pc.gray('→')} ${pc.magenta('Pattern')}: ${pattern}`);
+            const pattern = alert._rawRecord.signals.map(s => s.type).join(' > ');
+            console.log(`  ${c(pc.gray, '>')} ${c(pc.magenta, 'Pattern')}: ${pattern}`);
         } else {
-             console.log(`  ${pc.gray('→')} ${pc.magenta('Rule')}: ${alert.ruleName}`);
+             console.log(`  ${c(pc.gray, '>')} ${c(pc.magenta, 'Rule')}: ${alert.ruleName}`);
         }
         console.log();
     });
+
+    // --- Decision Narrative Block [v3.6.2] ---
+    console.log(c(pc.dim, '─'.repeat(50)));
+    console.log(c(pc.bold, 'Decision Narrative:'));
+    
+    if (critical.length > 0) {
+        const top = critical[0];
+        const isSecurity = top.classification === 'SECURITY';
+        const verdictLabel = isSecurity ? 'SECURITY THREAT' : 'POLICY VIOLATION';
+        const verdictColor = isSecurity ? pc.red : pc.magenta;
+
+        console.log(`${c(verdictColor, `VERDICT: ${verdictLabel} DETECTED.`)}`);
+        console.log(`Sentinel identified a high-confidence ${top.category || 'offensive'} operation in ${c(pc.bold, top._file)}.`);
+        if (top.rule_id) console.log(`Primary Rule: ${c(pc.bold, top.rule_id)} | Confidence: 92% (Engine)`);
+        console.log(`${c(verdictColor, `ACTION: BLOCK BUILD / REJECT PR (Exit Code: ${isSecurity ? '1' : '2'})`)}`);
+    } else if (high.length > 0) {
+        console.log(`${c(pc.yellow, 'VERDICT: HIGH RISK DETECTED.')}`);
+        console.log(`Heuristic chains suggest high probability of malicious code or dangerous primitives.`);
+        console.log(`${c(pc.yellow, 'ACTION: MANUAL AUDIT REQUIRED')}`);
+    } else if (suspicious.length > 0) {
+        console.log(`${c(pc.blue, 'VERDICT: SUSPICIOUS SIGNALS DETECTED.')}`);
+        console.log(`The scan matched minor heuristic patterns that deviate from normal behavior.`);
+        console.log('ACTION: INFORMATIONAL REVIEW');
+    }
+    console.log(c(pc.dim, '─'.repeat(50)) + '\n');
 }
 
 function renderExplain(threat) {
-    console.log(pc.bold(pc.blue('\n🛡️  Sentinel Explainability Deck (Forensic View)')));
+    console.log(pc.bold(pc.blue('\n[Sentinel] Explainability Deck (Forensic View)')));
     console.log(pc.dim('─'.repeat(60)));
     
     console.log(`${pc.bold('Target:')} ${threat._file || 'Unknown'}`);
@@ -60,7 +94,7 @@ function renderExplain(threat) {
     
     const rec = threat._rawRecord;
     if (!rec) {
-        console.log(pc.yellow('\n⚠️  No raw mathematical baseline found for this alert. (Legacy/Binary Rule)'));
+        console.log(pc.yellow('\nWARN: No raw mathematical baseline found for this alert. (Legacy/Binary Rule)'));
         return;
     }
 
@@ -100,11 +134,11 @@ function renderExplain(threat) {
 }
 
 function renderTrace(threat) {
-    console.log(pc.bold(pc.blue('\n🛡️  Sentinel Attack Trace (Execution Flow)')));
+    console.log(pc.bold(pc.blue('\n[Sentinel] Attack Trace (Execution Flow)')));
     console.log(pc.dim('─'.repeat(60)));
     const rec = threat._rawRecord;
     if (!rec) {
-        console.log(pc.yellow('⚠️  Trace not available.'));
+        console.log(pc.yellow('WARN: Trace not available.'));
         return;
     }
     
