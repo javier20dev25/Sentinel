@@ -78,4 +78,25 @@ All detection rules must be traceable. This means every diagnostic output must i
 - A human-readable `explanation` of the detection logic.
 - The `rulepack_version` identifier representing the active security baseline.
 
-This policy ensures that Sentinel remains a consistent and auditable decision engine for enterprise security operations.
+---
+
+## 6. Developer Security Hygiene & Branch Protection
+
+Sentinel is most effective when integrated into a hardened repository environment. We recommend the following practices for all developers and organizations using this engine.
+
+### Mandatory Branch Protection
+- **Protect Main/Master**: Never allow direct pushes to the primary branch. All changes must go through a Pull Request.
+- **Required Reviews**: Enable at least one mandatory code review before merging.
+- **Status Checks**: Ensure that `sentinel scan --ci` is a required status check for every PR.
+
+### Native GitHub Security Tools
+We recommend enabling the following features in your repository settings:
+- **Dependency Graph & Dependabot**: Automated auditing and updates for outdated or vulnerable packages.
+- **Secret Scanning**: Scans for accidental exposure of credentials, tokens, and keys.
+- **CodeQL Analysis**: Static analysis for common software vulnerabilities.
+
+### Identity & Access
+- **Multi-Factor Authentication (MFA)**: All contributors must have MFA enabled on their accounts.
+- **SSH/GPG Signing**: We encourage signing commits to ensure provenance and prevent identity spoofing.
+
+---
