@@ -1,8 +1,9 @@
 /**
- * Sentinel: Risk Orchestrator (v2.9 — Policy Driven)
+ * Sentinel: Risk Orchestrator (v3.8)
  * 
- * Aggregates signals into a deterministic verdict using ScoringEngine (v10).
- * v2.9: Integrated with Policy Engine for Governance-as-Code.
+ * PATENT PENDING. Proprietary algorithms for security signal aggregation 
+ * and decision quantization. Unauthorized copying or conceptual derivation 
+ * is prohibited under BSL 1.1.
  */
 
 'use strict';

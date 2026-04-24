@@ -17,3 +17,6 @@ The global reputation data pulled via the `sync` module is provided as telemetry
 
 ## 5. Automated Response Actions
 Sentinel's automated response actions (e.g., `block`, `notify`, `audit`) are executed based on user-defined criteria. Sentinel is not responsible for any direct or indirect consequences of these automated decisions, including but not limited to developer productivity loss or CI/CD pipeline delays.
+
+## 6. Intellectual Property and Indemnification
+Sentinel does not provide intellectual property indemnification to third parties. Any use of the proprietary algorithms or concepts declared as "Patent Pending" in this repository is done at the user's own risk. In the event of litigation or third-party claims arising from the unauthorized use of Sentinel's conceptual designs, the user agrees to indemnify and hold harmless the authors and copyright holders.

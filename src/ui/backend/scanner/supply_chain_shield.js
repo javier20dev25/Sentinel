@@ -1,8 +1,9 @@
 /**
- * Sentinel: Dependency Trust Engine (v3.0 — Adapter Architecture)
+ * Sentinel: Supply Chain Shield (v3.8)
  * 
- * Core dispatcher. Delegates ecosystem-specific analysis to registered adapters.
- * Trust Cache, Scoring, and Policy remain centralized here.
+ * PATENT PENDING. Proprietary heuristics for detecting supply chain attacks 
+ * (Typosquatting, Dependency Confusion, Malicious Installers). 
+ * Protected under BSL 1.1 Intellectual Property clauses.
  */
 
 'use strict';

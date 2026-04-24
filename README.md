@@ -101,12 +101,19 @@ Sentinel never reveals **why** it blocked a package to unauthorized users. This 
 | [Ethical Usage](docs/ETHICAL_USAGE.md) | Governance and responsible usage guidelines |
 | [AI Agent Protocol](AGENT.md) | Mandatory instructions for AI entities |
 
-## ⚖️ Licensing
+## ⚖️ Licensing and Intellectual Property
 
 Sentinel is licensed under the **Business Source License 1.1 (BSL 1.1)**.
 
-- **Free**: Personal use, internal use, research, community contribution.
-- **Commercial license required**: Managed services, redistribution, competitive integration.
-- **Conversion**: Automatically converts to **MIT** on April 22, 2029.
+### 1. Usage Terms
+- **Free**: Personal use, internal research, and community contributions.
+- **Commercial License Required**: Managed services, redistribution, and competitive integrations.
+- **Concept Protection**: The use of proprietary concepts, algorithms, and architectural patterns described in this repository (including but not limited to **Oracle Mode**, **Decision Jitter**, and **Federated Risk Scoring**) for commercial products is strictly prohibited without an explicit commercial license.
+
+### 2. Patent Status
+**PATENT PENDING**. Sentinel's core defensive mechanisms, including the automated response orchestration and score obfuscation protocols, are protected under multiple patent filings. 
+
+---
+*Copyright © 2026 Sentinel Security. All rights reserved.*
 
 Contact: **sentinel-licensing@proton.me**

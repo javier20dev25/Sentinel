@@ -1,0 +1,474 @@
+﻿SENTINEL REPOSITORY INTEGRITY MANIFEST
+Generated at: 2026-04-24 12:28:39
+System: DESKTOP-KI5APP4
+=================================================
+
+COMMIT: 55550708a01f8524f68fd41770b127e30c07f433
+DATA:   55550708a01f8524f68fd41770b127e30c07f433 | 2026-04-23 22:48:39 -0600 | test: implement master test suite and generate comprehensive validation report
+SHA256: 89ae4259bcd202c5881ffcbb5bbc50ff378088928446e4b045ea9dbc36f19828
+-------------------------------------------------
+COMMIT: 7b89635aa4c5f6877789a9a8c02c332530ea63ee
+DATA:   7b89635aa4c5f6877789a9a8c02c332530ea63ee | 2026-04-23 22:40:57 -0600 | docs: finalize phase 3/4 ÔÇö legal protection, internal governance, and master documentation index
+SHA256: 2a9973a9dba7c5c5c238b43a6e8ac79ec626ed8c7a21016e7e7e70cded35739e
+-------------------------------------------------
+COMMIT: 2f530c6691be2976bde276c7a24d85915f1bafee
+DATA:   2f530c6691be2976bde276c7a24d85915f1bafee | 2026-04-23 22:24:05 -0600 | feat(sync): phase 4 implementation ÔÇö networked intelligence, trust modeling, and federated risk scoring
+SHA256: 4474371ec20e795f47e8b41e3ad4dfe670c5e4e0bf6ece3d4616e074db6c0afa
+-------------------------------------------------
+COMMIT: f47fe2101136d4338d835f023332f927fec2cbff
+DATA:   f47fe2101136d4338d835f023332f927fec2cbff | 2026-04-23 22:11:30 -0600 | feat(risk-graph): phase 3 implementation ÔÇö reputational intelligence and cross-repository correlation
+SHA256: 79d9abb5bcf11d53ab06bf17b32ef407fc71fcd332b6004c0b7f835183d5bdfe
+-------------------------------------------------
+COMMIT: 439ee843d4cd97cec1db588ecc847798df486ee2
+DATA:   439ee843d4cd97cec1db588ecc847798df486ee2 | 2026-04-23 22:02:10 -0600 | feat(spl): phase 2 product strategy ÔÇö explainability, policy packs, simulation, and playbook-aware PR firewall
+SHA256: 451fc880661f8982c95841bac48068adada499ab8642b1f9a499e16bd3baf27d
+-------------------------------------------------
+COMMIT: 467e028db007a3439a100013e0022cf8cdf9e3bb
+DATA:   467e028db007a3439a100013e0022cf8cdf9e3bb | 2026-04-23 21:41:20 -0600 | feat(spl): implement Sentinel Playbook Language v0.1 ÔÇö lexer, parser, compiler, runtime
+SHA256: 6f671abec717cbd05cc42b74c60da318d885b75893e969ee82a5afd3e0b4a5ad
+-------------------------------------------------
+COMMIT: 6098719047b40307bc9242f678fcc54187f1d5dd
+DATA:   6098719047b40307bc9242f678fcc54187f1d5dd | 2026-04-23 20:20:49 -0600 | feat(pr-firewall): implement PR Firewall engine and GitHub Checks API integration
+SHA256: 23a98c73b795a951579b591f42017a82579ccef21a9845bd77659dde3f481740
+-------------------------------------------------
+COMMIT: 4b2cde61f5ca6637c8887872775eafdb0b43c4c8
+DATA:   4b2cde61f5ca6637c8887872775eafdb0b43c4c8 | 2026-04-23 19:35:26 -0600 | feat: Supply Chain Firewall v3.8 & AI Agent Protocol
+SHA256: de9db9240379d6badfe239b05a1f10f5668829d50e683d0d1422a2d0f9969bef
+-------------------------------------------------
+COMMIT: e3cd5a95b7f96c61776f9ddd6b7d38a01285f188
+DATA:   e3cd5a95b7f96c61776f9ddd6b7d38a01285f188 | 2026-04-22 02:14:06 -0600 | docs: add section 6 security hygiene and configure dependabot
+SHA256: 50df6f347652a05f19cbe17743e3f6cce14953811a375442cb028a6f1cf3c409
+-------------------------------------------------
+COMMIT: 247382ef4be186963abb088d7ee9e3f5e1102c21
+DATA:   247382ef4be186963abb088d7ee9e3f5e1102c21 | 2026-04-22 02:05:23 -0600 | docs: integrate Sentinel philosophy regarding AI-generated code decisioning
+SHA256: bae3092a916b246311257c06fd455bb9ae12b5d99b65e889df064bb7775c6ed0
+-------------------------------------------------
+COMMIT: a4b63989ea734ec9ecb48500281fc7070d259456
+DATA:   a4b63989ea734ec9ecb48500281fc7070d259456 | 2026-04-22 01:55:39 -0600 | chore: final release artifacts v3.6.1
+SHA256: bea57436ed4de28b0143b8d0516b8b90d0efd6da0109a11c0a774e56ad7c83b5
+-------------------------------------------------
+COMMIT: bd634f264bbef296b137bc8b26e9b250301d8f5d
+DATA:   bd634f264bbef296b137bc8b26e9b250301d8f5d | 2026-04-21 16:01:02 -0600 | fix(scanner): Silence dynamic execution FP over whitelisted sub-args and clean corpus false positives
+SHA256: 8664fdd94101a7312b897090436a105cb75bf684c44c44c085f260f58fd6c3bd
+-------------------------------------------------
+COMMIT: 40d45265b1fda892ef2fae854001766046a62b52
+DATA:   40d45265b1fda892ef2fae854001766046a62b52 | 2026-04-21 15:52:38 -0600 | feat(cli): Sentinel Developer Experience v3.6, Explainability deck & unified hierarchical scanner
+SHA256: 60f1554856f5a7b4f44be529e3f6d56d5a32c3e8db5cbaa90ce3049dfcc2de32
+-------------------------------------------------
+COMMIT: 9a9b2de0ebea432c1aeef1c139cec9ffac88cef6
+DATA:   9a9b2de0ebea432c1aeef1c139cec9ffac88cef6 | 2026-04-21 15:35:36 -0600 | Sec: Finaliza Sentinel Security Engine v3.5 (Composite Risk & FP Suppression)
+SHA256: e7d3b4a7b7156875dff288922a89a480928a9335a9202cf40a415ba536e8ff51
+-------------------------------------------------
+COMMIT: 7086f10862bdc289e4319a222a842a3110f87d31
+DATA:   7086f10862bdc289e4319a222a842a3110f87d31 | 2026-04-21 11:22:06 -0600 | docs: Update Interop Report with Phase 3.2 Hardening results
+SHA256: 6e6e855fd41a1152b874a0bac521ee06add23ed108cde4fbd30a0d2e7c4b0f69
+-------------------------------------------------
+COMMIT: 9171c3d03971ce5f8eb96d45fe93dad3ca9a56f3
+DATA:   9171c3d03971ce5f8eb96d45fe93dad3ca9a56f3 | 2026-04-21 00:31:01 -0600 | feat(3.2): Hardening - Proxy trap detection, WASM binary scanner, prototype pollution, obfuscated sink analysis
+SHA256: b86467cbf421eb8768badc6e6d322dabdbe68747f084c68c8fa6aba9484c4d0e
+-------------------------------------------------
+COMMIT: a6aa2b35336f0e825b28f20ae50586b1b6689bd7
+DATA:   a6aa2b35336f0e825b28f20ae50586b1b6689bd7 | 2026-04-20 21:50:30 -0600 | feat: Agentic Interoperability (v3.1) - audit command and enhanced direct scanning
+SHA256: 56e23610151402cb0a4864d1a8dce1672459eaccf24b8f23061aa9799b22ccdd
+-------------------------------------------------
+COMMIT: d3078ff9e3c8a25f2145310a5a86391238b8cc90
+DATA:   d3078ff9e3c8a25f2145310a5a86391238b8cc90 | 2026-04-20 21:18:00 -0600 | chore: add sentinel sandbox
+SHA256: 87030d009b6ac3f417fd8ee75022a0302713700352bb2bc5053d034f973ccc7c
+-------------------------------------------------
+COMMIT: 502f3f94ee3caffbba622b8a00049167b370a5ee
+DATA:   502f3f94ee3caffbba622b8a00049167b370a5ee | 2026-04-20 20:01:03 -0600 | docs: document latest scan test results and update README header
+SHA256: 83978d1d8e06cf535f06f0cdb9eae14bcf7d0de58f59ec6c2bf9d804b8ea5d2a
+-------------------------------------------------
+COMMIT: 94cd72464ebb139d5110e5729594db928a339ab0
+DATA:   94cd72464ebb139d5110e5729594db928a339ab0 | 2026-04-20 17:06:08 -0600 | docs: link DETECTION_SPEC to central navigation header
+SHA256: 072246c25c260476496866a3ce7cf131171f12493ab6c6f2d7b3df2b8deb4dcb
+-------------------------------------------------
+COMMIT: eb46b2d26dc47388add96a116fca6b7a1d6f6ce7
+DATA:   eb46b2d26dc47388add96a116fca6b7a1d6f6ce7 | 2026-04-20 17:02:05 -0600 | feat: migrate sources, sinks, and scoring to central JSON spec
+SHA256: d2a6d92cfa5b0cfb6f44d9f55fd4880a86eec2525b11f64e535d482e653943cb
+-------------------------------------------------
+COMMIT: 6768a637be7d8c31c5af7f6e2730899cd4234243
+DATA:   6768a637be7d8c31c5af7f6e2730899cd4234243 | 2026-04-20 16:42:46 -0600 | fix: remove ignore-scripts to allow Sandbox to act as true honeypot
+SHA256: 3798b4b6349d15b58de83c218cb76550894a2fbc87f9029999024a1ceea94438
+-------------------------------------------------
+COMMIT: 14202b8f7f7e20cf914383d7ee3a8968ea4487dc
+DATA:   14202b8f7f7e20cf914383d7ee3a8968ea4487dc | 2026-04-20 16:23:57 -0600 | chore: add sentinel sandbox workflow to repo
+SHA256: 7ec6b83de577f972fffcd59a161e3b697cce8074c52bc1a34dfccb65f6c5785b
+-------------------------------------------------
+COMMIT: 8d4327757072035e7bd57a9ed20c61963703e6f8
+DATA:   8d4327757072035e7bd57a9ed20c61963703e6f8 | 2026-04-20 16:20:49 -0600 | feat: enhance sandbox to post PR comments on detection & add local test suite payloads
+SHA256: 71e165f8e92296121f4ada9663ae13ff73b6338832d7997c9e92df91abb4c0f3
+-------------------------------------------------
+COMMIT: f27edf9f8de8d2a621000993549ff1bebe4974ea
+DATA:   f27edf9f8de8d2a621000993549ff1bebe4974ea | 2026-04-20 13:53:06 -0600 | docs: formalize research methodology, AST taint, and active hunting architecture
+SHA256: b4ef253eee3349e1982af6a60b89755470212604447835b0db49c0b2759a6e83
+-------------------------------------------------
+COMMIT: 0fefce63e1743d44d6fd313b51d559e84b9b05b0
+DATA:   0fefce63e1743d44d6fd313b51d559e84b9b05b0 | 2026-04-20 13:47:08 -0600 | chore: clean up embedded repo and update gitignore
+SHA256: 6c054e36605eae6c4d4ec5495918d2361b2eb30af265c83967cd8b70e4337ddd
+-------------------------------------------------
+COMMIT: 0eb3041b14a4f0d88091ab6f0f1b3533cca82be6
+DATA:   0eb3041b14a4f0d88091ab6f0f1b3533cca82be6 | 2026-04-20 13:42:46 -0600 | feat: upgrade to enterprise SAST engine with deep injection rules, AST taint analysis, and Sandbox X-Ray runtime monkey-patching
+SHA256: 4eaf7fe278d9b1d9174e85c88f629e0854bff1af33efa093471a55e3725136b1
+-------------------------------------------------
+COMMIT: 023b189723541751d9ca901c61c01f8c33adfdd2
+DATA:   023b189723541751d9ca901c61c01f8c33adfdd2 | 2026-04-19 19:31:41 -0600 | docs: add comprehensive Threat Model and architectural defense overview
+SHA256: 9268f9249201fe5ff42af3e3f687091d20aab0cfa683ad59a362e901c0f0b860
+-------------------------------------------------
+COMMIT: 52fd1ad8ad24c0dce19b4e1747eea260767e22ae
+DATA:   52fd1ad8ad24c0dce19b4e1747eea260767e22ae | 2026-04-19 19:06:19 -0600 | docs: clarify --auto usage for sandbox sync and newly available commands
+SHA256: 901a00b1f027d735908a7caf2fd6dcda884141f2f9c5677471abc04c4a87a52e
+-------------------------------------------------
+COMMIT: a52dfd70909af7fc0517a7331325488ae7233cd4
+DATA:   a52dfd70909af7fc0517a7331325488ae7233cd4 | 2026-04-19 18:31:12 -0600 | fix(cli): add 'protected remove' command and full JSON support for Packs/Protected
+SHA256: 6140093a18f76c5918271abbd9e7354e2c1190910add3d7a740bf12e4a45d17e
+-------------------------------------------------
+COMMIT: 50040f4a2908c0130b97d3d00f8b475f1707fc28
+DATA:   50040f4a2908c0130b97d3d00f8b475f1707fc28 | 2026-04-19 18:04:21 -0600 | feat(cli): add 'sandbox audit-prs' command to link PRs with telemetry
+SHA256: bf1eb37fb6b13f030edaa1e7bfa385bc1b092e980768faa577e2d8531d371256
+-------------------------------------------------
+COMMIT: dfabb7a536c0085edf94f180be6d5c5166ad3703
+DATA:   dfabb7a536c0085edf94f180be6d5c5166ad3703 | 2026-04-19 17:22:03 -0600 | feat(cli): add 'prs' command and fix 'sandbox sync --auto' JSON output
+SHA256: fa4247a03aa3847d38efc59048ea31a3368fdb9672d64efee68b728756a2cd9e
+-------------------------------------------------
+COMMIT: 26b980b0d6dd3700cf65974382dc5cb88405a715
+DATA:   26b980b0d6dd3700cf65974382dc5cb88405a715 | 2026-04-19 17:14:44 -0600 | docs: add autonomous agent interoperability report with empirical test results
+SHA256: 04990b0480aa3c36e8a14089128c901dfc9b6fcd1645f494efe6871f2d190bba
+-------------------------------------------------
+COMMIT: 551e42fea7098d47a9b56f195e5c110af1587519
+DATA:   551e42fea7098d47a9b56f195e5c110af1587519 | 2026-04-19 16:48:47 -0600 | feat(cli): standardize all management commands with --json support and create AI agent onboarding guide
+SHA256: dda6287141567f7ef3a327bb79538892a9457366f97680641625a814c4262247
+-------------------------------------------------
+COMMIT: 4460fbf3eac056396edf26f1e1e67dd51289e6cf
+DATA:   4460fbf3eac056396edf26f1e1e67dd51289e6cf | 2026-04-18 20:27:43 -0600 | docs: exhaustive update of AI agent guide and smart-blocking behavior across all guides
+SHA256: 7a5b121ece295f003ee7b31df7a8954655b3db0cc093a848ba7bc509b6f1c8cb
+-------------------------------------------------
+COMMIT: de7f522982ea1b51f1b74ecafac269badb004720
+DATA:   de7f522982ea1b51f1b74ecafac269badb004720 | 2026-04-18 20:23:28 -0600 | fix(cli): link command now uses db.addRepository instead of nonexistent db.linkRepository
+SHA256: a1ebceef84fa95f9ad17de9c94b84b548f2e4fb97ca6783dc7818078efd5f38c
+-------------------------------------------------
+COMMIT: 4f16efb4ef2f4e44dd57816492d9e970b8766179
+DATA:   4f16efb4ef2f4e44dd57816492d9e970b8766179 | 2026-04-18 19:27:01 -0600 | feat(cli): add smart welcome menu for humans and AI agents
+SHA256: 1584392012efef785dab537e48c0214b4be9dfceec858acfefbc92d2c1119fea
+-------------------------------------------------
+COMMIT: 0f80e7673bf527ab98b787a61b86220c340d45a8
+DATA:   0f80e7673bf527ab98b787a61b86220c340d45a8 | 2026-04-18 17:58:37 -0600 | feat: smart-block pre-push hook with bypass, simplified safe heal
+SHA256: 2b3a4959a4167c65f5b7e899ca8df768b8581b2f8f7a7459714e4b19a803b0a5
+-------------------------------------------------
+COMMIT: 8ace6e8e552a70d4038fb2582ad41039836ea391
+DATA:   8ace6e8e552a70d4038fb2582ad41039836ea391 | 2026-04-18 17:32:45 -0600 | fix: heal --leaks now removes protected files from ALL unpushed commits, not just HEAD~1
+SHA256: 99c49487ed97f30751c3f298f9ca4fe1818d7d9d7124eb56ead0134dd00af669
+-------------------------------------------------
+COMMIT: 343960f03374631f6b5379295d3c63b8dfaaa994
+DATA:   343960f03374631f6b5379295d3c63b8dfaaa994 | 2026-04-18 03:36:44 -0600 | feat: add missing hook-install CLI command for pre-push hook setup
+SHA256: 3983293908a059dc06f804e000d7ff7b20a928427055a1f8921d500d58763c8f
+-------------------------------------------------
+COMMIT: 33761a569d161adf1f72eb259baada0e64f34531
+DATA:   33761a569d161adf1f72eb259baada0e64f34531 | 2026-04-18 02:51:59 -0600 | chore: remove phantom submodule merx-simulation to fix CI/CD
+SHA256: 396ef86c69c118d7b8ac322d3f39d759e9ec6255674ccf33f2593baccf4db2d3
+-------------------------------------------------
+COMMIT: 7c64465deb0cb40200d268df68907da25552b896
+DATA:   7c64465deb0cb40200d268df68907da25552b896 | 2026-04-18 02:43:33 -0600 | Merge pull request #11 from javier20dev25/feat/protected-files-cli
+SHA256: a79872ac6924a5cfa4da7338fd994e7e419c0028a8608efc87227881dd7495b2
+-------------------------------------------------
+COMMIT: 03c445fa6b80786af733cc7724f741fbbbc5cf0a
+DATA:   03c445fa6b80786af733cc7724f741fbbbc5cf0a | 2026-04-18 02:25:19 -0600 | chore: merge main into feat/protected-files-cli and unify advisory security guardian
+SHA256: b059afe95c1bcdf1487a0ee119a07ac944d9794e5126d299cf78ca435641ef57
+-------------------------------------------------
+COMMIT: 1113910963f2fa7d79b334ad680c65f623343b99
+DATA:   1113910963f2fa7d79b334ad680c65f623343b99 | 2026-04-18 00:33:46 -0600 | docs(heal): update guides to reflect commit-healing capabilities
+SHA256: 26aad52f1e1ac18598127b1e3e024654d35196832a8fb560d97d5a5b9ae1df9e
+-------------------------------------------------
+COMMIT: 4f038042bae08aa980643f7a98863bcee6df4246
+DATA:   4f038042bae08aa980643f7a98863bcee6df4246 | 2026-04-18 00:28:30 -0600 | chore: re-commit without protected files (healed by Sentinel)
+SHA256: a77c0e7911619b3df20cdfb2661484c1f5751f74146d839d00fd28e8f1c94063
+-------------------------------------------------
+COMMIT: 43cc2770506d82bebf92d83612af5e39f78fde93
+DATA:   43cc2770506d82bebf92d83612af5e39f78fde93 | 2026-04-17 21:27:57 -0600 | docs(phase21): update CLI reference and user guide to reflect advisory mode and new commands
+SHA256: 3fee48aee2a4a92a24ebd118a0a77f9dd64ca54a5c0a693dd08f85406d4fc8a4
+-------------------------------------------------
+COMMIT: 3960f79e5ec46115e5923fb18897e167eca1c33e
+DATA:   3960f79e5ec46115e5923fb18897e167eca1c33e | 2026-04-17 21:22:41 -0600 | fix(cli): include committed but unpushed files in protected paths check
+SHA256: 6fac5629c12d4bd32ef41550cfe8add7768bfa485f42e737cd6ed0669283d896
+-------------------------------------------------
+COMMIT: 5b08574bfab7f246321c31cb00b3ef461fd7833e
+DATA:   5b08574bfab7f246321c31cb00b3ef461fd7833e | 2026-04-17 20:36:57 -0600 | docs: update AI Agent Guide with prepush, heal and Lite Model protocol
+SHA256: fdbbfb67757b4ab7b7daf0ff491576655f95b2cbf1959ba87d04c309ed27ebc0
+-------------------------------------------------
+COMMIT: 2671daca60f9ce28853c0ced8cb23ffd07065361
+DATA:   2671daca60f9ce28853c0ced8cb23ffd07065361 | 2026-04-17 19:33:13 -0600 | feat(phase20): pragmatic security gate - advisory prepush, fix normalizePath bug, warn-only hook
+SHA256: 6e3061aaf8f53c1ffcb16e5e693e4e6d8232201c55a7e7be912306359450359a
+-------------------------------------------------
+COMMIT: c95721a3c006ba4cd61ce59a962bc199720fc593
+DATA:   c95721a3c006ba4cd61ce59a962bc199720fc593 | 2026-04-17 18:19:43 -0600 | feat(guardian): implement pre-push hook logic and sentinel heal command
+SHA256: 9e0a0646176a7ace97bd70aaa103c31dcf95245b79f0cb85dc926b044b8854d8
+-------------------------------------------------
+COMMIT: babe918902711266d4f6e5d5091601adcc23d63d
+DATA:   babe918902711266d4f6e5d5091601adcc23d63d | 2026-04-17 17:20:04 -0600 | feat(agent): implement agentic skills (git hooks and protected files CLI)
+SHA256: c0bfdebbf0e7b25f015820eec116a7844519762455c1945204dc1c680dd75232
+-------------------------------------------------
+COMMIT: 828c98c90e36bf860fca4eb0e8d358d3b01369d1
+DATA:   828c98c90e36bf860fca4eb0e8d358d3b01369d1 | 2026-04-17 17:00:00 -0600 | feat(sandbox): add PR bot experience and JSON support to sandbox CLI
+SHA256: a1e1787a4dfbeaa6e422cdf3f4fc6c264ba7c642247ccdb6db48e8727930600c
+-------------------------------------------------
+COMMIT: 07f2b0e64613ad35c0ad3ba127292c6a30e075c9
+DATA:   07f2b0e64613ad35c0ad3ba127292c6a30e075c9 | 2026-04-17 16:33:51 -0600 | feat(cli): finalize agentic-ready refactor with --json support and architecture fixes
+SHA256: 4e71425cfda366ae4b420a42f1bc660811c2331393a5670bf4b8c1f33de6c75d
+-------------------------------------------------
+COMMIT: 83643e653f66f1d362a56302bbb19971b2c04775
+DATA:   83643e653f66f1d362a56302bbb19971b2c04775 | 2026-04-17 15:25:29 -0600 | fix(ui): resolve JSX syntax errors in RepoCard and add missing test script
+SHA256: aae2b57b8f71433f0d1d25a731e58f3d111cc9558b7aedb2e57049dfe9dca1dd
+-------------------------------------------------
+COMMIT: 492d32809e850657e8748f2298a2aa4ded90e53c
+DATA:   492d32809e850657e8748f2298a2aa4ded90e53c | 2026-04-17 11:17:15 -0600 | feat(cli): Add pack loading via cli and sample template
+SHA256: a1e2fb5e058a57355f9965f590ace2976b216e4523c3fff17909b76ff1f2d675
+-------------------------------------------------
+COMMIT: 688e3db29f29e18b0fce99a8072702c093fb1c61
+DATA:   688e3db29f29e18b0fce99a8072702c093fb1c61 | 2026-04-17 11:04:17 -0600 | Merge branch 'main' of https://github.com/javier20dev25/Sentinel
+SHA256: 5c365cafc97dae2124068399786f4e3ca2262a6d360afd780af89b7d5e6dd26b
+-------------------------------------------------
+COMMIT: 26ca01aa8b7dccfe6987cc475e59674f0510a4e8
+DATA:   26ca01aa8b7dccfe6987cc475e59674f0510a4e8 | 2026-04-17 11:02:25 -0600 | feat(security): Add Protected Files and Ed25519 Config Packs System
+SHA256: 7aa748a18e3b213b69e1c452ed6cc38b58cfeb63873a0a9cf528a08c62bc1e81
+-------------------------------------------------
+COMMIT: 2639e13249840b9b0d739e57a21a3da6b96001db
+DATA:   2639e13249840b9b0d739e57a21a3da6b96001db | 2026-04-17 07:53:10 -0600 | feat(security): full sandbox integration and pre-commit analysis
+SHA256: ee25f99f1e36407e2281405ef1fc5b67d44cdc078360293aef4c0652010949e1
+-------------------------------------------------
+COMMIT: ac8562b2ede44aad244f7533fadda1c063b34d2d
+DATA:   ac8562b2ede44aad244f7533fadda1c063b34d2d | 2026-04-14 14:07:59 -0600 | fix/secret scanner alerts (#8)
+SHA256: 8ddb8c56316bd78ebad2dad037a2dd6528bf37ec397d68cc22cf83a909c490ae
+-------------------------------------------------
+COMMIT: 3fb980b17800df565a74b4826e259ad83bb0da37
+DATA:   3fb980b17800df565a74b4826e259ad83bb0da37 | 2026-04-14 14:07:59 -0600 | fix/secret scanner alerts (#8)
+SHA256: 70586e175f09848d149fda85aa3aa4f43cb7e8dbf07d7ef980c166aa99885d8d
+-------------------------------------------------
+COMMIT: 5c55aa0f78221224e614d2f3efdb905806ec4814
+DATA:   5c55aa0f78221224e614d2f3efdb905806ec4814 | 2026-04-14 13:24:33 -0600 | security: patch all 39 Dependabot CVEs + automated dependency audit CI
+SHA256: d26c5c050eff41d922e38310d4c3c26c8b13d4bea76abf4fdadca76bb80119d4
+-------------------------------------------------
+COMMIT: 84b13fafb6b1cc28dc33f625e35c79acbeb0bc6f
+DATA:   84b13fafb6b1cc28dc33f625e35c79acbeb0bc6f | 2026-04-14 13:24:33 -0600 | security: patch all 39 Dependabot CVEs + automated dependency audit CI
+SHA256: e3acd5f8933d04c2e9dc38f36302d84ec9720de4baa768da7360aa51658f48cd
+-------------------------------------------------
+COMMIT: d2b1fe495795b3ac6deb31683aa13c0050f557ca
+DATA:   d2b1fe495795b3ac6deb31683aa13c0050f557ca | 2026-04-14 04:55:23 -0600 | Merge pull request #2 from javier20dev25/infra/hardening
+SHA256: 263d8cd2b6b30992f03dc9beaeaff44b169d909ca30f8e0ea6a170358550b69d
+-------------------------------------------------
+COMMIT: ab879f7bb95e0cb5c42a71f50c45739ddb39cf4d
+DATA:   ab879f7bb95e0cb5c42a71f50c45739ddb39cf4d | 2026-04-14 04:55:23 -0600 | Merge pull request #2 from javier20dev25/infra/hardening
+SHA256: 732a94292a86b9c1ef1774f680e3626123f187a681f257c72c0d523f9b5a21e1
+-------------------------------------------------
+COMMIT: 680b8d29e15475a60903c0b1585ee32a385ef129
+DATA:   680b8d29e15475a60903c0b1585ee32a385ef129 | 2026-04-14 04:41:04 -0600 | ci: install root dependencies to fix tests
+SHA256: 9d47efcfc33c6f502d15b60966383507e112935bbae4ae281b6afb5281c398e6
+-------------------------------------------------
+COMMIT: b78fb7e159a0903b06ddf108510d069af26bfe5e
+DATA:   b78fb7e159a0903b06ddf108510d069af26bfe5e | 2026-04-14 04:41:04 -0600 | ci: install root dependencies to fix tests
+SHA256: 737a059e536675266c54622db027e58fb3fa9cda664bd0b6c982a6549546fe82
+-------------------------------------------------
+COMMIT: 2b771a87b91d38a9c67f47c2af68ba34a4db1072
+DATA:   2b771a87b91d38a9c67f47c2af68ba34a4db1072 | 2026-04-13 13:08:08 -0600 | security: implement automated PR transparency reporting and summary generation
+SHA256: bd19ab3f2b7143735567daa1d87d0a2d75815f3c485282d150d3879c2f85e73a
+-------------------------------------------------
+COMMIT: 11a12047dfa9414b6b312cfb9490b942d09c6d43
+DATA:   11a12047dfa9414b6b312cfb9490b942d09c6d43 | 2026-04-13 13:08:08 -0600 | security: implement automated PR transparency reporting and summary generation
+SHA256: 66aa0b8cb54957ea1da45ba1d76eacbd806e3b788c77c88269241d1a126fc1e2
+-------------------------------------------------
+COMMIT: ccd2874ef8243943edc5a266a1842b4c8cb22b7b
+DATA:   ccd2874ef8243943edc5a266a1842b4c8cb22b7b | 2026-04-13 12:54:18 -0600 | infra: enable main branch protection, integrate tests and pr-security scan
+SHA256: c4c934aa931685c0498b92c9ef0e58ba0e70c1d488d691efd923d96183e1b547
+-------------------------------------------------
+COMMIT: f51f49c39b689e978cb1bceb65cc304b090f8b83
+DATA:   f51f49c39b689e978cb1bceb65cc304b090f8b83 | 2026-04-13 12:54:18 -0600 | infra: enable main branch protection, integrate tests and pr-security scan
+SHA256: df692efa6b23320f5c3c63a734c5d1b5a8905af8a1d5e1943effb85a433dad15
+-------------------------------------------------
+COMMIT: d241b6023a10c42e156988a73459e7a95c77c6e2
+DATA:   d241b6023a10c42e156988a73459e7a95c77c6e2 | 2026-04-12 20:16:34 -0600 | feat: sentinel 3.0 core release - unified cli, dynamic sandbox, and governance
+SHA256: 0d782e6d7001ebbe70e69b6f537033b8d6709612a2eeb9cf8127b1417482baa9
+-------------------------------------------------
+COMMIT: dbfe79b563099e6b87a1e7642e9d73c5f4dd0f5a
+DATA:   dbfe79b563099e6b87a1e7642e9d73c5f4dd0f5a | 2026-04-12 20:16:34 -0600 | feat: sentinel 3.0 core release - unified cli, dynamic sandbox, and governance
+SHA256: 6ce6c0b27b18461fed3f5624c31b88bdacba265c855e53b62ef2462551cb3a6f
+-------------------------------------------------
+COMMIT: 340f4e0ee8d25d2d82467f0fda18febc0867c6c6
+DATA:   340f4e0ee8d25d2d82467f0fda18febc0867c6c6 | 2026-04-12 18:35:01 -0600 | Sentinel 3.0: Sandbox Integration ÔÇö CLI, UI, Backend and Tests complete
+SHA256: 19a2475781b3c99a5468af8954e7f2deb95974dd545ad30cf89ce82f3ac3596c
+-------------------------------------------------
+COMMIT: ac19fc60ef0f525332d08bf2831b9a358bf777f1
+DATA:   ac19fc60ef0f525332d08bf2831b9a358bf777f1 | 2026-04-12 18:35:01 -0600 | Sentinel 3.0: Sandbox Integration ÔÇö CLI, UI, Backend and Tests complete
+SHA256: f59008b485983bef337a9b6b8a1787f5b9f427a2fc7701f03d6d032100383844
+-------------------------------------------------
+COMMIT: 7274187f0c5d52bc8d500bb1d85649e5d58bf986
+DATA:   7274187f0c5d52bc8d500bb1d85649e5d58bf986 | 2026-04-12 09:47:22 -0600 | fix(ci): specify electron main entry point, resolve postcss warning, and obfuscate test secrets
+SHA256: cafe5ed802780f3d4276186ff207e8081932a14ac12b689dda678f87fc458bcb
+-------------------------------------------------
+COMMIT: b976f695979e81c62ca34bbf8205aa7c4df99572
+DATA:   b976f695979e81c62ca34bbf8205aa7c4df99572 | 2026-04-12 09:47:22 -0600 | fix(ci): specify electron main entry point, resolve postcss warning, and obfuscate test secrets
+SHA256: e286d6a1a2977e93de9afc04bfce39622bdf4e6be1a67c860f0add0feb267c76
+-------------------------------------------------
+COMMIT: 5754c8051499a898abe370c8b0f1fe98783e58fa
+DATA:   5754c8051499a898abe370c8b0f1fe98783e58fa | 2026-04-03 18:06:08 -0600 | fix: implement robust launcher box detection and 5s fallback timer
+SHA256: 7b407be5b4a07f7cfb8835e4898b97a228381b0f30521deae7f77e715e4631cd
+-------------------------------------------------
+COMMIT: 69a8c510947c1c1cf0874990453bf7e9fd5b6132
+DATA:   69a8c510947c1c1cf0874990453bf7e9fd5b6132 | 2026-04-03 18:01:01 -0600 | feat: upgrade launcher with RGB animations, auto-open, and fail-safe redirection
+SHA256: c5a90fe4cfa15bb09999a9ad4ba3ce8e768361f71af619b5b0dd5926957bedf5
+-------------------------------------------------
+COMMIT: 2664883f9d006d8af62829afc429d4c46dd46913
+DATA:   2664883f9d006d8af62829afc429d4c46dd46913 | 2026-04-03 17:52:06 -0600 | fix: resolve MODULE_NOT_FOUND errors in backend server
+SHA256: b094566705e11146c4a318a199cc9b20976f399d98a0323bb28d5d6a4d124295
+-------------------------------------------------
+COMMIT: 1c4ff0d8dd60aba5946d87cbe9c94329f0ba7b96
+DATA:   1c4ff0d8dd60aba5946d87cbe9c94329f0ba7b96 | 2026-04-03 17:47:18 -0600 | feat: make 'sentinel' and 'sntl' command global-accessible
+SHA256: a3cd146ea2fbdd5a311d29ff819edd4f9aa59e0f0b6891259d372a7e6aa2dada
+-------------------------------------------------
+COMMIT: ced24adf214c493f571d4286b22fa15af7075a05
+DATA:   ced24adf214c493f571d4286b22fa15af7075a05 | 2026-04-03 17:11:24 -0600 | fix: add missing dependencies and interactive launcher features
+SHA256: b4ff25b96ef19dd6fb462c17e0db51ed795e47581ac4a311f850963026d17498
+-------------------------------------------------
+COMMIT: 5dedd7ee70d983994cc8525895bd45b953e44692
+DATA:   5dedd7ee70d983994cc8525895bd45b953e44692 | 2026-04-03 17:01:22 -0600 | docs: comprehensive technical documentation suite and cinematic launcher update
+SHA256: 52a8efcb981b75763b8174032d19010b57f34524b8c57bc68fb0ec3a8b9a7ddc
+-------------------------------------------------
+COMMIT: 384a72eb242c5bf2b187f50ecd9fc80b817ff7e1
+DATA:   384a72eb242c5bf2b187f50ecd9fc80b817ff7e1 | 2026-04-03 16:43:18 -0600 | feat: add epic cinematic launcher (npm run sentinel) and update docs
+SHA256: 76fdb63fa4cdb88b67ea9317a85b2a28ee1bde666a0ee0cfb91ad7bc5b64afcf
+-------------------------------------------------
+COMMIT: 89851eb8d949f2eceaa8546fe741ce99decf92eb
+DATA:   89851eb8d949f2eceaa8546fe741ce99decf92eb | 2026-04-03 15:21:44 -0600 | fix: prevent browser extensions from crashing React DOM on password inputs
+SHA256: f05cd611a5ade84c96231d49eba7078494feeb027da9db8e651085a4a2373da0
+-------------------------------------------------
+COMMIT: ad559a7ab89c9e3e00a3d1f21f5c5951c67ef398
+DATA:   ad559a7ab89c9e3e00a3d1f21f5c5951c67ef398 | 2026-04-03 14:34:51 -0600 | fix: migrate bcrypt to bcryptjs (pure JS) and remove postinstall to enable clean npm install without C++ compilers
+SHA256: 91123ef32bf9a0b10ddd1aa32359ef75a9d046f47b5d39eb7450b339a90f2aed
+-------------------------------------------------
+COMMIT: 804507fd95562446f7e29754e871b0a4379584a7
+DATA:   804507fd95562446f7e29754e871b0a4379584a7 | 2026-04-03 14:02:42 -0600 | docs: add Quick Start section with one-liner deployment command and copy-to-clipboard functionality
+SHA256: bfff524d7c7c99014f2c9900af5c6aaa413332ee5e5ec3413d4a022051fe3bbc
+-------------------------------------------------
+COMMIT: a9377b94e737a6f2c9728c23de751b2a2acbb8bc
+DATA:   a9377b94e737a6f2c9728c23de751b2a2acbb8bc | 2026-04-03 13:44:41 -0600 | docs: improve frog animation anatomy and expand technical capabilities table to full list
+SHA256: db404b8c47db30806c49afb3b1c78ac2f5eeae88522f98d7347a1accb7d7a15a
+-------------------------------------------------
+COMMIT: 3ae964a9e396d6c0bfb657867bed1e8cb0318af6
+DATA:   3ae964a9e396d6c0bfb657867bed1e8cb0318af6 | 2026-04-03 13:33:07 -0600 | docs: restore rich feature descriptions and integrate local web edition section in website
+SHA256: 378dad0b57f1cc121f357f87ee1dc3eedd8c988ee44af6c312b36bd61bdc27e8
+-------------------------------------------------
+COMMIT: e64da4553cefc6971588891223ae32fd4674934a
+DATA:   e64da4553cefc6971588891223ae32fd4674934a | 2026-04-03 13:18:40 -0600 | ci: fix native module rebuild by installing python setuptools and migrating to @electron/rebuild
+SHA256: f8874c476223c22fbfb7146726d4054f739f2c20118767fd4fd1299cb1e78cba
+-------------------------------------------------
+COMMIT: c8bbb6ef862e9fd3c1e1acdabac6cd4aaad7964e
+DATA:   c8bbb6ef862e9fd3c1e1acdabac6cd4aaad7964e | 2026-04-03 13:02:58 -0600 | docs: restore readme content, refine version cards design and remove web banner
+SHA256: 6a537b4011b420dc1b5a80a4875ae5801fd35c8d28fb2a4d2024e9c0008cdb11
+-------------------------------------------------
+COMMIT: 706e2a68bc67f143769a3a793352e569de81e3ca
+DATA:   706e2a68bc67f143769a3a793352e569de81e3ca | 2026-04-03 12:48:58 -0600 | docs: finalize sentinel local web edition v1.0 - remove emojis, update versions guide and disclaimer
+SHA256: f3949462f7926872d424afd9309d31377001c4af750211735b58fa76ac07ee21
+-------------------------------------------------
+COMMIT: 16ed3a8670092c10378d7e6b87b7aeaa1efb0a20
+DATA:   16ed3a8670092c10378d7e6b87b7aeaa1efb0a20 | 2026-04-03 12:17:18 -0600 | feat: sentinel local web edition v1.0 - audit trail, asset guard, shield & hardened auth
+SHA256: 84fb26bcd43bf9d4f76ce2acab53de502185cdd237499fc725a2120fb3831c99
+-------------------------------------------------
+COMMIT: bf341c21311c05652d00ebcbb4eb73f5e4c8b10a
+DATA:   bf341c21311c05652d00ebcbb4eb73f5e4c8b10a | 2026-04-03 02:12:34 -0600 | docs: add advanced installation and troubleshooting instructions for executable blockers
+SHA256: 675c0ea29d5875d84b2b2010f79ada1073da57e460a1172adbe86567e0306ca1
+-------------------------------------------------
+COMMIT: 83658316201657a69ddb7236f621ecce850a4122
+DATA:   83658316201657a69ddb7236f621ecce850a4122 | 2026-04-03 01:36:27 -0600 | style: overhaul pixel frog geometry, add white eyes and dynamic tracking, perfect radar centering
+SHA256: fdc936aff18f65c45e0e32ed97204f5558aa7b214b66604c876ba96087bf74eb
+-------------------------------------------------
+COMMIT: 5756ddccb76d53645e9a84f80e600a586b503f2d
+DATA:   5756ddccb76d53645e9a84f80e600a586b503f2d | 2026-04-03 01:21:28 -0600 | style: fix radar clipping, remove extra legs, add fly-tracking pupil animation
+SHA256: c92b92e97776534692aa79adfacbd2d3a15b7152393944683cadf4714a22f4de
+-------------------------------------------------
+COMMIT: 4a5c86ca7903852b18b9e793ff0687285beb2d01
+DATA:   4a5c86ca7903852b18b9e793ff0687285beb2d01 | 2026-04-03 01:08:16 -0600 | style: perfect pixel art retro frog, remove canvas bounding box, add radar scan effect, and simplify audio
+SHA256: d6eca306c2734c707e67349c56a882ed99c5101a1cc6046aab2d91620e7b30ce
+-------------------------------------------------
+COMMIT: 7345fbaa0de7cab0aa918209154b4b553675134f
+DATA:   7345fbaa0de7cab0aa918209154b4b553675134f | 2026-04-03 00:46:16 -0600 | style: revert to pastel green theme, restore pixel art aesthetics, create realistic synth audio layer
+SHA256: 5dfd443331f797852cbee6677434bb54a56cb95e3fc93501af8d69aa4b5413ab
+-------------------------------------------------
+COMMIT: a7d4a612c58dc457fc4a9720aa70d62e51659340
+DATA:   a7d4a612c58dc457fc4a9720aa70d62e51659340 | 2026-04-03 00:20:41 -0600 | feat: complete developer-centric redesign and comprehensive text overhaul
+SHA256: e7da51efc9db4fc7f9cd0922435d1e670bde9332118a08884c1bf887eb87125c
+-------------------------------------------------
+COMMIT: 1a31b372a1edd127f066e9abb49e480d34db2af3
+DATA:   1a31b372a1edd127f066e9abb49e480d34db2af3 | 2026-04-03 00:02:13 -0600 | chore: high-fidelity landing page layout fix
+SHA256: f6e270975e98ada09f6cc6db824183e0b94a1d4aefe6c8def3cb295b615cea1b
+-------------------------------------------------
+COMMIT: cf7bbba9c6c6c5a43e850802ad6fa2666d8a0e19
+DATA:   cf7bbba9c6c6c5a43e850802ad6fa2666d8a0e19 | 2026-04-02 23:45:18 -0600 | fix: restore missing script tag and variables causing blank page
+SHA256: 6c2724ae4a8ff79a71c077646d51e26ece69f56f6f61dea4d2e45861ef303e53
+-------------------------------------------------
+COMMIT: 843238d54b020046d6b212029f2531f637755818
+DATA:   843238d54b020046d6b212029f2531f637755818 | 2026-04-02 23:35:08 -0600 | feat: high-fidelity redesign with Lucide icons, improved frog/fly animation, and technical feature expansion
+SHA256: ebaadbb3ffac893b8a7219db14f95c767901e1fe162dee54ee7b257c1dcbe51c
+-------------------------------------------------
+COMMIT: 74b4e1b668a8e89face450d4a82345c989196a9d
+DATA:   74b4e1b668a8e89face450d4a82345c989196a9d | 2026-04-02 18:13:43 -0600 | fix: frog scene clipping, fly animation, broken links, and expanded feature info
+SHA256: ebae070c60de612589ae01fcb98c1672de58801f9a9e02502bf76c4a10dd3a0d
+-------------------------------------------------
+COMMIT: 2567be90bab1fbc9dcfae83bca8e9fc4175c6840
+DATA:   2567be90bab1fbc9dcfae83bca8e9fc4175c6840 | 2026-04-02 17:59:34 -0600 | feat: enhance website with glow effects, pixel-bubbles, and detailed tool info
+SHA256: 09bd91429a8772f66a5ea7df3d0d84698b7954eee01ffd60cec12407da50dff1
+-------------------------------------------------
+COMMIT: 1ff2d1e76ded9d587794e1357827c214e17bd5f9
+DATA:   1ff2d1e76ded9d587794e1357827c214e17bd5f9 | 2026-04-02 16:46:00 -0600 | feat: improve fast-scan UX, fix score system, add forget repository, hide SYS RAM, simplify README
+SHA256: a58c0e7865ad10c7d411d16e81139085de3cdf835738836ffb296c16b6eba3ee
+-------------------------------------------------
+COMMIT: 486ea1cf307eafa0c22343c113f773de1d25fe9b
+DATA:   486ea1cf307eafa0c22343c113f773de1d25fe9b | 2026-04-02 16:31:31 -0600 | fix: db parameters and prevent duplicate repos, enhance README tutorial
+SHA256: 5ac1572b10e0754da97ec691a56667e4d0220f2212b707a0254015c0cba88275
+-------------------------------------------------
+COMMIT: fdb646c052baa8eb4beb306c47f54100161ca5f0
+DATA:   fdb646c052baa8eb4beb306c47f54100161ca5f0 | 2026-04-02 16:18:20 -0600 | docs: quickstart from source as primary method, pre-built downloads as alternative
+SHA256: 38c6d40502810d3266c3dc27ec2121c1d7c035699f95e3bee91b231fa9695f49
+-------------------------------------------------
+COMMIT: e4c5d11c51d0c8faebd37bb649c83eb0cc5cd76a
+DATA:   e4c5d11c51d0c8faebd37bb649c83eb0cc5cd76a | 2026-04-02 16:01:43 -0600 | feat: portable ZIP build + dual download options on landing page with SmartScreen instructions
+SHA256: e1016db60ce893e1d997cffc8cbadad16e040d2a898e273a4209c6669b19c5cd
+-------------------------------------------------
+COMMIT: 135b230fa5ca454196f904fed17d08bb980afa90
+DATA:   135b230fa5ca454196f904fed17d08bb980afa90 | 2026-04-02 15:32:47 -0600 | fix: production crash resilience - ASAR native module resolution, optional node-notifier, global crash handlers
+SHA256: 613078c1aece36b2693c907b1014f7e2c92100f49ff35af959dc88ae6ea8d245
+-------------------------------------------------
+COMMIT: de2ca0a7edd6e2332adeac0385a2776bfdb39fd2
+DATA:   de2ca0a7edd6e2332adeac0385a2776bfdb39fd2 | 2026-04-02 15:10:29 -0600 | ci: add write permissions for release action to avoid 403 error
+SHA256: 329662f59d0b8e8e8a64e5045ffc00ac7ab1b919392d681b6d2bad0129c88ebf
+-------------------------------------------------
+COMMIT: df976e30f6c7b1b942f9818a9f77dc4575ec33f3
+DATA:   df976e30f6c7b1b942f9818a9f77dc4575ec33f3 | 2026-04-02 15:05:41 -0600 | ci: fix artifact path and add auto-release step so download button works
+SHA256: 61076e26645f47044e94c24d68ba48b5ae9bdddd31ce80e8140db39017e60e38
+-------------------------------------------------
+COMMIT: bea8d2ce07be83bae098ca59d90dd21dca1e9e18
+DATA:   bea8d2ce07be83bae098ca59d90dd21dca1e9e18 | 2026-04-02 14:52:08 -0600 | Add GitHub Actions workflow for GitHub Pages deployment
+SHA256: a3459038a59e43dca0ca499ee6bbaa05be0ee85194a84835dbe96813a23121ac
+-------------------------------------------------
+COMMIT: 65fbe615defd329cc2d1ba613492bb0999ea95eb
+DATA:   65fbe615defd329cc2d1ba613492bb0999ea95eb | 2026-04-02 14:45:50 -0600 | docs: add homepage link to README
+SHA256: d25145089b3d280ac77e743de061780c0be375b04e8a101736581f3452e127c5
+-------------------------------------------------
+COMMIT: cbb4d83528f483f2d0a38da8545bf2cc39e88faa
+DATA:   cbb4d83528f483f2d0a38da8545bf2cc39e88faa | 2026-04-02 14:37:21 -0600 | fix(build): add repository field to package.json to fix electron-builder auto publish detector error in CI/CD
+SHA256: a6a36238147ee473ac216df089a93626c6567e72549535f056b41a42ead8a71a
+-------------------------------------------------
+COMMIT: 81268405d32698c9ab9e9ed19e558881b407527a
+DATA:   81268405d32698c9ab9e9ed19e558881b407527a | 2026-04-02 14:29:30 -0600 | Configure GitHub Pages + Desktop Bugfixes: Fixed OneDrive path corruption & OOM UI crash, removed README emojis, added interactive frog landing page structure
+SHA256: 067559d83f3d1d02262419179a23ad4092175bdbf6bee0f385310308a0cf8f02
+-------------------------------------------------
+COMMIT: 9c8062352b5be3817775e8c2465053743a2c9c47
+DATA:   9c8062352b5be3817775e8c2465053743a2c9c47 | 2026-04-01 13:46:13 -0600 | fix: Resolve backend connection failure in packaged Electron build - Fix asar.unpacked path resolution for native modules (better-sqlite3) - Move SQLite DB to stable userData directory (not process.cwd) - Add backend readiness check before showing window - Add frontend retry mechanism for auth status (10 retries) - Remove debug DevTools from production build - Configure asarUnpack for backend and native deps
+SHA256: c203a7e16e084292d4ad290db0e0133fded42ea6cd1927887dac76b483e28835
+-------------------------------------------------
+COMMIT: 017d6f8bf2b865454ccff6294bcbff5845232ec4
+DATA:   017d6f8bf2b865454ccff6294bcbff5845232ec4 | 2026-04-01 13:14:28 -0600 | feat: Add GitHub Actions release workflow, fix auth recovery, update CLI shim and code map
+SHA256: ab125b5872788de8ff3a1158a16d9f3a8e6ae482953e6e260f3465a7bd2ac3ec
+-------------------------------------------------
+COMMIT: d414fab8309fead951dc68a344acd7c93698cd51
+DATA:   d414fab8309fead951dc68a344acd7c93698cd51 | 2026-03-31 14:36:43 -0600 | ­ƒÜÇ Sentinel Release: Hardened Desktop & CLI Security Suite. Resolved all connectivity and port issues.
+SHA256: c606f120d9c175854861f9799f5181d77d19d0c77137d3f16371c9dbf6aafaae
+-------------------------------------------------
+
