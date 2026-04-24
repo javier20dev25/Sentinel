@@ -1,0 +1,29 @@
+// Sentinel Policy Pack: CI/CD Lockdown (v1.0)
+// Prevents pipeline poisoning and unauthorized infrastructure changes.
+
+workflow "ci-cd-integrity" {
+  target repo "./"
+  profile strict
+
+  // Protect workflows and CI configs
+  when change in [".github/workflows/*", ".gitlab-ci.yml", "azure-pipelines.yml"] {
+    run pr_policy_engine
+    
+    if user.permission != "admin" {
+      block
+      notify admin channel "slack:#pipeline-alerts"
+    }
+  }
+
+  // Protect infrastructure as code
+  when change in ["terraform/*", "kubernetes/*", "ansible/*"] {
+    run pr_policy_engine
+    review from "devops-security"
+  }
+
+  // Protect Sentinel's own policies
+  when change in [".sentinel/*"] {
+    block
+    notify admin
+  }
+}

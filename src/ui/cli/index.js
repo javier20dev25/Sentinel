@@ -1561,9 +1561,6 @@ program
             const files = gh.getPRFiles(repoFullName, prNumber);
             if (files === null) {
                 console.error("\x1b[31m\u274c Invalid repo target. Expected owner/repo with GitHub access.\x1b[0m\n");
-                console.log("\x1b[36m\ud83d\udca1 Tip:\x1b[0m");
-                console.log("\x1b[36mRun 'git remote -v' to find your repo, or use:\x1b[0m");
-                console.log("\x1b[36msentinel pr scan <owner>/<repo> <pr>\x1b[0m\n");
                 process.exit(1);
             }
             if (files.length === 0) {
@@ -1572,53 +1569,69 @@ program
             }
             console.log(`\x1b[2mFound ${files.length} modified file(s).\x1b[0m`);
 
-            // 2. Evaluate Policies
-            const policies = prEngine.loadPolicies(process.cwd());
-            const result = prEngine.evaluateFiles(files);
-            
-            // 3. Optional Sandbox trigger
-            let sandboxThreats = null;
-            if (files.some(f => f.endsWith('package.json') || f.endsWith('package-lock.json'))) {
-                console.log(`\x1b[33m\u26a0  Dependencies modified. Simulating Sandbox environment (Dry-Run mode logic)...\x1b[0m`);
-                // En una implementación real, aquí se dispara o revisa el CI Sandbox.
-                sandboxThreats = []; 
+            // 2. Playbook Discovery
+            const SPL = require('../backend/spl/index');
+            const policyDir = path.join(process.cwd(), '.sentinel', 'policies');
+            const playbooks = fs.existsSync(policyDir) ? 
+                fs.readdirSync(policyDir).filter(f => f.endsWith('.sentinel')) : [];
+
+            let finalVerdict = 'allow';
+            let summary = '';
+            let details = "### Sentinel Security Intelligence Report\n\n";
+
+            if (playbooks.length > 0) {
+                console.log(`\x1b[36m\ud83d\udcc1 Found ${playbooks.length} playbook(s). Executing...\x1b[0m`);
+                
+                // Context for playbooks
+                const context = {
+                    event: { type: 'pr', changedFiles: files, pr_number: prNumber },
+                    repo: { fullName: repoFullName, path: process.cwd(), authorized: true }
+                };
+
+                for (const pbFile of playbooks) {
+                    const source = fs.readFileSync(path.join(policyDir, pbFile), 'utf8');
+                    try {
+                        const result = SPL.run(source, context);
+                        
+                        // Aggregate verdict (any block → block)
+                        if (result.results.some(r => r.verdict === 'block')) finalVerdict = 'block';
+                        else if (result.results.some(r => r.verdict === 'review') && finalVerdict !== 'block') finalVerdict = 'review';
+
+                        // Add to details
+                        details += SPL.explain(result, { markdown: true });
+                    } catch (e) {
+                        console.error(`\x1b[31m\u26a0 Error in playbook ${pbFile}: ${e.message}\x1b[0m`);
+                    }
+                }
+            } else {
+                // Fallback to static PR Policy Engine
+                console.log(`\x1b[2mNo playbooks found. Using static policy engine.\x1b[0m`);
+                prEngine.loadPolicies(process.cwd());
+                const result = prEngine.evaluateFiles(files);
+                
+                finalVerdict = result.verdict === 'FAIL' ? 'block' : (result.verdict === 'ADVISORY' ? 'review' : 'allow');
+                
+                if (result.violations.length > 0) {
+                    details += "#### Policy Violations Detected:\n\n";
+                    result.violations.forEach(v => {
+                        details += `- **${v.mode.toUpperCase()}** \`${v.file}\`: ${v.message} (Rule: ${v.rule})\n`;
+                    });
+                } else {
+                    details += "✅ No policy violations detected.\n";
+                }
             }
 
-            // 4. Formatting output
-            let conclusion = 'success';
-            let statusLog = '\x1b[32mPASS\x1b[0m';
-            let summary = `Sentinel PR Firewall evaluated ${files.length} files. No strict policy violations.`;
-
-            if (result.verdict === 'FAIL') {
-                conclusion = 'failure';
-                statusLog = '\x1b[31mFAIL (BLOCKED)\x1b[0m';
-                summary = `Sentinel Policy Violation in PR #${prNumber}`;
-            } else if (result.verdict === 'ADVISORY') {
-                conclusion = 'neutral';
-                statusLog = '\x1b[33mADVISORY (WARNING)\x1b[0m';
-                summary = `Sentinel Policy Advisory Warning in PR #${prNumber}`;
-            }
+            // 3. Final Formatting
+            let conclusion = finalVerdict === 'block' ? 'failure' : (finalVerdict === 'review' ? 'neutral' : 'success');
+            let statusLog = finalVerdict === 'block' ? '\x1b[31mBLOCK\x1b[0m' : (finalVerdict === 'review' ? '\x1b[33mREVIEW\x1b[0m' : '\x1b[32mALLOW\x1b[0m');
+            summary = finalVerdict === 'block' ? "Sentinel blocked this PR due to security policy violations." : "Sentinel security evaluation completed.";
 
             console.log(`\n\x1b[1mVerdict: ${statusLog}\x1b[0m`);
-            let details = "### Policy Evaluation Report\n\n";
 
-            if (result.violations.length > 0) {
-                console.log('\nViolations:');
-                result.violations.forEach(v => {
-                    const color = v.mode === 'strict' ? '\x1b[31m' : '\x1b[33m';
-                    console.log(`  ${color}■\x1b[0m ${v.file}`);
-                    console.log(`    Rule: ${v.rule} (${v.mode})`);
-                    console.log(`    ${v.message}`);
-                    details += `- **${v.mode.toUpperCase()}** \`${v.file}\`: ${v.message} (Rule: ${v.rule})\n`;
-                });
-            } else {
-                details += "✅ No policy violations detected.\n";
-            }
-
-            // 5. Submit to GitHub Checks API
+            // 4. Submit to GitHub Checks API
             const sha = gh.getPRHeadSha(repoFullName, prNumber);
             if (sha) {
-                gh.createCheckRun(
+                const posted = gh.createCheckRun(
                     repoFullName, 
                     sha, 
                     'Sentinel PR Firewall', 
@@ -1628,11 +1641,12 @@ program
                     details, 
                     options.ci
                 );
+                if (posted) console.log(`\x1b[32m\u2713 GitHub Check Run created.\x1b[0m`);
             } else {
-                console.warn("\x1b[33mUnable to fetch PR HEAD SHA. Cannot post Check Run.\x1b[0m");
+                console.warn("\x1b[33mUnable to fetch PR HEAD SHA. Check Run skipped.\x1b[0m");
             }
 
-            if (result.verdict === 'FAIL' && options.ci) {
+            if (finalVerdict === 'block' && options.ci) {
                 process.exit(1);
             }
             return;
@@ -1644,10 +1658,10 @@ program
 // ─── Sentinel Playbook Language (SPL v0.1) ───
 
 program
-    .command('playbook <action> [file]')
+    .command('playbook <action> [file] [extra]')
     .description('Run, validate, or compile Sentinel Playbook (.sentinel) files')
     .option('--context <json>', 'JSON string with runtime context for execution')
-    .action((action, file, options) => {
+    .action((action, file, extra, options) => {
         const SPL = require('../backend/spl/index');
 
         if (action === 'validate') {
@@ -1735,7 +1749,84 @@ program
             return;
         }
 
-        console.error("Unknown action. Use 'run', 'validate', or 'compile'.");
+        if (action === 'explain') {
+            if (!file) { console.error("Usage: sentinel playbook explain <file.sentinel> [--context '{...}']"); process.exit(1); }
+            const source = fs.readFileSync(path.resolve(file), 'utf8');
+
+            let context = {};
+            if (options.context) {
+                try { context = JSON.parse(options.context); }
+                catch (e) { console.error(`\x1b[31m\u274c Invalid --context JSON: ${e.message}\x1b[0m`); process.exit(1); }
+            }
+
+            try {
+                const executionResult = SPL.run(source, context);
+                const justification = SPL.explain(executionResult);
+                process.stdout.write(justification + '\n');
+            } catch (e) {
+                console.error(`\x1b[31m\u274c ${e.message}\x1b[0m`);
+                process.exit(1);
+            }
+            return;
+        }
+
+        if (action === 'pack') {
+            const subAction = file; 
+            const name = extra;
+
+            if (subAction === 'install') {
+                if (!name || name === 'install') { console.error("Usage: sentinel playbook pack install <fintech|supply-chain|ci-cd>"); process.exit(1); }
+                
+                const packFileMap = {
+                    'fintech': 'fintech-compliance.sentinel',
+                    'supply-chain': 'supply-chain-hardened.sentinel',
+                    'ci-cd': 'ci-cd-lockdown.sentinel'
+                };
+
+                const sourceFile = packFileMap[name];
+                if (!sourceFile) { console.error(`Unknown pack: ${name}. Available: fintech, supply-chain, ci-cd`); process.exit(1); }
+
+                const sourcePath = path.join(__dirname, '../backend/templates/packs', sourceFile);
+                const destPath = path.join(process.cwd(), '.sentinel', 'policies', sourceFile);
+
+                try {
+                    if (!fs.existsSync(path.dirname(destPath))) fs.mkdirSync(path.dirname(destPath), { recursive: true });
+                    fs.copyFileSync(sourcePath, destPath);
+                    console.log(`\x1b[32m\u2713 Policy Pack '${name}' installed to ${destPath}\x1b[0m`);
+                    console.log(`\x1b[2mRun it with: sentinel playbook run .sentinel/policies/${sourceFile}\x1b[0m`);
+                } catch (e) {
+                    console.error(`\x1b[31m\u274c Failed to install pack: ${e.message}\x1b[0m`);
+                    process.exit(1);
+                }
+                return;
+            }
+            
+            console.error("Unknown sub-action. Use 'sentinel playbook pack install <name>'.");
+            return;
+        }
+
+        if (action === 'simulate') {
+            if (!file) { console.error("Usage: sentinel playbook simulate <file.sentinel> [--context '{...}']"); process.exit(1); }
+            const source = fs.readFileSync(path.resolve(file), 'utf8');
+
+            let context = {};
+            if (options.context) {
+                try { context = JSON.parse(options.context); }
+                catch (e) { console.error(`\x1b[31m\u274c Invalid --context JSON: ${e.message}\x1b[0m`); process.exit(1); }
+            }
+
+            try {
+                const impact = SPL.simulate(source, context);
+                const report = SPL.formatSimulation(impact);
+                process.stdout.write(report + '\n');
+            } catch (e) {
+                console.error(`\x1b[31m\u274c ${e.message}\x1b[0m`);
+                process.exit(1);
+            }
+            return;
+        }
+
+        console.error("Unknown action. Use 'run', 'validate', 'compile', 'explain', 'pack', or 'simulate'.");
     });
 
 // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.

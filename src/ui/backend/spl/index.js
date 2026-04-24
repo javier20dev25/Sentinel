@@ -14,6 +14,8 @@ const { tokenize, LexerError }  = require('./lexer');
 const { parse, ParseError }     = require('./parser');
 const { compile, CompileError } = require('./compiler');
 const { execute }               = require('./runtime');
+const SPLExplainer              = require('./explainer');
+const SPLSimulator              = require('./simulator');
 
 /**
  * Parse a .sentinel source string into an AST.
@@ -66,12 +68,44 @@ function run(source, context = {}) {
     return { results, context: updatedContext, warnings };
 }
 
+/**
+ * Generate a human-readable explanation of an execution result.
+ * @param {Object} executionResult - Result from run() or execute()
+ * @param {Object} [options] - Formatting options
+ * @returns {string}
+ */
+function explain(executionResult, options) {
+    return SPLExplainer.explain(executionResult, options);
+}
+
+/**
+ * Simulate the impact of a playbook.
+ * @param {string} source - .sentinel source code
+ * @param {Object} context - Runtime context
+ * @returns {Object} Impact report data
+ */
+function simulate(source, context) {
+    return SPLSimulator.simulate(source, context);
+}
+
+/**
+ * Format a simulation result into a human-readable report.
+ * @param {Object} impact - Result from simulate()
+ * @returns {string}
+ */
+function formatSimulation(impact) {
+    return SPLSimulator.formatImpactReport(impact);
+}
+
 module.exports = {
     parse: parseSource,
     compile: compileSource,
     validate,
     run,
     execute,
+    explain,
+    simulate,
+    formatSimulation,
     // Re-export errors for external catch
     LexerError,
     ParseError,
