@@ -1,0 +1,20 @@
+// Sentinel Playbook: Protect Package Manifest
+// This playbook blocks PRs that modify package.json
+// and triggers sandbox verification for suspicious changes.
+
+workflow "protect-package-json" {
+  target repo "./"
+  profile strict
+
+  when change in ["package.json", "package-lock.json"] {
+    run pr_policy_engine
+
+    if risk.band == "CRITICAL" {
+      block
+      notify admin
+      audit trace
+    } else {
+      allow
+    }
+  }
+}

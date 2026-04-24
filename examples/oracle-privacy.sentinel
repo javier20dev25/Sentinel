@@ -1,0 +1,20 @@
+// Sentinel Playbook: Oracle Privacy Mode
+// Restricts intelligence exposure when scanning unauthorized repos.
+
+workflow "oracle-privacy" {
+  target repo
+  profile oracle
+
+  when repo.authorized == false {
+    run risk_orchestrator mode="oracle"
+
+    redact evidence, file_paths, lines
+
+    if risk.band in ["HIGH", "HIGH_AGGREGATED", "CRITICAL"] {
+      block
+      audit trace
+    } else {
+      allow
+    }
+  }
+}

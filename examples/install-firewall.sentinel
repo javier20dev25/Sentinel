@@ -1,0 +1,19 @@
+// Sentinel Playbook: Install Firewall
+// Monitors package installations and blocks typosquatting attempts.
+
+workflow "install-firewall" {
+  target package
+  profile balanced
+
+  when install package {
+    run supply_chain_shield
+
+    if package.typosquatting == true {
+      sandbox verify
+      block
+      notify admin
+    } else {
+      allow
+    }
+  }
+}

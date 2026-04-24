@@ -98,6 +98,7 @@ Sentinel never reveals **why** it blocked a package to unauthorized users. This 
 | [Classified Data](docs/CLASSIFIED_DATA_GUIDE.md) | Protocol for protected files and declassification |
 | [Policy Governance](docs/POLICIES.md) | GaC manual and exposure levels |
 | [PR Firewall Guide](docs/PR_FIREWALL.md) | Configuración de políticas de acceso y enforcement en Pull Requests |
+| [Sentinel Playbooks](docs/SENTINEL_PLAYBOOKS.md) | Workflow language for orchestrating Sentinel engines (.sentinel files) |
 
 ## ⚖️ Licensing
 

@@ -1641,6 +1641,103 @@ program
         console.error("Unknown action. Use 'scan' or 'hook'.");
     });
 
+// ─── Sentinel Playbook Language (SPL v0.1) ───
+
+program
+    .command('playbook <action> [file]')
+    .description('Run, validate, or compile Sentinel Playbook (.sentinel) files')
+    .option('--context <json>', 'JSON string with runtime context for execution')
+    .action((action, file, options) => {
+        const SPL = require('../backend/spl/index');
+
+        if (action === 'validate') {
+            if (!file) { console.error("Usage: sentinel playbook validate <file.sentinel>"); process.exit(1); }
+            const source = fs.readFileSync(path.resolve(file), 'utf8');
+            const result = SPL.validate(source);
+
+            if (result.valid) {
+                console.log(`\x1b[32m\u2713 Playbook is valid.\x1b[0m`);
+                if (result.warnings.length > 0) {
+                    result.warnings.forEach(w => console.log(`  \x1b[33m\u26a0 ${w}\x1b[0m`));
+                }
+            } else {
+                console.error(`\x1b[31m\u274c Playbook has errors:\x1b[0m`);
+                result.errors.forEach(e => console.error(`  ${e}`));
+                if (result.warnings.length > 0) {
+                    result.warnings.forEach(w => console.log(`  \x1b[33m\u26a0 ${w}\x1b[0m`));
+                }
+                process.exit(1);
+            }
+            return;
+        }
+
+        if (action === 'compile') {
+            if (!file) { console.error("Usage: sentinel playbook compile <file.sentinel>"); process.exit(1); }
+            const source = fs.readFileSync(path.resolve(file), 'utf8');
+            try {
+                const { compiled, warnings } = SPL.compile(source);
+                if (warnings.length > 0) {
+                    warnings.forEach(w => console.error(`\x1b[33m\u26a0 ${w}\x1b[0m`));
+                }
+                process.stdout.write(JSON.stringify(compiled, null, 2) + '\n');
+            } catch (e) {
+                console.error(`\x1b[31m\u274c ${e.message}\x1b[0m`);
+                process.exit(1);
+            }
+            return;
+        }
+
+        if (action === 'run') {
+            if (!file) { console.error("Usage: sentinel playbook run <file.sentinel> [--context '{...}']"); process.exit(1); }
+            const source = fs.readFileSync(path.resolve(file), 'utf8');
+
+            let context = {};
+            if (options.context) {
+                try { context = JSON.parse(options.context); }
+                catch (e) { console.error(`\x1b[31m\u274c Invalid --context JSON: ${e.message}\x1b[0m`); process.exit(1); }
+            }
+
+            try {
+                console.log(`\n\x1b[36m\ud83d\udee1\ufe0f  Sentinel Playbook Engine v0.1\x1b[0m`);
+                console.log(`\x1b[2mFile: ${file}\x1b[0m\n`);
+
+                const { results, warnings } = SPL.run(source, context);
+
+                if (warnings.length > 0) {
+                    console.log('\x1b[33mWarnings:\x1b[0m');
+                    warnings.forEach(w => console.log(`  \u26a0 ${w}`));
+                    console.log();
+                }
+
+                let exitCode = 0;
+                results.forEach(r => {
+                    const icon = r.verdict === 'block' ? '\x1b[31m\u26d4' :
+                                 r.verdict === 'allow' ? '\x1b[32m\u2713' :
+                                 r.verdict === 'sandbox' ? '\x1b[33m\ud83d\udce6' : '\x1b[36m\u2139';
+                    console.log(`${icon} Workflow "${r.workflow}" → ${r.verdict.toUpperCase()}\x1b[0m`);
+                    console.log(`  \x1b[2mProfile: ${r.profile} | Target: ${r.target?.kind || 'none'}\x1b[0m`);
+
+                    // Show execution log summary
+                    const engines = r.log.filter(l => l.type === 'engine').map(l => l.engine);
+                    const actions = r.log.filter(l => l.type === 'action').map(l => l.action);
+                    if (engines.length) console.log(`  \x1b[2mEngines: ${engines.join(', ')}\x1b[0m`);
+                    if (actions.length) console.log(`  \x1b[2mActions: ${actions.join(', ')}\x1b[0m`);
+                    console.log();
+
+                    if (r.verdict === 'block') exitCode = 1;
+                });
+
+                process.exit(exitCode);
+            } catch (e) {
+                console.error(`\x1b[31m\u274c ${e.message}\x1b[0m`);
+                process.exit(1);
+            }
+            return;
+        }
+
+        console.error("Unknown action. Use 'run', 'validate', or 'compile'.");
+    });
+
 // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
 function run(args = process.argv) {
     if (args.length === 2) {
