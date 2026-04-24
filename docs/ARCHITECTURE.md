@@ -1,35 +1,38 @@
-# Sentinel Architecture: High-Level Overview (v3.8.0)
+# Sentinel Architecture: Strategic Overview (v3.8.0)
 
 ## 1. System Philosophy
-Sentinel is designed as a **Security Decision Engine (SDE)** with a Zero-Trust posture. The architecture is modular, separating the observation (Engines), orchestration (SPL), and intelligence (Risk Graph) layers.
+Sentinel is an **Adaptive Security Decision Engine (ASDE)** designed to bridge the gap between static scanning and autonomous policy enforcement. The architecture emphasizes **Contextual Intelligence** and **Explainable Verdicts**.
 
-## 2. Global Execution Flow
+## 2. High-Level Execution Flow
 
 ```mermaid
 graph TD
-    CLI["CLI: sentinel playbook run"] --> PR["Playbook Runtime (SPL v0.1)"]
-    PR --> Context["Context Enrichment (Risk Graph)"]
-    Context --> Orchestrator["Risk Orchestrator v3.8"]
+    CLI["CLI / API Trigger"] --> CRL["Context Resolution Layer"]
+    CRL --> EMS["Execution Mode Selection"]
     
-    subgraph "Observation Layer"
-        SCS["Supply Chain Shield"]
-        PPE["PR Policy Engine"]
-        PE["Static Policy Engine"]
-    end
+    EMS --> SM["Standard Mode"]
+    EMS --> RM["Restricted Mode"]
     
-    Orchestrator --> SCS
-    Orchestrator --> PPE
-    Orchestrator --> PE
+    SM --> AE["Analysis Engine"]
+    RM --> AE
     
-    SCS --> Logic["Proprietary Decision Logic (Redacted)"]
-    PPE --> Logic
-    PE --> Logic
+    AE --> ADS["Adaptive Decision System"]
+    ADS --> RC["Risk Classification"]
     
-    Logic --> Result["Verdict: BLOCK / ALLOW / REVIEW"]
-    Result --> Explain["Strategic Explainer"]
-    Explain --> Audit["Forensic Audit Log"]
-    Audit --> Output["Output: GitHub Check / Terminal"]
+    RC --> AT["Audit & Trace Output"]
+    AT --> CO["Client Output / Integrations"]
 ```
+
+## 3. Core Intelligence Layers
+
+### 3.1 Adaptive Decision System (ADS)
+The ADS is the primary orchestration core of Sentinel. It correlates multiple observational signals using proprietary contextual weighting to emit deterministic risk classifications.
+
+### 3.2 Contextual Resolution & Mode Selection
+Before analysis, Sentinel evaluates the execution environment and caller identity to determine the appropriate depth of evidence exposure. This ensuring that high-value intelligence is only accessible to authorized entities.
+
+### 3.3 Audit and Forensic Integrity
+Every decision is recorded with a structured evidence trace, providing full explainability for security teams while maintaining the integrity of the underlying decision logic.
 
 ## 3. Core Protection Layers
 

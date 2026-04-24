@@ -7,6 +7,7 @@ Sentinel requires a POSIX-compliant environment or Windows PowerShell with the f
 - GitHub CLI (gh) for remote synchronization.
 
 ## 2. Code Contribution Standards
+- **GPG Signing**: All commits MUST be signed using GPG to provide cryptographic proof of authorship and non-repudiation. This is mandatory for protecting the project's intellectual property.
 - All logic must be modular and documented using JSDoc.
 - Security-sensitive modules (Compiler, Runtime, Risk Engines) must include automated unit tests.
 - PRs that modify the `RiskGraph` schema or the `SyncManager` protocol must be accompanied by updated documentation in `docs/`.

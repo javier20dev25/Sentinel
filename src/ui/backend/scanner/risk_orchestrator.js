@@ -21,10 +21,27 @@ const TRUST_LEVELS = {
     RESTRICTED: 0
 };
 
+// ─── Scoring Configuration (Standard Engine) ───
+// These weights represent the community standard. Enterprise licenses 
+// provide access to dynamically tuned weights via the Global Intelligence Sync.
+const CONFIG = {
+    WEIGHTS: {
+        INTERNAL_SIGNALS: 0.50,
+        NETWORK_REPUTATION: 0.30,
+        TEMPORAL_DYNAMICS: 0.20
+    },
+    DEFENSE: {
+        JITTER_ENABLED: true,
+        QUANTIZATION_BANDS: [0.1, 0.25, 0.5, 0.75, 0.9],
+        // Note: Advanced stochastic jitter algorithms are redacted in the community engine.
+        STANDARD_JITTER_RANGE: 0.05 
+    }
+};
+
 class RiskOrchestrator {
 
     static quantizeWithJitter(score, jitterAmount = 0.05, fingerprint = '', user = 'anonymous') {
-        const buckets = [0, 0.25, 0.50, 0.75, 1.0];
+        const buckets = CONFIG.DEFENSE.QUANTIZATION_BANDS;
         let nearest = buckets[0];
         let minDist = Math.abs(score - nearest);
         for (const b of buckets) {

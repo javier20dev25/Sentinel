@@ -105,12 +105,16 @@ Sentinel never reveals **why** it blocked a package to unauthorized users. This 
 
 Sentinel is licensed under the **Business Source License 1.1 (BSL 1.1)**.
 
-### 1. Usage Terms
-- **Free**: Personal use, internal research, and community contributions.
-- **Commercial License Required**: Managed services, redistribution, and competitive integrations.
-- **Concept Protection**: The use of proprietary concepts, algorithms, and architectural patterns described in this repository (including but not limited to **Oracle Mode**, **Decision Jitter**, and **Federated Risk Scoring**) for commercial products is strictly prohibited without an explicit commercial license.
+### 1. Project Tiers: Community vs. Enterprise
+Sentinel is designed to provide maximum security value to the community while maintaining a sustainable intelligence network.
 
-### 2. Patent Status
+- **Sentinel Community Engine (Local)**: The core repository contains the full, functional, and self-contained engine. It is optimized for deterministic security decisioning and standard reputational analysis.
+- **Sentinel Enterprise Intelligence (Cloud)**: An advanced intelligence layer that provides adaptive scoring weights, global network correlation, and non-deterministic defense protocols (stochastic jitter and quantization). Access to this layer requires a commercial license.
+
+### 2. Concept Protection
+The use of proprietary concepts, algorithms, and architectural patterns described in this repository (including but not limited to **Adaptive Execution Modes**, **Score Obfuscation**, and **Federated Risk Scoring**) for commercial products is strictly prohibited without an explicit commercial license.
+
+### 3. Patent Status
 **PATENT PENDING**. Sentinel's core defensive mechanisms, including the automated response orchestration and score obfuscation protocols, are protected under multiple patent filings. 
 
 ---
