@@ -1,0 +1,35 @@
+// Sentinel Policy: Internal Repository Lockdown (v1.0)
+// Ensures the integrity of the Sentinel engine and its security policies.
+
+workflow "repo-integrity-lockdown" {
+  target repo "./"
+  profile strict
+
+  // 1. Protect Security Policies
+  // Prevents unauthorized modification of the enforcement rules.
+  when change in [".sentinel/policies/*"] {
+    if user.permission != "admin" {
+      block
+      notify admin channel "slack:#sentinel-governance"
+    }
+  }
+
+  // 2. Protect Compiler and Runtime Core
+  // Prevents tampering with the decision logic itself.
+  when change in ["src/ui/backend/spl/*", "src/ui/backend/scanner/*"] {
+    run pr_policy_engine
+    
+    if risk.band in ["HIGH", "CRITICAL"] {
+      block
+      audit trace
+    } else {
+      review from "security-architects"
+    }
+  }
+
+  // 3. Protect Intelligence Trust Model
+  when change in ["src/ui/backend/scanner/aggregators/trust_model.js"] {
+    block
+    notify admin
+  }
+}

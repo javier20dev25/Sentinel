@@ -88,17 +88,18 @@ Sentinel never reveals **why** it blocked a package to unauthorized users. This 
 | **Partner** | Risk rationale, severity — no code evidence |
 | **Restricted** | Binary verdict only: BLOCK or PASS |
 
-## 📄 Documentation
+## Technical Documentation Index
 
 | Document | Description |
 |---|---|
+| [MASTER INDEX](docs/MASTER_INDEX.md) | **Central hub for all technical specifications** |
 | [Architecture](docs/ARCHITECTURE.md) | System design and adapter architecture |
-| [Supply Chain Firewall](docs/SUPPLY_CHAIN_GUIDE.md) | Installation firewall & Docker Zero Trust guide |
-| [AI Agent Protocol](AGENT.md) | **Mandatory prompt** for AI agents working in this repo |
-| [Classified Data](docs/CLASSIFIED_DATA_GUIDE.md) | Protocol for protected files and declassification |
-| [Policy Governance](docs/POLICIES.md) | GaC manual and exposure levels |
-| [PR Firewall Guide](docs/PR_FIREWALL.md) | Configuración de políticas de acceso y enforcement en Pull Requests |
-| [Sentinel Playbooks](docs/SENTINEL_PLAYBOOKS.md) | Workflow language for orchestrating Sentinel engines (.sentinel files) |
+| [Risk Graph Spec](docs/RISK_GRAPH_SPEC.md) | Stateful intelligence and correlation engine |
+| [Sync Protocol (SSP)](docs/SYNC_PROTOCOL.md) | Global Intelligence Network synchronization |
+| [Playbook Language (SPL)](docs/SENTINEL_PLAYBOOKS.md) | Workflow language for orchestrating security engines |
+| [Liability Disclaimer](LEGAL_DISCLAIMER.md) | Legal protections and limitation of liability |
+| [Ethical Usage](docs/ETHICAL_USAGE.md) | Governance and responsible usage guidelines |
+| [AI Agent Protocol](AGENT.md) | Mandatory instructions for AI entities |
 
 ## ⚖️ Licensing
 
