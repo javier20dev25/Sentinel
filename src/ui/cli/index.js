@@ -1661,7 +1661,7 @@ program
     .command('playbook <action> [file] [extra]')
     .description('Run, validate, or compile Sentinel Playbook (.sentinel) files')
     .option('--context <json>', 'JSON string with runtime context for execution')
-    .action((action, file, extra, options) => {
+    .action(async (action, file, extra, options) => {
         const SPL = require('../backend/spl/index');
 
         if (action === 'validate') {
@@ -1715,7 +1715,7 @@ program
                 console.log(`\n\x1b[36m\ud83d\udee1\ufe0f  Sentinel Playbook Engine v0.1\x1b[0m`);
                 console.log(`\x1b[2mFile: ${file}\x1b[0m\n`);
 
-                const { results, warnings } = SPL.run(source, context);
+                const { results, warnings } = await SPL.run(source, context);
 
                 if (warnings.length > 0) {
                     console.log('\x1b[33mWarnings:\x1b[0m');
@@ -1760,7 +1760,7 @@ program
             }
 
             try {
-                const executionResult = SPL.run(source, context);
+                const executionResult = await SPL.run(source, context);
                 const justification = SPL.explain(executionResult);
                 process.stdout.write(justification + '\n');
             } catch (e) {
@@ -1816,7 +1816,7 @@ program
             }
 
             try {
-                const impact = SPL.simulate(source, context);
+                const impact = await SPL.simulate(source, context);
                 const report = SPL.formatSimulation(impact);
                 process.stdout.write(report + '\n');
             } catch (e) {

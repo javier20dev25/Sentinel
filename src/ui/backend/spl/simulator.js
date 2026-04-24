@@ -18,9 +18,9 @@ class SPLSimulator {
      * @param {Object} baseContext - The context to use for simulation
      * @returns {Object} Simulation results and impact summary
      */
-    static simulate(source, baseContext = {}) {
+    static async simulate(source, baseContext = {}) {
         const { compiled, warnings } = compile(require('./parser').parse(require('./lexer').tokenize(source)));
-        const executionResult = execute(compiled, baseContext);
+        const executionResult = await execute(compiled, baseContext);
         
         const impact = {
             workflows_evaluated: executionResult.results.length,

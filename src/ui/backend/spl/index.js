@@ -62,9 +62,9 @@ function validate(source) {
  * @param {Object} context - Runtime context (repo, user, event, risk, etc.)
  * @returns {{ results: Array, context: Object, warnings: string[] }}
  */
-function run(source, context = {}) {
+async function run(source, context = {}) {
     const { compiled, warnings } = compileSource(source);
-    const { results, context: updatedContext } = execute(compiled, context);
+    const { results, context: updatedContext } = await execute(compiled, context);
     return { results, context: updatedContext, warnings };
 }
 

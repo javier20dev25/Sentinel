@@ -125,7 +125,7 @@ function compare(left, op, right) {
 
 // ─── Step Executor ───────────────────────────────────────────────────────────
 
-function executeSteps(steps, context, log) {
+async function executeSteps(steps, context, log) {
     let verdict = null;
 
     for (const step of steps) {
@@ -173,6 +173,14 @@ function executeSteps(steps, context, log) {
                                 context.policy.exposure = info.exposure;
                             }
                         }
+                        else if (step.engine === 'supply_chain_shield') {
+                            const result = await engine.scan(context);
+                            context.risk = context.risk || {};
+                            context.risk.score = result.riskScore;
+                            context.risk.signals = result.signals;
+                            context.risk.verdict = result.verdict;
+                            log.push({ type: 'engine_result', engine: step.engine, verdict: result.verdict, score: result.riskScore });
+                        }
                         else if (step.engine === 'risk_graph_enrichment') {
                             if (typeof engine.enrich === 'function') {
                                 engine.enrich(context);
@@ -197,10 +205,10 @@ function executeSteps(steps, context, log) {
                 const matches = evaluateCondition(step.condition, context);
                 log.push({ type: 'condition', result: matches, condition: JSON.stringify(step.condition).substring(0, 100) });
                 if (matches) {
-                    const result = executeSteps(step.then, context, log);
+                    const result = await executeSteps(step.then, context, log);
                     if (result) verdict = result;
                 } else if (step.else) {
-                    const result = executeSteps(step.else, context, log);
+                    const result = await executeSteps(step.else, context, log);
                     if (result) verdict = result;
                 }
                 break;
@@ -209,7 +217,7 @@ function executeSteps(steps, context, log) {
             case 'when': {
                 const matches = evaluateCondition(step.condition, context);
                 if (matches) {
-                    const result = executeSteps(step.steps, context, log);
+                    const result = await executeSteps(step.steps, context, log);
                     if (result) verdict = result;
                 }
                 break;
@@ -249,7 +257,7 @@ function executeSteps(steps, context, log) {
  * @param {string} [workflowName] - Specific workflow to run (runs all if omitted)
  * @returns {{ verdicts: Array, log: Array }}
  */
-function execute(compiled, context = {}) {
+async function execute(compiled, context = {}) {
     const results = [];
 
     for (const workflow of compiled.workflows) {
@@ -261,7 +269,7 @@ function execute(compiled, context = {}) {
 
         for (const trigger of workflow.triggers) {
             if (evaluateCondition(trigger.condition, context)) {
-                const v = executeSteps(trigger.steps, context, log);
+                const v = await executeSteps(trigger.steps, context, log);
                 if (v) finalVerdict = v;
             }
         }

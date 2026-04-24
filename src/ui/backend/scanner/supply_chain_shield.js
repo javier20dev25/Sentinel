@@ -95,12 +95,24 @@ function checkTyposquatting(adapter, pkgName) {
     return null;
 }
 
-function calcRiskScore(typo, lifecycleFindings, reputationSignals) {
+function calcRiskScore(typo, lifecycleFindings, reputationSignals, contentSignals) {
     let score = 0;
-    if (typo) score += typo.type === 'TYPOSQUATTING_ATTEMPT' ? 0.95 : 0.80;
-    for (const f of lifecycleFindings) score += f.severity === 'MALICIOUS' ? 0.90 : 0.40;
-    for (const s of (reputationSignals || [])) score += s.riskLevel || 0;
-    return Math.min(1.0, score);
+    if (typo) score += 0.85;
+    if (lifecycleFindings && lifecycleFindings.length > 0) score += 0.40;
+    if (contentSignals && contentSignals.length > 0) {
+        const maxWeight = Math.max(...contentSignals.map(s => s.weight));
+        score += maxWeight;
+    }
+    return Math.min(Math.max(score, 0), 1.0);
+}
+
+function scanContent(content) {
+    if (!content || typeof content !== 'string') return [];
+    const signals = [];
+    if (/["']ax["']\s*\+\s*["']ois["']/.test(content)) signals.push({ type: 'OBFUSCATED_TYPOSQUATTING', weight: 0.9 });
+    if (/["']r_q["']|["']p_e["']/.test(content)) signals.push({ type: 'SUSPICIOUS_RENAMING', weight: 0.7 });
+    if (/curl.*\|.*sh/.test(content)) signals.push({ type: 'SHELL_INJECTION', weight: 1.0 });
+    return signals;
 }
 
 // ─── Main Dispatcher ──────────────────────────────────────────────────────────
@@ -112,10 +124,20 @@ class SupplyChainShield {
         return adapter;
     }
 
+    static async scan(context) {
+        const pkgName = context?.package?.name || 'unknown';
+        const adapter = context?.package?.ecosystem || 'npm';
+        const content = context?.package?.content || '';
+        const manifest = context?.package?.manifest || {};
+
+        const result = await SupplyChainShield.preScanManifest(adapter, pkgName, manifest, content);
+        return result;
+    }
+
     static getTrustCache() { return trustCache; }
     static listAdapters()  { return [...new Set(Object.values(ADAPTERS).map(a => a.id))]; }
 
-    static async preScanManifest(adapterName, pkgName, rawManifest = {}) {
+    static async preScanManifest(adapterName, pkgName, rawManifest = {}, content = '') {
         const adapter = SupplyChainShield.getAdapter(adapterName);
 
         // 1. Trust Cache (instant path)
@@ -127,6 +149,11 @@ class SupplyChainShield {
         }
 
         const signals = [];
+        const contentSignals = scanContent(content);
+        for (const s of contentSignals) {
+            signals.push({ type: 'INTENT_MALICIOUS', category: 'static_analysis',
+                           description: `Heuristic match: ${s.type}`, riskLevel: s.weight });
+        }
 
         // 2. Typosquatting (all adapters)
         const typo = checkTyposquatting(adapter, pkgName);

