@@ -564,6 +564,107 @@ class GitHubBridge {
             return { success: false, error: e.message };
         }
     }
+
+    // ─── PR Firewall Methods (v3.8) ───
+
+    /**
+     * Obtains the list of files modified in a Pull Request.
+     */
+    getPRFiles(repoFullName, prNumber) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'pr', 'view', String(prNumber),
+                '--repo', repoFullName,
+                '--json', 'files'
+            ], { encoding: 'utf-8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] });
+            const data = JSON.parse(output);
+            return data.files ? data.files.map(f => f.path) : [];
+        } catch (e) {
+            // Return null on failure (e.g. invalid repo, network error) instead of crashing or polluting logs
+            return null;
+        }
+    }
+
+    /**
+     * Gets the HEAD SHA of a PR to attach the Check Run to the correct commit.
+     */
+    getPRHeadSha(repoFullName, prNumber) {
+        if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return null;
+        try {
+            const output = execFileSync('gh', [
+                'pr', 'view', String(prNumber),
+                '--repo', repoFullName,
+                '--json', 'commits'
+            ], { encoding: 'utf-8', timeout: 15000 });
+            const data = JSON.parse(output);
+            if (data.commits && data.commits.length > 0) {
+                return data.commits[data.commits.length - 1].oid; // The last commit in the PR
+            }
+            return null;
+        } catch (e) {
+            console.error(`[GH_BRIDGE] Error getting HEAD SHA for PR #${prNumber}:`, sanitizeForLog(e.message));
+            return null;
+        }
+    }
+
+    /**
+     * Creates a Check Run via GitHub API.
+     * Implements strict permission checking and gracefully falls back to local dry-run.
+     */
+    createCheckRun(repoFullName, headSha, name, status, conclusion, summary, details, isCI = false) {
+        if (!isValidOwnerRepo(repoFullName) || !headSha) return false;
+
+        // Validation: Verify if we should actually post to GitHub
+        const isActionContext = !!process.env.GITHUB_ACTIONS || !!process.env.CI || isCI;
+        
+        if (!isActionContext) {
+            console.log(`\n\x1b[36m[DRY-RUN]\x1b[0m GitHub Check Run skipped in local environment.`);
+            console.log(`\x1b[2mCheck: ${name} | Conclusion: ${conclusion}\nSummary: ${summary.split('\\n')[0]}...\x1b[0m\n`);
+            return true;
+        }
+
+        const permission = this.getRepoPermission(repoFullName);
+        const authorizedRoles = ['ADMIN', 'MAINTAIN', 'WRITE'];
+        
+        if (!authorizedRoles.includes(permission)) {
+            console.warn(`[SECURITY] Skipping Check Run creation. Requires WRITE access. Current role: ${permission}`);
+            return false;
+        }
+
+        const fs = require('fs');
+        const os = require('os');
+        const crypto = require('crypto');
+
+        try {
+            const payload = {
+                name,
+                head_sha: headSha,
+                status,
+                conclusion,
+                output: {
+                    title: "Sentinel PR Firewall",
+                    summary: summary || "",
+                    text: details || ""
+                }
+            };
+            
+            const tmpFile = path.join(os.tmpdir(), `sentinel_check_${crypto.randomBytes(4).toString('hex')}.json`);
+            fs.writeFileSync(tmpFile, JSON.stringify(payload));
+            
+            execFileSync('gh', [
+                'api', `repos/${repoFullName}/check-runs`,
+                '--input', tmpFile
+            ], { encoding: 'utf-8', timeout: 15000 });
+            
+            try { fs.unlinkSync(tmpFile); } catch (e) {}
+            return true;
+        } catch (e) {
+            console.error(`[GH_BRIDGE] Error creating Check Run for ${repoFullName}:`, sanitizeForLog(e.message));
+            return false;
+        }
+    }
+
 }
 
 module.exports = new GitHubBridge();

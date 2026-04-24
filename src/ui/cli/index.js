@@ -1476,6 +1476,171 @@ program
         }
     });
 
+// ─── PR Firewall Commands (v3.8) ───
+
+program
+    .command('policy <action> [path]')
+    .description('Manage repository protection policies (add, list, remove, protect)')
+    .option('--rule <type>', 'Rule type (no-modify, require-review)', 'no-modify')
+    .option('--mode <type>', 'Enforcement mode (strict, advisory)', 'strict')
+    .option('--reviewers <list>', 'Comma-separated list of required reviewers')
+    .action((action, targetPath, options) => {
+        const prEngine = require('../backend/scanner/pr_policy_engine');
+        const repoPath = process.cwd();
+
+        try {
+            if (action === 'protect') {
+                if (!targetPath) throw new Error('Path is required for protect action.');
+                prEngine.saveRule(repoPath, { path: targetPath, rule: 'no-modify', mode: 'strict' });
+                console.log(`\x1b[32m\u2713\x1b[0m Protected ${targetPath} (Strict no-modify policy applied).`);
+            } else if (action === 'add') {
+                if (!targetPath) throw new Error('Path is required for add action. Usage: sentinel policy add <path> [options]');
+                const rule = { path: targetPath, rule: options.rule, mode: options.mode };
+                if (options.reviewers) rule.reviewers = options.reviewers;
+                prEngine.saveRule(repoPath, rule);
+                console.log(`\x1b[32m\u2713\x1b[0m Policy rule added for ${targetPath}.`);
+            } else if (action === 'remove') {
+                if (!targetPath) throw new Error('Path is required for remove action.');
+                const removed = prEngine.removeRule(repoPath, targetPath);
+                if (removed) console.log(`\x1b[32m\u2713\x1b[0m Policy rule removed for ${targetPath}.`);
+                else console.log(`No policy rule found for ${targetPath}.`);
+            } else if (action === 'list') {
+                const policies = prEngine.loadPolicies(repoPath);
+                console.log(`\n\x1b[36m🛡️  Sentinel Policy Rules (Schema v${policies.policy_schema_version})\x1b[0m\n`);
+                if (!policies.rules || policies.rules.length === 0) {
+                    console.log('  No policies defined. Use `sentinel policy protect <path>` to get started.');
+                } else {
+                    policies.rules.forEach(r => {
+                        console.log(`  \x1b[33m${r.path}\x1b[0m`);
+                        console.log(`    Rule: \x1b[1m${r.rule}\x1b[0m (${r.mode})`);
+                        if (r.reviewers) console.log(`    Reviewers: ${r.reviewers}`);
+                    });
+                }
+                console.log();
+            } else {
+                console.error(`Unknown action: ${action}. Use add, list, remove, or protect.`);
+            }
+        } catch (e) {
+            console.error(`\x1b[31mError:\x1b[0m ${e.message}`);
+        }
+    });
+
+program
+    .command('pr <action> [repo] [prNumber]')
+    .description('Manage and enforce Pull Request policies (scan, hook)')
+    .option('--ci', 'Run in CI environment mode (enforces Checks API)')
+    .action(async (action, repoFullName, prNumberStr, options) => {
+        const gh = require('../backend/lib/gh_bridge');
+        const prEngine = require('../backend/scanner/pr_policy_engine');
+        const Shield = require('../backend/scanner/supply_chain_shield');
+        const fs = require('fs');
+
+        if (action === 'hook') {
+            const destPath = path.join(process.cwd(), '.github', 'workflows', 'sentinel-pr-firewall.yml');
+            const templatePath = path.join(__dirname, '..', 'backend', 'templates', 'sentinel-pr-firewall.yml');
+            
+            if (!fs.existsSync(path.dirname(destPath))) {
+                fs.mkdirSync(path.dirname(destPath), { recursive: true });
+            }
+            fs.copyFileSync(templatePath, destPath);
+            console.log(`\x1b[32m\u2713\x1b[0m PR Firewall GitHub Action installed at: .github/workflows/sentinel-pr-firewall.yml`);
+            console.log(`Commit and push this file to enable automatic PR policy enforcement.`);
+            return;
+        }
+
+        if (action === 'scan') {
+            if (!repoFullName || !prNumberStr) {
+                console.error("Usage: sentinel pr scan <owner/repo> <pr-number>");
+                process.exit(1);
+            }
+
+            const prNumber = parseInt(prNumberStr, 10);
+            console.log(`\n\x1b[36m🛡️  Sentinel PR Firewall: Scanning PR #${prNumber} in ${repoFullName}...\x1b[0m`);
+
+            // 1. Get PR Files
+            const files = gh.getPRFiles(repoFullName, prNumber);
+            if (files === null) {
+                console.error("\x1b[31m\u274c Invalid repo target. Expected owner/repo with GitHub access.\x1b[0m\n");
+                console.log("\x1b[36m\ud83d\udca1 Tip:\x1b[0m");
+                console.log("\x1b[36mRun 'git remote -v' to find your repo, or use:\x1b[0m");
+                console.log("\x1b[36msentinel pr scan <owner>/<repo> <pr>\x1b[0m\n");
+                process.exit(1);
+            }
+            if (files.length === 0) {
+                console.log("No files modified in this PR or unable to fetch diff.");
+                return;
+            }
+            console.log(`\x1b[2mFound ${files.length} modified file(s).\x1b[0m`);
+
+            // 2. Evaluate Policies
+            const policies = prEngine.loadPolicies(process.cwd());
+            const result = prEngine.evaluateFiles(files);
+            
+            // 3. Optional Sandbox trigger
+            let sandboxThreats = null;
+            if (files.some(f => f.endsWith('package.json') || f.endsWith('package-lock.json'))) {
+                console.log(`\x1b[33m\u26a0  Dependencies modified. Simulating Sandbox environment (Dry-Run mode logic)...\x1b[0m`);
+                // En una implementación real, aquí se dispara o revisa el CI Sandbox.
+                sandboxThreats = []; 
+            }
+
+            // 4. Formatting output
+            let conclusion = 'success';
+            let statusLog = '\x1b[32mPASS\x1b[0m';
+            let summary = `Sentinel PR Firewall evaluated ${files.length} files. No strict policy violations.`;
+
+            if (result.verdict === 'FAIL') {
+                conclusion = 'failure';
+                statusLog = '\x1b[31mFAIL (BLOCKED)\x1b[0m';
+                summary = `Sentinel Policy Violation in PR #${prNumber}`;
+            } else if (result.verdict === 'ADVISORY') {
+                conclusion = 'neutral';
+                statusLog = '\x1b[33mADVISORY (WARNING)\x1b[0m';
+                summary = `Sentinel Policy Advisory Warning in PR #${prNumber}`;
+            }
+
+            console.log(`\n\x1b[1mVerdict: ${statusLog}\x1b[0m`);
+            let details = "### Policy Evaluation Report\n\n";
+
+            if (result.violations.length > 0) {
+                console.log('\nViolations:');
+                result.violations.forEach(v => {
+                    const color = v.mode === 'strict' ? '\x1b[31m' : '\x1b[33m';
+                    console.log(`  ${color}■\x1b[0m ${v.file}`);
+                    console.log(`    Rule: ${v.rule} (${v.mode})`);
+                    console.log(`    ${v.message}`);
+                    details += `- **${v.mode.toUpperCase()}** \`${v.file}\`: ${v.message} (Rule: ${v.rule})\n`;
+                });
+            } else {
+                details += "✅ No policy violations detected.\n";
+            }
+
+            // 5. Submit to GitHub Checks API
+            const sha = gh.getPRHeadSha(repoFullName, prNumber);
+            if (sha) {
+                gh.createCheckRun(
+                    repoFullName, 
+                    sha, 
+                    'Sentinel PR Firewall', 
+                    'completed', 
+                    conclusion, 
+                    summary, 
+                    details, 
+                    options.ci
+                );
+            } else {
+                console.warn("\x1b[33mUnable to fetch PR HEAD SHA. Cannot post Check Run.\x1b[0m");
+            }
+
+            if (result.verdict === 'FAIL' && options.ci) {
+                process.exit(1);
+            }
+            return;
+        }
+
+        console.error("Unknown action. Use 'scan' or 'hook'.");
+    });
+
 // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
 function run(args = process.argv) {
     if (args.length === 2) {

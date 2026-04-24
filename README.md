@@ -97,6 +97,7 @@ Sentinel never reveals **why** it blocked a package to unauthorized users. This 
 | [AI Agent Protocol](AGENT.md) | **Mandatory prompt** for AI agents working in this repo |
 | [Classified Data](docs/CLASSIFIED_DATA_GUIDE.md) | Protocol for protected files and declassification |
 | [Policy Governance](docs/POLICIES.md) | GaC manual and exposure levels |
+| [PR Firewall Guide](docs/PR_FIREWALL.md) | Configuración de políticas de acceso y enforcement en Pull Requests |
 
 ## ⚖️ Licensing
 
