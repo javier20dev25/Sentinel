@@ -1829,6 +1829,49 @@ program
         console.error("Unknown action. Use 'run', 'validate', 'compile', 'explain', 'pack', or 'simulate'.");
     });
 
+// ─── Sentinel Risk Graph (Phase 3) ───
+
+program
+    .command('graph <action> [target]')
+    .description('Inspect the Sentinel Risk Graph (Reputation & Correlation)')
+    .action((action, target) => {
+        const riskGraph = require('../backend/scanner/aggregators/risk_graph');
+
+        if (action === 'stats') {
+            if (!target) { console.error("Usage: sentinel graph stats <package:name|repository:name>"); process.exit(1); }
+            
+            const [type, id] = target.split(':');
+            if (!id) { console.error("Invalid target format. Use type:id (e.g., package:axios)"); process.exit(1); }
+
+            if (type === 'package') {
+                const stats = riskGraph.getPackageStats(id);
+                console.log(`\n\x1b[1mRisk Graph Stats: Package [${id}]\x1b[0m`);
+                console.log(`  Seen Count:   ${stats.seen_count}`);
+                console.log(`  Block Count:  ${stats.block_count}`);
+                console.log(`  Risk Score:   ${stats.risk_score}`);
+                console.log(`  Last Seen:    ${stats.last_seen || 'Never'}`);
+
+                const spikes = riskGraph.getTemporalSpikes(`package:${id}`, 24);
+                console.log(`  Temporal Spikes (24h): ${spikes.count}`);
+            } else {
+                console.log(`Stats for ${type} not yet implemented.`);
+            }
+            return;
+        }
+
+        if (action === 'edges') {
+            if (!target) { console.error("Usage: sentinel graph edges <type:id>"); process.exit(1); }
+            const edges = riskGraph.getRelatedEdges(target);
+            console.log(`\n\x1b[1mRelated Edges for [${target}]:\x1b[0m`);
+            edges.forEach(e => {
+                console.log(`  ${e.from} ──[${e.type}]──> ${e.to} (${e.timestamp})`);
+            });
+            return;
+        }
+
+        console.error("Unknown action. Use 'stats' or 'edges'.");
+    });
+
 // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
 function run(args = process.argv) {
     if (args.length === 2) {

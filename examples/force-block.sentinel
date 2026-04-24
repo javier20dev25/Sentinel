@@ -1,0 +1,7 @@
+workflow "block-always" {
+  target package
+  profile strict
+  when install package {
+    block
+  }
+}

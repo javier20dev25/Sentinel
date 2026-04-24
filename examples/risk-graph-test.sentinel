@@ -1,0 +1,20 @@
+// Sentinel Playbook: Risk Graph Correlation Test
+// Validates global reputation injection and decision recording.
+
+workflow "risk-graph-correlation" {
+  target package
+  profile strict
+
+  when install package {
+    run risk_graph_enrichment
+    run supply_chain_shield
+
+    // Check if the package was previously blocked globally
+    if package.global.block_count > 0 {
+      block
+      audit trace
+    } else {
+      allow
+    }
+  }
+}

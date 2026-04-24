@@ -13,11 +13,12 @@
 
 function loadEngine(name) {
     const engineMap = {
-        risk_orchestrator:    '../scanner/risk_orchestrator',
-        supply_chain_shield:  '../scanner/supply_chain_shield',
-        pr_policy_engine:     '../scanner/pr_policy_engine',
-        policy_engine:        '../scanner/policy_engine',
-        scanner:              '../scanner/index'
+        risk_orchestrator:     '../scanner/risk_orchestrator',
+        supply_chain_shield:   '../scanner/supply_chain_shield',
+        pr_policy_engine:      '../scanner/pr_policy_engine',
+        policy_engine:         '../scanner/policy_engine',
+        scanner:               '../scanner/index',
+        risk_graph_enrichment: '../scanner/aggregators/risk_graph_enricher'
     };
 
     const modulePath = engineMap[name];
@@ -172,6 +173,12 @@ function executeSteps(steps, context, log) {
                                 context.policy.exposure = info.exposure;
                             }
                         }
+                        else if (step.engine === 'risk_graph_enrichment') {
+                            if (typeof engine.enrich === 'function') {
+                                engine.enrich(context);
+                                log.push({ type: 'engine_result', engine: step.engine, status: 'context_enriched' });
+                            }
+                        }
                         else {
                             log.push({ type: 'engine_result', engine: step.engine, status: 'connected_no_dispatch' });
                         }
@@ -272,6 +279,12 @@ function execute(compiled, context = {}) {
             target: workflow.target,
             log
         });
+
+        // Record decision in Risk Graph
+        const enricher = loadEngine('risk_graph_enrichment');
+        if (enricher && typeof enricher.record === 'function') {
+            enricher.record(context, { workflow: workflow.name, verdict: finalVerdict });
+        }
     }
 
     return { results, context };
