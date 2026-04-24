@@ -2,9 +2,10 @@ const lab = require('../src/ui/backend/lab/orchestrator');
 
 (async () => {
     try {
-        await lab.runSession(20, 0.7);
-        console.log("Adversarial session successful.");
+        // Running a 2-minute session for validation (can be adjusted to 5)
+        await lab.runTimeLimitedSession(2);
+        console.log("Adversarial combat session successful.");
     } catch (e) {
-        console.error("Adversarial session failed:", e);
+        console.error("Adversarial combat session failed:", e);
     }
 })();

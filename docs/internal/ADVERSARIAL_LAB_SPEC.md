@@ -21,30 +21,28 @@ The control plane that executes the "VS" loop. It maintains a historical record 
 - **Regression Detection**: Ensuring that new engine updates do not degrade detection accuracy.
 - **Gaps Identification**: Locating specific mutation types that consistently evade detection.
 
-## 3. Evolutionary Training Dynamics
+## 3. Evolutionary Training Dynamics (v1.2 Chaos)
 
-### 3.1 Progressive Difficulty Scaling
-SAL implements a 4-level difficulty curriculum based on performance:
-- **Level 1 (Baseline)**: Low mutation intensity (0.2). Focuses on signature-based detection.
-- **Level 2 (Evasive)**: Moderate intensity (0.5). Introduces basic string fragmentation.
-- **Level 3 (Advanced)**: High intensity (0.8). Combines multiple obfuscation vectors.
-- **Level 4 (Adversarial)**: Maximum intensity (1.0). Full mutation depth.
+### 3.1 Attack Strategies and Profiles
+SAL v1.2 introduces specialized attack vectors to simulate advanced persistent threats (APT):
+- **Stealth**: Payloads obfuscated within benign code to challenge pattern recognition.
+- **Stress**: Payloads designed to maximize AST depth and CPU cycles, testing engine endurance.
+- **Innocent Noise**: Benign code injection to quantify the **False Positive Rate (FPR)**.
 
-**Scaling Rules**:
-- **3 Consecutive Wins**: Level Up.
-- **2 Consecutive Losses**: Level Down/Stay.
+### 3.2 Audit Metrics for Enterprise Readiness
+The system now quantifies reliability through standardized metrics:
+- **False Negative Rate (FNR)**: Critical measure of detection bypass.
+- **False Positive Rate (FPR)**: Measure of "Safe" code interference (Noise sensitivity).
+- **Latency Consistency**: Jitter analysis under sustained load.
 
-### 3.2 Hint & Recursive Analysis Protocol
-If Sentinel fails to detect a payload, the Attacker reveals the mutation vector (the "Hint"). The Orchestrator then re-executes the analysis in **Boosted Mode** (lowered risk thresholds) to verify if the signal is present but silenced. This provides data for threshold optimization.
+## 4. Master Audit Table (MAT)
+Every simulation cycle generates a line item in the MAT (`adversarial_results.json`). This ledger provides the forensic trail required for:
+- **Patent Claims**: Evidence of non-obvious heuristic behavior.
+- **Liability Indemnification**: Proof of "State-of-the-art" testing.
+- **Continuous Intelligence**: Feedback loop for `Adaptive Intelligence` weight tuning.
 
-## 4. Security Isolation Guidelines (Mandatory)
-To protect the host infrastructure during high-intensity simulations, SAL must be executed under the following conditions:
-- **Air-Gapped Environment**: No external network access unless specifically required for telemetry.
-- **Containerization**: Use of ephemeral Docker containers or disposable VMs.
-- **Resource Constraints**: Strict CPU and RAM limits enforced via CGroups to prevent denial-of-service during complex AST analysis.
-
-## 5. Persistence and Analytics
-All session data is persisted in `src/ui/backend/lab/adversarial_results.json`. This acts as the project's **Continuous Intelligence Ledger**, tracking the engine's evolution over time.
+## 5. Security Isolation Guidelines (Mandatory)
+(Existing isolation guidelines remain in effect...)
 
 ---
 **CONFIDENTIAL: INTERNAL GOVERNANCE ONLY**

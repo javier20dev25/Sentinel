@@ -98,3 +98,9 @@ temp/
 test_output.txt
 merx-simulation/
 sentinel-report.md
+
+# Sentinel Adversarial Lab (SAL) - Local Moat
+src/ui/backend/lab/attacker_pro.js
+src/ui/backend/lab/attacker.js.bak
+src/ui/backend/lab/adversarial_results.json
+tests/run_adversarial_session.js
