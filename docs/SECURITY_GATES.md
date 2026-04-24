@@ -14,7 +14,23 @@ Sentinel automatically determines the required "Gate Level" by analyzing the fil
 | **3** | **ARTIFACT** | `.wasm`, `.exe`, `.dll`, etc. | Binary masquerading & deep entropy check. |
 | **4** | **FORENSIC** | High suspicion or `--forensic` | Scans `node_modules`, hidden files, and junk. |
 
-## 2. Decision Categories
+## 2. Risk Intelligence Orchestration (v3.7)
+
+Sentinel v3.7 introduces a probabilistic risk aggregation model. Instead of looking at individual alerts in isolation, the engine calculates the **Aggregated Risk Score ($R$)** and classifies it into tactical bands.
+
+### 2.1. Tactical Risk Bands (P0-P4)
+
+These bands determine the required action and the "Force" of the security gate.
+
+| Band | Severity | Priority | Decision Engine Action |
+| :--- | :--- | :--- | :--- |
+| **CRITICAL** | 0.95 - 1.00 | **P0** | **BLOCK**: Immediate remediation required. |
+| **HIGH** | 0.60 - 0.95 | **P1** | **BLOCK**: Investigation or pattern analysis required. |
+| **MODERATE** | 0.35 - 0.60 | **P2** | **REVIEW**: Manual audit recommended before deployment. |
+| **LOW** | 0.15 - 0.35 | **P3** | **MONITOR**: Logged and tracked for drift analysis. |
+| **NEGLIGIBLE**| 0.00 - 0.15 | **P4** | **PASS**: No manual intervention required. |
+
+## 3. Decision Categories
 
 Sentinel distinguishes between two types of findings to facilitate granular pipeline orchestration:
 

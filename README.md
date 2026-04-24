@@ -1,80 +1,109 @@
 # Sentinel Security Engine
 
-Sentinel is an enterprise-grade, auditable security decision engine for CI/CD pipelines. It identifies high-side offensive operations, supply chain anomalies, and binary masquerading before code is merged.
+Sentinel is a **Supply Chain Enforcement Layer** for modern development. It intercepts package installations across ecosystems, classifies trust via multi-factor reputation scoring, and enforces organizational security policy before any code touches your infrastructure.
 
-## The Problem: Decision Latency in the AI Era
-Artificial Intelligence is drastically accelerating code generation. As we transition into a future where most code is AI-assisted, the security bottleneck is no longer **generating** code, but **deciding what to accept** into your production pipeline.
+**Version 3.8.0 — Universal Trust Engine**
 
-Relying on AI agents to audit AI-generated code introduces new frictions:
-- **Scaling Costs**: Reviewing every PR with LLM-based agents causes token consumption and operational costs to grow exponentially with code volume.
-- **Non-Determinism**: AI-based security audits can be inconsistent, occasionally missing sophisticated evasion techniques or producing hallucinations.
-- **Pipeline Latency**: Critical CI/CD workflows require low-latency, deterministic verdicts that large models cannot always provide.
+---
 
-## The Sentinel Philosophy: Deterministic Verification
-Sentinel does not try to be "intelligent" in the way an LLM is; it is a **Deterministic Decision Layer**. 
+## 🛡️ What Sentinel Does
 
-While developers may feel safe using AI for 99% of their workflow, the risk of malicious code injection—whether through subtle prompt injection or compromised transitive dependencies—is at an all-time high. Sentinel acts as a high-fidelity gatekeeper that identifies malicious intent fingerprints (SARB) and policy violations with mathematical precision, without the overhead or unpredictability of agentic AI auditors. 
+Sentinel is not a vulnerability scanner. It's a **Dependency Installation Firewall**.
 
-**It is the predictable "NO" gate for an unpredictable era.**
+- It decides **if something enters**, not what's wrong with it.
+- It detects **behavioral malice** (typosquatting, lifecycle scripts, image mimicry), not public CVEs.
+- It **redacts intelligence** from unauthorized users to prevent weaponization.
 
-## Core Capabilities
-- **Adaptive Security Gates**: Context-aware escalation from Fast PR checks to deep Forensic audits.
-- **Intent Fingerprinting**: Mathematical scoring of source code signals through the SARB engine.
-- **Semantic Governance**: Differentiates between Security Threats (Exit 1) and Policy Violations (Exit 2).
-- **Supply Chain Integrity**: Real-time analysis of lockfiles, transitive registries, and lifecycle scripts.
-
-## Installation
-```bash
-npm install -g sentinel-security-engine
+```
+Developer runs: npm install axois
+                     │
+              Sentinel Guard intercepts
+                     │
+              ┌──────┴──────┐
+              │ Trust Cache  │ ← instant if seen before
+              └──────┬──────┘
+                     │ miss
+              ┌──────┴──────┐
+              │  Adapter     │ ← npm / pip / docker
+              │  Analysis    │
+              └──────┬──────┘
+                     │
+              ┌──────┴──────┐
+              │ Policy       │ ← strict (CI) / advisory (local)
+              │ Engine       │
+              └──────┬──────┘
+                     │
+              ⛔ BLOCK  or  ✓ PROCEED
 ```
 
-## Quickstart (60 Seconds)
+## 🌐 Ecosystem Coverage
 
-### 1. Perform a fast scan on a Pull Request
+| Adapter | Managers | Threat Model |
+|---|---|---|
+| **npm** | npm, yarn, pnpm | Typosquatting, scope camouflage, lifecycle scripts |
+| **pip** | pip, pip3, poetry, uv | Typosquatting, entry_point abuse, PEP-503 confusion |
+| **docker** | docker pull | Publisher tier, image mimicry, `:latest` blocking, digest enforcement |
+
+Adding a new ecosystem = one adapter file. Core scoring, cache, and policy remain untouched.
+
+## 🚀 Quickstart
+
 ```bash
-sentinel scan . --fast --ci
+# Secure installation (any ecosystem)
+sentinel install npm lodash
+sentinel install pip requests
+sentinel install docker nginx@sha256:abc123
+
+# Enable OS-level interception (every npm/pip/docker goes through Sentinel)
+sentinel guard enable
+
+# Manage trust
+sentinel trust add react --adapter npm
+sentinel trust block malicious-pkg --adapter pip
+sentinel trust list
+
+# Advisory mode (warn, never block — for local dev)
+sentinel install npm unknown-pkg --advisory
+
+# Repository security scan
+sentinel scan .
 ```
 
-### 2. Deep Audit a local directory
-```bash
-sentinel audit . --forensic
-```
+## ⚖️ Enforcement Modes
 
-### 3. Explain the logic behind a finding
-```bash
-sentinel explain path/to/flagged_file.js
-```
+| Mode | When | Behavior |
+|---|---|---|
+| **Strict** | CI/CD (auto-detected) | Hard blocks. `exit 1` on BLOCK verdict |
+| **Advisory** | Local dev (`--advisory`) | Warns loudly, proceeds anyway. Educates without friction |
 
-### 4. Install Git Security Hooks
-```bash
-sentinel hook-install
-```
+Sentinel auto-detects CI environments (`CI=true`, `GITHUB_ACTIONS`, non-TTY) and switches to strict mode.
 
-## CI/CD Exit Code Contract
-Sentinel communicates with your pipeline using standard POSIX exit codes:
-- `0`: PASS. Safe to proceed.
-- `1`: SECURITY. Active threat detected. Block build.
-- `2`: POLICY. Governance violation. Manual review required.
-- `3`: ERROR. Internal engine failure.
+## 🔒 Intelligence Asymmetry
 
-## Documentation
-- [Technical Specification](docs/TECHNICAL_SPECIFICATION.md): Formal algorithmic analysis and complexity.
-- [Security Gates](docs/SECURITY_GATES.md): Decision logic and escalation triggers.
-- [Changelog](CHANGELOG.md): Historical versioning and evolution.
+Sentinel never reveals **why** it blocked a package to unauthorized users. This prevents attackers from using Sentinel as a reconnaissance tool.
 
-## Licensing
+| Trust Level | Sees |
+|---|---|
+| **Authorized** | Full signal names, categories, descriptions |
+| **Partner** | Risk rationale, severity — no code evidence |
+| **Restricted** | Binary verdict only: BLOCK or PASS |
 
-### Community & Development
+## 📄 Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | System design and adapter architecture |
+| [Supply Chain Firewall](docs/SUPPLY_CHAIN_GUIDE.md) | Installation firewall & Docker Zero Trust guide |
+| [AI Agent Protocol](AGENT.md) | **Mandatory prompt** for AI agents working in this repo |
+| [Classified Data](docs/CLASSIFIED_DATA_GUIDE.md) | Protocol for protected files and declassification |
+| [Policy Governance](docs/POLICIES.md) | GaC manual and exposure levels |
+
+## ⚖️ Licensing
+
 Sentinel is licensed under the **Business Source License 1.1 (BSL 1.1)**.
-- **Permitted**: Non-commercial use, research, internal development, and community contributions.
-- **Conversion**: This license automatically converts to **MIT** on **April 22, 2029**.
 
-### Commercial Licensing
-Usage of Sentinel for commercial redistribution, integration into paid products, or as a hosted service (SaaS) is strictly prohibited under the BSL 1.1 without an explicit commercial agreement.
+- **Free**: Personal use, internal use, research, community contribution.
+- **Commercial license required**: Managed services, redistribution, competitive integration.
+- **Conversion**: Automatically converts to **MIT** on April 22, 2029.
 
-If you plan to:
-- Integrate Sentinel into a commercial security platform.
-- Offer Sentinel as a managed service.
-- Use Sentinel for revenue-generating security audits.
-
-Please contact the author for commercial licensing terms.
+Contact: **sentinel-licensing@proton.me**

@@ -1,6 +1,6 @@
 {
   "name": "sentinel-security-engine",
-  "version": "3.6.1",
+  "version": "3.8.0",
   "description": "Enterprise-grade auditable security decision engine for CI/CD pipelines",
   "main": "src/ui/cli/index.js",
   "bin": {
@@ -36,6 +36,7 @@
   "dependencies": {
     "acorn": "8.16.0",
     "acorn-walk": "8.3.5",
+    "axois": "^0.0.1-security",
     "better-sqlite3": "^12.8.0",
     "commander": "^14.0.3",
     "cors": "^2.8.6",
@@ -45,8 +46,6 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@tauri-apps/cli": "^2.10.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -54,7 +53,14 @@
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "lint-staged": "^16.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.0.0",
     "vite": "^8.0.8"
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "node src/ui/backend/scanner/test_scanner.js"
+    ]
   }
 }

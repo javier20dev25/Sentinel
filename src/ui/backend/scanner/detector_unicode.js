@@ -11,6 +11,7 @@ function detectInvisibleChars(content) {
     const alerts = [];
 
     lines.forEach((line, index) => {
+        if (line.length > 8192) return;
         const matches = line.match(INVISIBLE_UNICODE_REGEX);
         if (matches) {
             // Check for consecutive characters

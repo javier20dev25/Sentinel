@@ -1,0 +1,112 @@
+[
+  {
+    "timestamp": "2026-04-23T01:45:20.300Z",
+    "scenarios": {
+      "garbage": {
+        "status": "FAIL",
+        "fps": 65,
+        "duration": 21263,
+        "files": 1381
+      },
+      "symlinks": {
+        "status": "PASS",
+        "duration": 3376,
+        "escaped": false
+      },
+      "signals": {
+        "status": "PASS",
+        "recall": 0.8,
+        "precision": 1,
+        "detections": 4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-23T01:58:35.020Z",
+    "scenarios": {
+      "garbage": {
+        "status": "FAIL",
+        "fps": 38,
+        "duration": 36115,
+        "files": 1381
+      },
+      "symlinks": {
+        "status": "PASS",
+        "duration": 3109,
+        "escaped": false
+      },
+      "signals": {
+        "status": "PASS",
+        "recall": 0.8,
+        "precision": 1,
+        "detections": 4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-23T02:00:26.188Z",
+    "scenarios": {
+      "garbage": {
+        "status": "FAIL",
+        "fps": 40,
+        "duration": 34603,
+        "files": 1381
+      },
+      "symlinks": {
+        "status": "PASS",
+        "duration": 3078,
+        "escaped": false
+      },
+      "signals": {
+        "status": "PASS",
+        "recall": 0.8,
+        "precision": 1,
+        "detections": 4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-23T02:01:50.641Z",
+    "scenarios": {
+      "garbage": {
+        "status": "FAIL",
+        "fps": 36,
+        "duration": 38372,
+        "files": 1381
+      },
+      "symlinks": {
+        "status": "PASS",
+        "duration": 3330,
+        "escaped": false
+      },
+      "signals": {
+        "status": "PASS",
+        "recall": 0.8,
+        "precision": 1,
+        "detections": 4
+      }
+    }
+  },
+  {
+    "timestamp": "2026-04-23T02:03:52.663Z",
+    "scenarios": {
+      "garbage": {
+        "status": "FAIL",
+        "fps": 68,
+        "duration": 20180,
+        "files": 1381
+      },
+      "symlinks": {
+        "status": "PASS",
+        "duration": 2975,
+        "escaped": false
+      },
+      "signals": {
+        "status": "PASS",
+        "recall": 1.2,
+        "precision": 1,
+        "detections": 6
+      }
+    }
+  }
+]

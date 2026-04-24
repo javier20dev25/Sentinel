@@ -1,61 +1,53 @@
-# Sentinel CLI Reference (`sentinel`)
+# Sentinel CLI Reference (v3.7.1)
 
-The `sentinel` command-line interface provides developers with a streamlined way to manage and scan repositories within their terminal or CI workflow.
-
----
-
-## 🛠️ Essential Security Commands
-
-### `sentinel prepush`
-**The primary security gate.** Analyzes outbound commits before pushing.
-- **Advisory Mode**: Does NOT block the push. Provides a detailed security report and disclaimer.
-- **Detection**: Catch both staged changes and commits that haven't been pushed to upstream yet.
-- **Options**:
-    - `--json`: Structured output for AI agents and CI/CD pipelines.
-
-### `sentinel heal`
-Automated incident response to contain leaks or threats.
-- **`--leaks`**: Automatically removes protected files from the **staging area**. For files already inside commits, it provides a safe manual guide (`git reset HEAD~1`) to avoid destructive history rewrites.
-- **`--threats`**: Unstages detected threats and moves them to `.sentinel/quarantine/` for analysis.
-
-### `sentinel protected`
-Manage sensitive folders and files for the current repository.
-- **`add <path>`**: Add a directory or file to the protected list.
-- **`list`**: View all protected paths for the linked repo.
-- **`remove <id>`**: Remove a path from protection using its ID.
-
-### `sentinel hook-install`
-Installs the **Sentinel Security Skill** (Git Hook) in the current repository.
-- **Smart-Block**: Unlike previous versions, this hook now **blocks** the push if threats are detected. Users can bypass the block by running `SENTINEL_BYPASS=1 git push`.
-- **Function**: Automatically triggers a mandatory security scan during `git push`.
+The `sentinel` command-line interface provides developers with a deterministic security decision engine. Version 3.7 introduces the **Risk Intelligence Orchestrator** and **Oracle Mode** for privacy-preserving audits.
 
 ---
 
-## 🛠️ Management Commands
+## 🛠️ Main Scanning Engine
 
-### `sentinel link <local_path> <github_full_name>`
-Link a local repository to the Sentinel database.
-- **`<local_path>`**: Path to the project root.
-- **`<github_full_name>`**: repository name in `owner/repo` format.
-- **Example**: `sentinel link . javier20dev25/my-app`
+### `sentinel scan <target>`
+**The primary multi-signal analysis engine.**
 
-### `sentinel list`
-Display all repositories currently monitored by Sentinel.
-- Shows: ID, Name, Last Scan, and Status (SAFE/INFECTED).
+Analyzes the target path (directory or file) across 8 layers of security logic and aggregates findings into a probabilistic risk score.
 
-### `sentinel status`
-Show high-level security status of all linked repositories in a clean table.
+- **Oracle Mode**: Automatically resolves repository ownership. If the user lacks 2+ authorization signals, the output is quantized, jittered, and redacted to prevent information leakage.
+- **Risk Bands**: Categorizes findings into tactical bands (**P0-P4**) with specific recommended actions.
+- **ROI Metrics**: Estimates the reduction in compromise probability if findings are remediated.
 
-### `sentinel scan`
-Trigger an immediate scan of **all** linked repositories.
-- Scans local files and remote PRs (if configured).
+**Options**:
+- `--profile <balanced|strict|relaxed>`: Adjust the risk aggregation sensitivity.
+- `--scan-mode <DEFAULT|DEEP|FORENSIC>`: **New in v3.7.1**. Context-aware scanning profile (Limits, Exclusions, and Depth).
+- `--allow-external`: Permits scanning directories outside the current CWD.
+- `--report <adapter=path>`: Inject external signals (e.g., `npm audit` JSON) into the risk orchestrator.
 
-### `sentinel open`
-Remotely control the Sentinel Desktop UI from the terminal.
-- **Options**:
-    - `--repo <name>`: Open the dashboard and navigate to a specific repository.
-    - `--pr <url>`: Open the security view for a specific PR URL.
-    - `--scan-all`: Trigger a global scan and open the UI immediately.
+#### Example: Oracle Mode Warning
+```text
+🔍 Checking GitHub CLI auth status...
+⚠  LIMITED INTELLIGENCE MODE
+This repository is not verified as owned/authorized.
+Ownership confidence: LOW (1/4 signals)
+Detailed findings will be redacted. 
+```
+
+- **Performance Dashboard**: Real-time breakdown of I/O efficiency, processing speed (files/sec), and skipped file metrics (binary, large, cached).
+
+---
+
+## 🛠️ Scan Modes (Intelligence Profiles)
+
+| Mode | Max File Size | Depth | Behavior |
+| :--- | :--- | :--- | :--- |
+| **DEFAULT** | 1 MB | Standard | High signal-to-noise. Skips non-code assets and build artifacts. |
+| **DEEP** | 5 MB | Extended | Includes documentation and auxiliary configs. Slower I/O. |
+| **FORENSIC** | Unlimited | Maximum | Scans EVERY file (including binary blobs and `.git`). No exclusions. |
+
+---
+
+## 🛠️ Supplemental Security Commands
+
+### `sentinel explain <file>`
+Provides a scientific rationale for specific security findings. In Oracle Mode, this output is limited to high-level risk band descriptions.
 
 ---
 

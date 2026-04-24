@@ -1,77 +1,64 @@
-# Sentinel 3.0: Dynamic Sandbox Guide
+# Sentinel v3.7: Dynamic Sandbox Guide
 
 ## Overview
-The Dynamic Sandbox in Sentinel 3.0 provides behavioral analysis of package dependencies by executing them in isolated, ephemeral environments (GitHub Actions). This allows for the detection of threats that are typically invisible to static analysis, such as obfuscated payloads, binary droppers, and runtime network exfiltration.
+
+El Dynamic Sandbox de Sentinel proporciona análisis conductual de dependencias mediante la ejecución en entornos efímeros aislados (GitHub Actions). Esta capa es crítica para detectar amenazas invisibles al análisis estático, como droppers binarios, exfiltración de red en runtime y módulos WebAssembly ofuscados.
 
 ---
 
-## ⚖️ Static Analysis vs. Sandbox: When to use each
-
-Sentinel provides both static and dynamic analysis. Understanding when to use each is key to maintaining a secure supply chain without incurring unnecessary compute costs.
+## ⚖️ Static Analysis vs. Dynamic Sandbox
 
 | Feature | Static Analysis (AST/Heuristics) | Dynamic Sandbox |
 |---|---|---|
-| **Best For** | Every commit and Pull Request. | High-risk PRs or new dependencies. |
-| **Speed** | Near-instant. | 3-10 minutes (CI overhead). |
-| **Visibility** | Code structure, credentials, known patterns. | Network connections, lockfile integrity, binary behavior. |
-| **Cost** | Minimal (Local CPU). | GitHub Actions minutes. |
-| **Usage** | Mandatory first line of defense. | Targeted validation for suspicious assets. |
+| **Efectividad** | Cada commit y Pull Request. | PRs de alto riesgo o nuevas dependencias. |
+| **Latencia** | < 2 segundos. | 3-10 minutos (Overhead de CI). |
+| **Visibilidad** | Estructura, secretos, patrones conocidos. | Conexiones de red, integridad de lockfile. |
+| **Costo** | Mínimo (CPU Local). | Créditos de GitHub Actions. |
+| **Gobernanza** | Primera línea de defensa obligatoria. | Validación dirigida para activos sospechosos. |
 
 ---
 
-## 🔄 Recommended Full Flow
+## 🔄 Flujo de Orquestación (v3.7)
 
-To implement the sandbox in your workflow, follow these steps in order:
-
-1. **Generate Workflow**:
-   Run `sntl sandbox generate` to obtain the latest YAML template.
-2. **Setup Repository**:
-   Create `.github/workflows/sentinel-sandbox.yml` in your repository and push it to the main branch.
-3. **Trigger Analysis**:
-   When a new dependency is added, run `sntl sandbox trigger <repo> <branch> --wait` to start the simulation.
-4. **Evaluate Results**:
-   Review the terminal output or the **Sandbox Monitor** in the UI to confirm the package is safe before merging.
+1. **Generación de Workflow**: `sntl sandbox generate` para obtener el template YAML.
+2. **Setup**: Instalar `.github/workflows/sentinel-sandbox.yml` en la rama principal.
+3. **Trigger**: Ejecutar `sntl sandbox trigger <repo> <branch> --wait` ante cambios en dependencias.
+4. **Ingesta de Señales**: Los resultados del sandbox se inyectan en el **Risk Orchestrator v2**, influyendo en la Banda de Riesgo (**P0-P4**) del reporte final.
 
 ---
 
-## 🛡️ "Passive Mode" Operation
-Sentinel implements a **Passive Mode** security model. This means Sentinel does not require write permissions to your repository. Instead, it relies on a pre-installed workflow file that is triggered via the `workflow_dispatch` API.
+## 🛡️ Operación en "Passive Mode"
 
-This model ensures that even if the local Sentinel environment is compromised, the attacker cannot modify your remote CI/CD configuration without your manual review and commit of the workflow file.
+Sentinel implementa un modelo de seguridad pasivo: no requiere permisos de escritura en el repositorio remoto. Se apoya en un flujo pre-instalado disparado via `workflow_dispatch` API. Esto garantiza que el IP de seguridad y la configuración de CI/CD permanezcan inmutables para el agente local.
 
 ---
 
-## 🔬 Use Case: Investigating the "Axios 2026" Attack
-The "Axios 2026" attack utilized a compiled WebAssembly (WASM) module to hide malicious logic from static scanners. By using the sandbox, Sentinel can detect the execution artifacts of such an attack.
+## 🔬 Caso de Estudio: Ataque "Axios 2026"
 
-### Realistic Evaluation Output (`sntl sandbox analyze`)
-When analyzing a repository infected with this pattern, the output will look as follows:
+### Evaluación de Resultados (`sntl sandbox analyze`)
+
+En la v3.7, el análisis del sandbox no genera alertas aisladas, sino que escala la postura de seguridad del activo:
 
 ```text
 📥 Downloading artifacts for run #99283741...
-🔍 Analyzing telemetry...
+🔍 Injecting signals into Risk Orchestrator...
 
-🚨 FOUND 3 SUSPICIOUS BEHAVIORS IN SANDBOX:
+🚨 SANDBOX CRITICAL SIGNALS DETECTED:
 
-[CRITICAL] RUNTIME_REGISTRY_OVERRIDE
-Message: [SANDBOX] La variable npm_config_registry apunta a un registry NO oficial.
-Evidence: npm_config_registry = https://malicious-registry.host/repo/ ...
+[P0] UNEXPECTED_NETWORK_CONNECTIONS
+Evidence: tcp 45.33.22.11:443 [ESTABLISHED] -> Domain: sfrclak.com
 
-[HIGH] UNEXPECTED_NETWORK_CONNECTIONS
-Message: [SANDBOX] 1 conexión(es) de red nuevas detectadas durante npm install en axios/axios.
-Evidence: > tcp 45.33.22.11:443 [ESTABLISHED] (Domain: sfrclak.com) ...
+[P1] RUNTIME_REGISTRY_OVERRIDE
+Evidence: npm_config_registry = https://malicious-registry.host/
 
-[HIGH] WASM_MODULE_DETECTED
-Message: [SANDBOX] 1 archivo(s) .wasm encontrados en node_modules de axios/axios.
-Evidence: node_modules/axios/lib/core/auth.wasm ...
+[P1] WASM_PERSISTENCE
+Evidence: node_modules/axios/lib/core/auth.wasm (Entropy: 7.8)
 
-Risk Score: 10.0/10
-
-[RECOMMENDATION]
-The analysis indicates a highly compromised installation environment.
-1. DO NOT install or merge this version.
-2. Verify the source registry in your .npmrc file.
-3. Audit the detected WASM module for malicious entry points.
+--------------------------------------------------
+AGGREGATED RISK: 0.99 [CRITICAL]
+TACTICAL BAND: P0 - IMMEDIATE BLOCK
+REDUCCIÓN DE RIESGO ESTIMADA (ROI): 94% tras remediación.
+--------------------------------------------------
 ```
 
 ---
@@ -79,17 +66,10 @@ The analysis indicates a highly compromised installation environment.
 ## 🔍 Troubleshooting
 
 ### Error: "Workflow not found" (404)
-- **Cause**: The `sentinel-sandbox.yml` file is missing or wrongly named in the remote `.github/workflows/` directory.
-- **Solution**: Ensure the file exists in the default branch. Run `sntl sandbox generate` to verify the required filename.
+Asegúrese de que el archivo YAML existe en la rama por defecto del repositorio remoto. Use `sntl sandbox generate` para verificar el nombre exacto requerido.
 
 ### Error: "Secondary Rate Limit" (403)
-- **Cause**: Frequent API calls to GitHub in a short period.
-- **Solution**: Run `gh auth refresh -s workflow` to ensure your token is fresh. If the error persists, wait 60 seconds before re-triggering.
+GitHub limita el disparo frecuente de workflows. Espere 60 segundos antes de re-intentar o use `gh auth refresh -s workflow`.
 
-### Empty Telemetry Artifacts
-- **Problem**: The run completed, but the `sentinel-telemetry` artifact is empty or missing.
-- **Solution**: Check the GitHub Actions logs for your repository. If the `npm install` step failed before telemetry could be captured, investigate the build logs for specific dependency errors.
-
-### Harden-Runner Compatibility
-- **Problem**: No network egress logs are present in the report.
-- **Solution**: Harden-Runner is required for advanced egress auditing. If using a private runner or a non-standard environment, ensure that the `step-security/harden-runner@v2` step is correctly configured in your YAML.
+### Telemetría Vacía
+Si el paso `npm install` falla catastróficamente antes de la captura de telemetría, Sentinel reportará un error de ejecución. Revise los logs de la Action para descartar problemas de red o dependencias rotas.

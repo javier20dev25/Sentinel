@@ -1,102 +1,179 @@
-# Sentinel Governance & Policy Framework (v3.0)
+# Sentinel Governance & Policy Framework (v3.8.0)
 
-Este documento establece las normas de privacidad, uso y colaboración de Sentinel.
+Este documento establece las normas de gobernanza, privacidad y uso ético de Sentinel v3.8.0 — Supply Chain Enforcement Layer.
 
-> [!NOTE]
-> **Resumen Ejecutivo (Español)**:
-> Sentinel se rige por una política de **Cero Telemetría**: ningún dato sale de tu máquina. El uso de la herramienta debe ser ético y personal. Fomentamos las colaboraciones externas y las mejoras a través de Pull Requests, siempre bajo una revisión técnica rigurosa para mantener la integridad de la suite.
+> [!IMPORTANT]
+> **Resumen Ejecutivo (v3.8)**:
+> Sentinel opera bajo un modelo de **Zero-Telemetry** y **Privacy-Preserving Intelligence**. La introducción del **Supply Chain Firewall** (Trust Engine + Ecosystem Adapters + Guard Mode) amplía el perímetro de protección de Sentinel desde el análisis de repositorios hasta la **intercepción proactiva de instalaciones de dependencias**. El Dual Enforcement Mode (strict/advisory) garantiza que la protección sea firme en CI/CD y útil en entornos de desarrollo local. La Trust Cache proporciona velocidad nativa sin comprometer la seguridad.
 
 ---
 
 ## 1. Data Sovereignty & Privacy Policy
 
-Sentinel is built on the principle of **Local-First Security**.
+Sentinel se fundamenta en el principio de **Soberanía de Datos Local**.
 
-### Zero Telemetry Commitment
-- **No Data Collection**: Sentinel does NOT collect, store, or transmit any telemetry data, usage statistics, or user behavior patterns.
-- **Offline Scanning**: All static code analysis is performed entirely offline. 
-- **Local Storage**: Your repository metadata, scan logs, and threat intelligence remain exclusively in your local SQLite database (`sentinel.db`).
-- **Transparency**: Every outgoing request (e.g., to GitHub API) is strictly for orchestration and user-inititiated actions (like fetching PR info or triggering workflows).
-
----
-
-## 2. Responsible Use Policy
-
-As a powerful security tool, Sentinel should be used ethically:
-- **Authorized Audit Only**: Use Sentinel primarily on repositories you own or have explicit permission to audit.
-- **Dynamic Sandbox Safety**: The GitHub Actions sandbox is designed for behavioral analysis. Do not use it to intentionally compromise GitHub's infrastructure or evade their Terms of Service.
-- **Malware Research**: When auditing malicious packages (e.g., Axios 2026), ensure the environment is correctly isolated as described in the [Sandbox Guide](SANDBOX_GUIDE.md).
+### Compromiso de Cero Telemetría
+- **Privacidad Total**: Sentinel NO recolecta, transmite ni almacena datos de uso, telemetría o patrones de código en servidores externos.
+- **Análisis Offline**: El 100% del análisis (AST, Heurística, Entropía, Trust Engine) se ejecuta en la máquina del usuario.
+- **Trust Cache Local**: Los veredictos persistidos en `~/.sentinel/trust-cache.json` nunca se sincronizan con servidores externos.
+- **Auditoría Local**: Los registros de auditoría (`audit.jsonl`) permanecen exclusivamente en el entorno local.
 
 ---
 
-## 3. Collaboration & Improvement Policy
+## 2. Supply Chain Firewall Policy (v3.8 — NUEVO)
 
-Sentinel is a community-driven project. We welcome improvements and external collaborations.
+Con la versión 3.8, Sentinel implementa un **Firewall de Instalación de Dependencias** que opera en el punto cero del riesgo: antes de que cualquier paquete ejecute código en el sistema del desarrollador.
 
-### Acceptance of Improvements
-We actively seek contributions in the following areas:
-- **New Detection Rules**: Adding new YAML-based signatures for emerging threats.
-- **CLI/UI Enhancements**: Improving the developer experience and visual aesthetics.
-- **Bug Fixes**: Security remediation is our top priority.
+### 2.1 Principio de Enforcement Dual
 
-### How to Collaborate
-1.  **Fork & Branch**: Create a feature branch for your improvements.
-2.  **Standards**: Follow the coding style found in `src/ui/backend/lib/sanitizer.js` (strict input validation).
-3.  **Review Process**: Every Pull Request undergoes a technical peer review focusing on:
-    *   Security integrity (no injection vulnerabilities).
-    *   Performance (no blocking the UI main thread).
-    *   Testing coverage (must include unit tests in `tests/`).
+- **Strict Mode**: Activado automáticamente en entornos CI/CD. Los veredictos `BLOCK` producen `exit 1` y detienen el pipeline. Este modo no puede ser sobrescrito por flags de usuario en pipelines con `CI=true`.
+- **Advisory Mode**: Disponible en entornos interactivos locales. Los veredictos `BLOCK` generan advertencias detalladas pero no impiden la instalación. El evento queda registrado en el audit trail.
 
----
+**La decisión de qué modo aplicar es determinista, no configurable a discreción en CI.**
 
-## 4. Licensing & Commercial Redistribution
+### 2.2 Guard Mode — Consentimiento Explícito
 
-Sentinel operates under a balanced intellectual property model designed to support the developer community while protecting commercial value.
+El comando `sentinel guard enable` modifica el perfil de shell del usuario para interceptar gestores de paquetes (`npm`, `pip`, `docker`, etc.). Este cambio:
+- Requiere ejecución explícita del comando por parte del usuario.
+- Es completamente reversible con `sentinel guard disable`.
+- Solo afecta al perfil del usuario que ejecuta el comando (no requiere privilegios de sistema).
+- Es transparente: las modificaciones al perfil son legibles en texto plano.
 
-### Business Source License 1.1
-- **Individual/Dev Use**: Sentinel is free to use, modify, and distribute for non-production development, research, and open-source community contributions.
-- **Enterprise Internal Use**: Use within internal company pipelines is permitted for security auditing purposes.
-- **Commercial Restriction**: The redistribution of Sentinel as part of a paid product, the provisioning of Sentinel as a managed service (SaaS), or its use in revenue-generating commercial audits is prohibited without an explicit commercial license.
+### 2.3 Trust Cache — Política de Expiración
 
-### Commercial Licensing Contact
-Organizations wishing to integrate Sentinel into their commercial offerings or supply chain platforms must formalize a license agreement. Contact the Licensor at the official project repository for terms.
+- Los veredictos se almacenan con un TTL de **7 días**.
+- Los paquetes marcados manualmente como `TRUSTED` o `BLOCKED` no expiran.
+- La caché puede ser auditada con `sentinel trust list` y limpiada con `sentinel trust clear`.
 
 ---
 
-## 5. Release Governance & Operational Benchmarking
+## 3. Oracle & Information Asymmetry Policy
 
-Sentinel enforces technical governance during the research and development lifecycle:
+Con la versión 3.7.1 (vigente en v3.8), Sentinel implementa una política de asimetría de información:
 
-### Operational Benchmarking
-Any alteration to the detection engine is measured against a strict local Benchmark Suite. A release candidate or contribution is only considered valid if:
-- It achieves a 0% False Positive rate on clean tooling files.
-- It maintains 100% True Positive recall on known adversarial evasion vectors.
+- **Authorized Access**: Solo usuarios con señales de propiedad verificadas acceden a reportes completos con nombres de señales y descripciones técnicas.
+- **Restricted Access**: Actores no autorizados reciben únicamente el veredicto (`BLOCK/SAFE/SUSPICIOUS`) sin inteligencia técnica subyacente.
 
-### Governance Audit Standards
-All detection rules must be traceable. This means every diagnostic output must include:
-- A standardized `rule_id` under the `SARB-` namespace.
-- A human-readable `explanation` of the detection logic.
-- The `rulepack_version` identifier representing the active security baseline.
+**Esto previene que Sentinel sea usado como herramienta de reconocimiento ofensivo por atacantes.**
 
 ---
 
-## 6. Developer Security Hygiene & Branch Protection
+## 4. Responsible Use & Ethics
 
-Sentinel is most effective when integrated into a hardened repository environment. We recommend the following practices for all developers and organizations using this engine.
-
-### Mandatory Branch Protection
-- **Protect Main/Master**: Never allow direct pushes to the primary branch. All changes must go through a Pull Request.
-- **Required Reviews**: Enable at least one mandatory code review before merging.
-- **Status Checks**: Ensure that `sentinel scan --ci` is a required status check for every PR.
-
-### Native GitHub Security Tools
-We recommend enabling the following features in your repository settings:
-- **Dependency Graph & Dependabot**: Automated auditing and updates for outdated or vulnerable packages.
-- **Secret Scanning**: Scans for accidental exposure of credentials, tokens, and keys.
-- **CodeQL Analysis**: Static analysis for common software vulnerabilities.
-
-### Identity & Access
-- **Multi-Factor Authentication (MFA)**: All contributors must have MFA enabled on their accounts.
-- **SSH/GPG Signing**: We encourage signing commits to ensure provenance and prevent identity spoofing.
+Sentinel es una herramienta de seguridad defensiva. Su uso debe alinearse con:
+- **Auditoría Autorizada**: Prohibido el uso de Sentinel para reconocimiento ofensivo de repositorios de terceros sin autorización explícita.
+- **Guard Mode Ético**: El Guard Mode solo debe activarse en máquinas propias o con consentimiento del propietario del sistema.
+- **Integridad del Motor**: Modificar el motor para evadir las protecciones del Oráculo o el Trust Engine constituye una violación de los términos de uso.
 
 ---
+
+## 5. Licensing & Commercial Terms (v3.8 actualizado)
+
+Sentinel utiliza la **Business Source License 1.1 (BSL 1.1)** con conversión a MIT en 2029.
+
+### Uso No-Comercial (Sin Costo)
+1. **Uso Personal**: Desarrolladores independientes en proyectos personales.
+2. **Uso Interno Organizacional**: Empresas que usan Sentinel para proteger su propio entorno de desarrollo.
+3. **Investigación/Educación**: Uso académico y contribuciones comunitarias.
+
+### Triggers de Licencia Comercial (v3.8 — actualizado)
+Se requiere licencia comercial para:
+1. Ofrecer Sentinel como **SaaS** o servicio gestionado.
+2. Integrar el **Trust Engine o los Adapters** en productos comerciales de terceros.
+3. Ofrecer el **Guard Mode como servicio** en entornos multi-tenant.
+4. Redistribución del Supply Chain Firewall como componente de plataformas de seguridad.
+5. Consultoría basada en redistribución o hosting de Sentinel.
+
+Para consultas comerciales: **sentinel-licensing@proton.me**
+
+---
+
+## 6. Audit Integrity & Forensic Accountability
+
+Sentinel implementa una Capa de Confianza Criptográfica:
+
+- **TraceID**: Cada veredicto (instalación o scan) emite un ID firmado con HMAC-SHA256.
+- **Trust Cache Hashes**: Cada entrada en caché incluye un hash de 8 caracteres para trazabilidad forense.
+- **Audit Log**: `~/.sentinel/audit.jsonl` — append-only, compatible con SIEM.
+- **Enterprise Reports**: Firmados con License Key única. Solo estos son válidos para auditorías de cumplimiento institucional.
+
+---
+
+## 7. Compliance & Enforcement
+
+La eliminación o alteración de marcas de agua, metadatos de licencia o firmas de integridad en outputs de Sentinel constituye violación de BSL 1.1.
+
+Para verificación de legitimidad: **sentinel-compliance@proton.me**
+
+---
+
+## 1. Data Sovereignty & Privacy Policy
+
+Sentinel se fundamenta en el principio de **Soberanía de Datos Local**.
+
+### Compromiso de Cero Telemetría
+- **Privacidad Total**: Sentinel NO recolecta, transmite ni almacena datos de uso, telemetría o patrones de código en servidores externos. 
+- **Análisis Offline**: El 100% del análisis estático (AST, Heurística, Entropía) se ejecuta en la máquina del usuario.
+- **Auditoría Local**: Los registros de auditoría (`audit.jsonl`) y la inteligencia de amenazas permanecen exclusivamente en el entorno local del agente.
+
+---
+
+## 2. Oracle & Information Asymmetry Policy
+
+Con la versión 3.7.1, Sentinel implementa una política de asimetría de información para proteger el IP de seguridad:
+
+- **Authorized Access**: Solo usuarios con señales de propiedad verificadas (Git Remote + GitHub Auth + DB Match) acceden a reportes completos.
+- **Redaction Policy**: Actores no autorizados reciben veredictos cuantizados con jitter estable para prevenir la reconstrucción de vulnerabilidades mediante ataques de oráculo.
+
+---
+
+## 3. Responsible Use & Ethics
+
+Sentinel es una herramienta de auditoría defensiva. Su uso debe alinearse con la ética de ciberseguridad:
+- **Auditoría Autorizada**: Se prohibe el uso de Sentinel para el reconocimiento ofensivo de repositorios de terceros sin autorización explícita.
+- **Integridad del Motor**: La modificación del motor para evadir las protecciones del Oráculo o para usos maliciosos constituye una violación de los términos de uso.
+
+---
+
+## 4. Licensing & Commercial Terms
+
+Sentinel utiliza la **Business Source License 1.1 (BSL 1.1)** con un horizonte de conversión a MIT en 2029.
+
+### Definición de Uso No-Comercial (Sin Costo)
+1. **Uso Personal**: Desarrolladores independientes en proyectos personales.
+2. **Uso Interno Organizacional**: Empresas que utilizan Sentinel para auditar su propio código fuente, donde los resultados no se venden ni se exponen a terceros.
+3. **Investigación/Educación**: Uso académico y contribuciones a la comunidad.
+
+### Triggers de Licencia Comercial (Requiere Pago)
+Se requiere una licencia comercial firmada para:
+1. Ofrecer Sentinel como **Software-as-a-Service (SaaS)**.
+2. Integrar Sentinel en productos o servicios comerciales de terceros.
+3. Prestar servicios de consultoría basados en la redistribución o hosting de Sentinel.
+4. Forks monetizados o derivados que compitan con la oferta oficial.
+
+Para consultas comerciales: **sentinel-licensing@proton.me**
+
+---
+
+## 5. Audit Integrity & Authentic Verification
+
+Sentinel implementa una Capa de Confianza Criptográfica para garantizar la integridad de sus reportes frente a manipulaciones de terceros.
+
+### 5.1. Niveles de Verificación de Reporte
+1. **Unverified / Community**: Reportes generados por la edición gratuita. Incluyen una firma HMAC basada en una clave pública. Válidos para uso interno y personal.
+2. **Enterprise-Certified**: Reportes firmados con una License Key única del licenciatario oficial. Solo estos reportes se consideran válidos para evaluaciones de seguridad institucional y auditorías de cumplimiento comercial.
+
+### 5.2. Verificación de Proveedores de Servicio
+Cualquier entidad que proporcione auditorías basadas en Sentinel debe figurar en el **[Registro Oficial de Socios](PARTNERS.md)**. Se recomienda a las empresas finales verificar la firma del reporte y el estatus del proveedor antes de aceptar los resultados.
+
+---
+
+## 6. Compliance & Enforcement Policy
+
+### Reconocimiento de Manipulación
+La eliminación o alteración de las marcas de agua, metadatos de licencia o firmas de integridad integradas en los outputs de Sentinel constituye una violación de los términos de la Business Source License 1.1. 
+
+### Acción Legal
+El uso comercial no autorizado de Sentinel (SaaS, redistribución o consultoría sin licencia) resultará en la revocación automática de los derechos de uso y podrá estar sujeto a acciones legales bajo las leyes de propiedad intelectual internacionales.
+
+Para consultas de verificación de legitimidad: **sentinel-compliance@proton.me**

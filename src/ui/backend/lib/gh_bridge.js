@@ -427,8 +427,132 @@ class GitHubBridge {
         }
     }
 
+    /**
+     * Gets the git remote origin URL for a local path.
+     * Returns the URL string or null if not a git repo / no remote.
+     */
+    getRepoOrigin(localPath) {
+        if (!isValidLocalPath(localPath)) return null;
+        try {
+            const output = execFileSync('git', ['remote', 'get-url', 'origin'], {
+                cwd: localPath,
+                encoding: 'utf-8',
+                timeout: 5000,
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+            return output.trim() || null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Multi-signal ownership resolver (v8.3 Oracle Hardening).
+     * 
+     * Combines 4 independent signals to determine authorization level.
+     * Fail-closed: ambiguous results default to UNAUTHORIZED.
+     * 
+     * @param {string} localPath - Absolute path to the directory being scanned
+     * @param {Object} [cachedAuth] - Pre-cached auth from checkAuth() to avoid redundant calls
+     * @returns {Object} { authorized: boolean, confidence: string, signals: Object }
+     */
+    resolveOwnership(localPath, cachedAuth = null) {
+        const os = require('os');
+        const signals = {
+            remoteMatch: false,
+            githubPermission: 'SKIPPED',
+            localDbRegistered: false,
+            withinHomedir: false
+        };
+        let authorizedCount = 0;
+
+        // Signal 1: Git remote origin matches authenticated user (fast: 1 subprocess)
+        const remote = this.getRepoOrigin(localPath);
+        if (remote) {
+            const auth = cachedAuth || { authenticated: false };
+            if (auth.authenticated && auth.username) {
+                const username = auth.username.toLowerCase().replace(/[()]/g, '');
+                const remoteLower = remote.toLowerCase();
+                signals.remoteMatch = remoteLower.includes(`/${username}/`) || 
+                                     remoteLower.includes(`${username}/`);
+                if (signals.remoteMatch) authorizedCount++;
+            }
+        }
+
+        // Signal 2: Local DB whitelist (fast: no subprocess)
+        try {
+            const db = require('./db');
+            const repos = db.getRepositories();
+            const normalizedPath = path.resolve(localPath).toLowerCase();
+            signals.localDbRegistered = repos.some(r => 
+                r.local_path && path.resolve(r.local_path).toLowerCase() === normalizedPath
+            );
+            if (signals.localDbRegistered) authorizedCount++;
+        } catch {
+            // DB not available in CLI-only mode — skip
+        }
+
+        // Signal 3: Path is within user's home directory (fast: no subprocess)
+        const homedir = os.homedir();
+        const relative = path.relative(homedir, localPath);
+        signals.withinHomedir = !relative.startsWith('..') && !path.isAbsolute(relative);
+        if (signals.withinHomedir) authorizedCount++;
+
+        // Signal 4: GitHub viewerPermission — only if needed as tiebreaker (slow: 2 subprocesses)
+        if (authorizedCount <= 1 && remote) {
+            try {
+                const repoInfo = this.getRepoInfoLocal(localPath);
+                if (repoInfo && repoInfo.fullName) {
+                    signals.githubPermission = this.getRepoPermission(repoInfo.fullName);
+                    const writeRoles = ['ADMIN', 'MAINTAIN', 'WRITE'];
+                    if (writeRoles.includes(signals.githubPermission)) authorizedCount++;
+                }
+            } catch {
+                // API failure = no signal, fail-closed
+            }
+        }
+
+        // Decision: Fail-closed. Need at least 2 positive signals.
+        const authorized = authorizedCount >= 2;
+        const confidence = authorizedCount >= 3 ? 'HIGH' : (authorizedCount >= 2 ? 'MEDIUM' : 'LOW');
+
+        return { authorized, confidence, signals, signalCount: authorizedCount };
+    }
+
+    /**
+     * Gets the permission level of the authenticated user for a repo.
+     * Returns 'ADMIN', 'MAINTAIN', 'WRITE', 'READ', or 'NONE'.
+     */
+    getRepoPermission(repoFullName) {
+        if (!isValidOwnerRepo(repoFullName)) return 'NONE';
+        try {
+            const output = execFileSync('gh', [
+                'repo', 'view', repoFullName,
+                '--json', 'viewerPermission'
+            ], { encoding: 'utf-8', timeout: 15000 });
+            const result = JSON.parse(output);
+            return result.viewerPermission || 'NONE';
+        } catch (e) {
+            console.error(`[GH_BRIDGE] Error checking permission for ${repoFullName}:`, e.message);
+            return 'NONE';
+        }
+    }
+
     postPRComment(repoFullName, prNumber, message) {
         if (!isValidOwnerRepo(repoFullName) || !isValidPRNumber(prNumber)) return { success: false };
+        
+        // Governance: Permission Check (Hardened v3.7)
+        const permission = this.getRepoPermission(repoFullName);
+        const authorizedRoles = ['ADMIN', 'MAINTAIN', 'WRITE'];
+        
+        if (!authorizedRoles.includes(permission)) {
+            console.error(`[SECURITY] Post PR Comment denied for ${repoFullName}. Permission level: ${permission}`);
+            return { 
+                success: false, 
+                error: `Unauthorized: Sentinel requires WRITE/MAINTAIN permissions to post to ${repoFullName}. Current role: ${permission}` 
+            };
+        }
+
         try {
             execFileSync('gh', [
                 'pr', 'comment', String(prNumber),

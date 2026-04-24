@@ -5,6 +5,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 
 // Lazy-load node-notifier (may not be available in packaged mode)
 let notifier = null;
@@ -274,9 +275,18 @@ const pc = require('picocolors');
 
 program
     .name('sentinel')
-    .version('3.6.1')
-    .description('Sentinel Security Guardian — Enterprise SAST & Decision Engine')
+    .version('3.7.0')
+    .description('Sentinel Security Guardian — Deterministic Decision Engine')
     .option('--json', 'Machine-readable output (JSON)')
+    .option('--profile <name>', 'Decision profile: balanced, strict, dev', 'balanced')
+    .option('--allow-external', 'Allow scanning paths outside current directory (DANGEROUS)', false)
+    .option('--report <adapter=path>', 'Attach external reports (e.g. --report npm=audit.json)', (val, memo) => {
+        const parts = val.split('=');
+        const adapter = parts[0];
+        const p = parts.slice(1).join('='); // Handle paths with '='
+        memo.push({ adapter, path: p });
+        return memo;
+    }, [])
     .option('--no-color', 'Disable terminal colors (useful for log files/CI)')
     .hook('preAction', () => {
         // Ensure rules are loaded before any action that might use them
@@ -292,97 +302,379 @@ program
     .option('--ci', 'CI Mode: Minimal silent output with deterministic exit codes')
     .option('--debug', 'Verbose mode: Print raw breakdown metrics')
     .option('--fast', 'Fast Mode: Skip deep analysis and sandbox (Speed priority)')
-    .option('--mode <type>', 'Analysis mode: local or sandbox', 'local')
-    .option('--source <type>', 'Event source: cli or github-action', 'cli')
-    .action((targetPath, options) => {
-        const gh = require('../backend/lib/gh_bridge');
+    .option('--profile <type>', 'Risk Profile: balanced, aggressive, or conservative', 'balanced')
+    .option('--scan-mode <type>', 'Scan profile: DEFAULT, DEEP, or FORENSIC', 'DEFAULT')
+    .action(async (targetPath, cmdOptions) => {
         const scanner = require('../backend/scanner/index');
-        const db = require('../backend/lib/db');
+        const NpmAdapter = require('../backend/scanner/aggregators/npm_adapter');
+        const DecisionExplainer = require('../backend/scanner/aggregators/decision_explainer');
         const Orchestrator = require('../backend/scanner/gate_orchestrator');
-        const target = normalizeAbsPath(targetPath);
+
+        // Consolidate global and local options
+        const globalOpts = program.opts();
+        const options = { ...globalOpts, ...cmdOptions };
         
-        const computeConfidence = (execution) => execution === 'isolated' ? 92 : 65;
+        const absPath = path.resolve(targetPath);
+        const cwd = process.cwd();
         
-        let fileList = [];
-        const stats = fs.statSync(target, { throwIfNoEntry: false });
-        if (stats && stats.isDirectory()) {
-            fileList = fs.readdirSync(target);
-        } else {
-            fileList = [target];
+        // Determine the scan root directory (for ownership & fingerprint)
+        const absStats = fs.statSync(absPath, { throwIfNoEntry: false });
+        const scanDir = (absStats && absStats.isFile()) ? path.dirname(absPath) : absPath;
+
+        // Governance: Direct Boundary Check
+        const relative = path.relative(cwd, absPath);
+        const isOutside = relative.startsWith('..') || path.isAbsolute(relative);
+        
+        if (isOutside && !options.allowExternal) {
+            console.error(pc.red(`\n\u274c Security Block: Sentinel scanning is restricted to the current directory hierarchy.`));
+            console.error(pc.dim(`Target: ${absPath}\nCWD: ${cwd}\n`));
+            console.error(`To scan external paths, use ${pc.bold('--allow-external')} (Liability disclaimer applies).`);
+            process.exit(1);
         }
 
-        // 1. Auto-Escalation Logic
+        // 0. Oracle: Resolve Ownership (Multi-Signal)
+        const gh = require('../backend/lib/gh_bridge');
+        let ownershipResult = { authorized: true, confidence: 'HIGH', signals: {}, signalCount: 4 };
+        let authUser = 'local';
+        try {
+            const auth = gh.checkAuth();
+            authUser = auth.authenticated ? auth.username : 'anonymous';
+            ownershipResult = gh.resolveOwnership(scanDir, auth);
+        } catch {
+            // Fail-closed: if ownership resolution fails, treat as unauthorized
+            ownershipResult = { authorized: false, confidence: 'LOW', signals: {}, signalCount: 0 };
+        }
+
+        const isAuthorized = ownershipResult.authorized;
+
+        if (!isAuthorized && !options.ci && !options.json) {
+            console.log(pc.bgYellow(pc.black('\n  \u26a0  RESTRICTED INTELLIGENCE MODE  ')));
+            console.log(pc.yellow('Current repository is not verified as authorized.'));
+            console.log(pc.dim('Analysis logic has been throttled to prevent intellectual property leakage.'));
+            console.log(pc.dim(`Session ID: ${repoFingerprint.substring(0, 8)}... (Logged)\n`));
+        }
+
+        // 0b. Oracle: Generate Hardened Fingerprint
+        const repoFingerprint = scanner.generateHardenedFingerprint(scanDir);
+
+
+        let fileList = [];
+        const stats = fs.statSync(absPath, { throwIfNoEntry: false });
+        if (stats && stats.isDirectory()) {
+            fileList = fs.readdirSync(absPath);
+        } else if (stats) {
+            fileList = [absPath];
+        }
+
+        // 1. Auto-Escalation Logic (Sentinel Gates)
         const gateInfo = Orchestrator.resolveGateLevel(fileList);
         const activeLevel = options.gateLevel || (options.fast ? 0 : gateInfo.level);
-        options.gateLevel = activeLevel;
-
-        if (!options.ci && !program.opts().json) {
-            console.log(pc.bold(pc.cyan(`\n[Sentinel] Mode: ${Orchestrator.getLevelLabel(activeLevel)}`)));
-            if (activeLevel > 0) console.log(pc.dim(`Reason: ${gateInfo.reason}`));
+        
+        // 2. Load External Signals
+        let externalSignals = [];
+        if (options.report && options.report.length > 0) {
+            options.report.forEach(r => {
+                try {
+                    const reportPath = path.resolve(r.path);
+                    if (r.adapter === 'npm' && fs.existsSync(reportPath)) {
+                        const content = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                        externalSignals.push(...NpmAdapter.mapAudit(content));
+                    }
+                } catch (e) {
+                    console.error(`[CLI] Error loading external report ${r.path}:`, e.message);
+                }
+            });
         }
 
-        let results = null;
-        if (stats && stats.isFile()) {
-            const content = fs.readFileSync(target, 'utf8');
-            const scan = scanner.scanFile(path.basename(target), content, null, options);
-            scan.alerts.forEach(a => { a._file = path.basename(target); a._fullPath = target; });
-            const executionMode = options.fast ? 'none' : (options.mode === 'sandbox' ? 'isolated' : 'none');
+        // 3. Perform Primary Scan
+        const scanOptions = {
+            mode: options.mode,
+            gateLevel: activeLevel,
+            profile: options.scanMode?.toUpperCase() || 'DEFAULT'
+        };
+
+        let results;
+        if (stats && stats.isDirectory()) {
+            results = await scanner.scanDirectory(absPath, null, 10, scanOptions);
+        } else if (stats && stats.isFile()) {
+            const content = await fsPromises.readFile(absPath, 'utf8');
+            scanner.loadRules();
+            const scan = await scanner.scanFile(path.basename(absPath), content, null, scanOptions);
+            scan.alerts.forEach(a => { a._file = path.basename(absPath); a._fullPath = absPath; });
             results = {
-                version: "3.6.1",
+                version: "3.7.1",
                 rulepack_version: "2026.04",
-                context: {
-                    analysis_mode: options.mode,
-                    execution: executionMode,
-                    source: options.source,
-                    gate_level: activeLevel
-                },
-                summary: {
-                    confidence_score: computeConfidence(executionMode),
-                    confidence_source: "engine"
-                },
-                threats: scan.alerts.length,
                 filesScanned: 1,
-                rawAlerts: scan.alerts
+                skipped: { binary: 0, excluded: 0, large: 0, unsupported: 0, cached: 0 },
+                rawAlerts: scan.alerts,
+                threats: scan.alerts.length,
+                performance: { durationMs: 0, filesPerSec: 0 }
             };
         } else {
-            // Directory Scan
-            results = scanner.scanDirectory(target, options);
-            const executionMode = options.fast ? 'none' : (options.mode === 'sandbox' ? 'isolated' : 'none');
-            results.version = "3.6.1";
-            results.rulepack_version = "2026.04";
-            results.context = {
-                analysis_mode: options.mode,
-                execution: executionMode,
-                source: options.source,
-                gate_level: activeLevel
-            };
-            results.summary = {
-                confidence_score: computeConfidence(executionMode),
-                confidence_source: "engine"
-            };
+            console.error(`\u274c Path not found: ${targetPath}`);
+            process.exit(1);
         }
 
-        // 2. Classify Results for Semantic Exit Codes
-        const securityFindings = (results.rawAlerts || []).filter(a => a.classification === 'SECURITY');
-        const policyViolations = (results.rawAlerts || []).filter(a => a.classification === 'POLICY');
+        // 4. Finalize Verdict with Oracle Context
+        const oracleCtx = { isAuthorized, fingerprint: repoFingerprint, user: authUser };
+        scanner.finalizeVerdict(results, externalSignals, options.profile, oracleCtx);
 
-        if (program.opts().json) {
-            respondAgent(true, results);
-        } else if (options.ci) {
-            // Semantic Exit Code Contract [0-3]
-            if (results.threats === 0) process.exit(0);
-            if (securityFindings.length > 0) process.exit(1);
-            if (policyViolations.length > 0) process.exit(2);
-            process.exit(0);
-        } else {
-            renderer.renderHierarchicalReport(results.rawAlerts || [], results.filesScanned, { gateLevel: activeLevel, noColor: program.opts().noColor });
+        // 5. Forensic Audit Log
+        scanner.logScanAudit({
+            fingerprint: repoFingerprint,
+            ownershipStatus: isAuthorized ? 'authorized' : 'unauthorized',
+            riskBand: results.riskBand?.name || 'UNKNOWN',
+            scanPath: absPath, user: authUser
+        });
+
+        // 6. Strategic Deterrence & Final Display (v3.7.3 - Policy Driven)
+        if (!options.ci && !options.json) {
             
-            // Terminal Final Verdict / Exit Code
-            if (results.threats > 0) {
-                if (securityFindings.length > 0) process.exit(1);
-                process.exit(2);
+            // A. Lockdown Alert
+            if (results.lockdown) {
+                console.log(pc.bgRed(pc.white('\n  \u26a0  SYSTEM PROTECTION LOCK ACTIVATED  ')));
+                console.log(pc.red('Multiple exfiltration patterns detected. High-fidelity output disabled.'));
+                console.log(pc.dim(`Verified Audit Trail ID: ${results.traceId}\n`));
+                process.exit(1);
             }
+
+            // B. Governance Context
+            console.log(pc.cyan('\n\u2696\ufe0f  GOVERNANCE POLICY'));
+            console.log(`${pc.dim('Active Policy:')} ${results.policy?.name || 'Standard'}`);
+            console.log(`${pc.dim('Exposure Level:')} ${results.policy?.exposure?.toUpperCase() || 'RESTRICTED'}`);
+            console.log(`${pc.dim('Audit Status:')} ${results.policy?.auditStatus || 'ENABLED'}`);
+
+            // C. Dynamic Latency
+            if (results.delayMs > 0) {
+                console.log(pc.yellow('\n\u23f3  ADAPTIVE ANALYSIS THROTTLING'));
+                console.log(pc.dim(`Introducing protective latency (${(results.delayMs/1000).toFixed(1)}s) per organizational policy...`));
+                await new Promise(r => setTimeout(r, results.delayMs));
+            }
+
+            // D. Decision Banner & Rationale
+            console.log(DecisionExplainer.formatBanner(results.decisionVerdict, results.activeProfile));
+            console.log(DecisionExplainer.explain(results));
+
+            // E. Verified Audit Trail
+            console.log(pc.cyan('\n\ud83d\udee1\ufe0f  VERIFIED AUDIT TRAIL'));
+            const trustLabels = ['RESTRICTED', 'PARTNER / LIMITED', 'AUTHORIZED'];
+            const trustColor = results.trustLevel === 2 ? pc.green : (results.trustLevel === 1 ? pc.blue : pc.yellow);
+            
+            console.log(`${pc.dim('Trust Level:')} ${trustColor(trustLabels[results.trustLevel])}`);
+            console.log(`${pc.dim('Audit Trail ID:')} ${results.traceId}`);
+            console.log(`${pc.dim('Integrity Sig:')} ${results.report_signature.substring(0, 32)}...`);
+            
+            // F. Institutional Legal Disclaimer
+            console.log(pc.dim('\n LEGAL NOTICE: This session is subject to audit logging under organizational '));
+            console.log(pc.dim(" policy. Unauthorized reverse engineering or manipulation of Sentinel's "));
+            console.log(pc.dim(' intelligence outputs may violate Intellectual Property and Usage terms.\n'));
         }
+
+        if (options.json) {
+            process.stdout.write(JSON.stringify(results, null, 2) + '\n');
+            process.exit(results.decisionVerdict === 'BLOCK' ? 1 : 0);
+        }
+
+        if (results.decisionVerdict === 'BLOCK') process.exit(1);
+    });
+
+// ─── sentinel install (Dependency Trust Engine v3.0) ───
+program
+    .command('install')
+    .description('Verify and install a package through the Sentinel Policy Firewall.')
+    .argument('<adapter>', 'Package manager (npm, pip, docker)')
+    .argument('<package>', 'Package name or image reference')
+    .option('--sandbox', 'Force remote sandbox verification')
+    .option('--force', 'Bypass Trust Cache and re-evaluate')
+    .option('--advisory', 'Advisory mode: warn but never block')
+    .action(async (adapter, pkgName, options) => {
+        const Shield = require('../backend/scanner/supply_chain_shield');
+        const Policy = require('../backend/scanner/policy_engine');
+        const gh = require('../backend/lib/gh_bridge');
+
+        let isAuthorized = false;
+        try {
+            const auth = gh.checkAuth();
+            isAuthorized = gh.resolveOwnership(process.cwd(), auth).authorized;
+        } catch (e) {}
+
+        const isAdvisory = options.advisory || !Policy.shouldEnforceBlock();
+        const modeLabel = isAdvisory ? pc.blue('[ADVISORY]') : pc.red('[STRICT]');
+
+        process.stdout.write(pc.cyan(`\n\ud83d\udee1\ufe0f  SENTINEL FIREWALL ${modeLabel}: Evaluating '${pkgName}'...`));
+
+        if (options.force) Shield.getTrustCache()._cache[`${adapter}:${pkgName}`] = undefined;
+        const preScan = await Shield.preScanManifest(adapter, pkgName);
+
+        if (preScan.fromCache) {
+            process.stdout.write(pc.dim(` [cache:${preScan.cacheHash}]\n`));
+        } else {
+            process.stdout.write('\n');
+        }
+
+        // ── BLOCK verdict ─────────────────────────────────────────────
+        if (preScan.verdict === 'BLOCK') {
+            if (isAdvisory) {
+                // Advisory: warn loudly, but proceed
+                console.log(pc.bgYellow(pc.black('  \u26a0  RISK DETECTED — PROCEEDING IN ADVISORY MODE  ')));
+                if (isAuthorized) {
+                    preScan.signals.forEach(s => {
+                        console.log(`  ${pc.yellow('\u2022')} ${pc.bold(s.type)} [${s.category}]`);
+                        console.log(`    ${pc.dim(s.description)}`);
+                    });
+                }
+                console.log(pc.yellow('\n  In STRICT mode (CI/CD), this installation would be blocked.'));
+                console.log(pc.dim(`  Audit Trail recorded. Consider: sentinel verify-pkg ${adapter} ${pkgName} --sandbox\n`));
+                // Proceed anyway
+                Shield.executeInstall(adapter, pkgName);
+                return;
+            }
+
+            // Strict: hard block
+            console.log(pc.bgRed(pc.white('  \u26d4  INSTALLATION BLOCKED BY POLICY  ')));
+            if (isAuthorized) {
+                preScan.signals.forEach(s => {
+                    console.log(`  ${pc.red('\u2022')} ${pc.bold(s.type)} [${s.category}]`);
+                    console.log(`    ${pc.dim(s.description)}`);
+                });
+            } else {
+                console.log(pc.dim('\nThis package violates organizational security policies.'));
+                console.log(pc.dim('Specific threat intelligence is restricted per policy.'));
+            }
+            console.log(pc.cyan('\nSAFE ALTERNATIVE: Remote sandbox verification'));
+            console.log(pc.bold(`  sentinel verify-pkg ${adapter} ${pkgName} --sandbox\n`));
+            process.exit(1);
+        }
+
+        // ── SUSPICIOUS verdict ────────────────────────────────────────
+        if (preScan.verdict === 'SUSPICIOUS' || options.sandbox) {
+            console.log(pc.bgYellow(pc.black('  \u26a0  PACKAGE FLAGGED — SANDBOX RECOMMENDED  ')));
+            if (isAuthorized) {
+                preScan.signals.forEach(s => {
+                    console.log(`  ${pc.yellow('\u2022')} ${pc.bold(s.type)} [${s.category}]`);
+                    console.log(`    ${pc.dim(s.description)}`);
+                });
+            }
+            console.log(pc.dim(`\nAudit Trail recorded. Use 'sentinel verify-pkg ${adapter} ${pkgName} --sandbox' for confirmation.\n`));
+        } else {
+            console.log(pc.green('\u2713 SAFE — Policy Authorization Granted.'));
+        }
+
+        Shield.executeInstall(adapter, pkgName);
+    });
+
+// ─── sentinel verify-pkg (Cloud Sandbox Orchestrator) ───
+program
+    .command('verify-pkg')
+    .description('Verify a package behavior in a remote cloud sandbox.')
+    .argument('<adapter>', 'Package manager')
+    .argument('<package>', 'Package name')
+    .action((adapter, pkgName) => {
+        const Shield = require('../backend/scanner/supply_chain_shield');
+        console.log(pc.cyan(`\n\ud83d\udce6  ORCHESTRATING CLOUD SANDBOX: ${adapter}://${pkgName}`));
+        const workflow = Shield.generateSandboxWorkflow(adapter, pkgName);
+        const workflowPath = path.join(process.cwd(), '.github', 'workflows', 'sentinel-sandbox.yml');
+        if (!fs.existsSync(path.dirname(workflowPath))) fs.mkdirSync(path.dirname(workflowPath), { recursive: true });
+        fs.writeFileSync(workflowPath, workflow);
+        console.log(pc.green('\u2713 Sandbox workflow generated.'));
+        console.log(pc.dim('  Path: .github/workflows/sentinel-sandbox.yml'));
+        console.log('\nTrigger with:');
+        console.log(pc.bold('  gh workflow run sentinel-sandbox.yml\n'));
+    });
+
+// ─── sentinel guard (OS Interception Layer) ───
+program
+    .command('guard')
+    .description('Manage Sentinel Guard — OS-level package manager interception.')
+    .argument('<action>', 'enable | disable | status')
+    .action((action) => {
+        const Guard = require('./guard');
+
+        if (action === 'status') {
+            const active = Guard.isGuardEnabled();
+            console.log(`\n\ud83d\udee1\ufe0f  Sentinel Guard: ${active ? pc.green('ACTIVE') : pc.yellow('INACTIVE')}`);
+            if (active) {
+                console.log(pc.dim(`  Intercepting: ${Guard.SUPPORTED_MANAGERS.join(', ')}`));
+                console.log(pc.dim(`  Profile: ${Guard.getShellProfilePath()}`));
+            }
+            return;
+        }
+
+        if (action === 'enable') {
+            const result = Guard.enableGuard();
+            if (!result.success) {
+                console.log(pc.yellow(`\u26a0  ${result.reason}`));
+                return;
+            }
+            console.log(pc.green('\n\u2713 Sentinel Guard ENABLED'));
+            console.log(pc.dim(`  Profile modified: ${result.profilePath}`));
+            console.log(pc.dim(`  Intercepting: ${result.managers.join(', ')}`));
+            console.log(pc.cyan('\nRestart your shell or run:'));
+            console.log(pc.bold(`  source ${result.profilePath}\n`));
+            console.log(pc.dim('Every package installation will now pass through the Sentinel Firewall.'));
+            return;
+        }
+
+        if (action === 'disable') {
+            const result = Guard.disableGuard();
+            console.log(result.success
+                ? pc.yellow('\n\u26a0  Sentinel Guard DISABLED. Package managers restored.')
+                : pc.red(`\u274c ${result.reason}`)
+            );
+            return;
+        }
+
+        console.log(pc.red(`Unknown action '${action}'. Use: enable | disable | status`));
+    });
+
+// ─── sentinel trust (Trust Cache Management) ───
+program
+    .command('trust')
+    .description('Manage the Sentinel Trust Cache for instant package verification.')
+    .argument('<action>', 'add | block | list | clear')
+    .argument('[package]', 'Package name (for add/block)')
+    .option('--adapter <mgr>', 'Package manager (npm, pip, cargo)', 'npm')
+    .action((action, pkgName, options) => {
+        const Shield = require('../backend/scanner/supply_chain_shield');
+        const cache  = Shield.getTrustCache();
+
+        if (action === 'add') {
+            if (!pkgName) return console.log(pc.red('Package name required.'));
+            cache.markTrusted(options.adapter, pkgName);
+            console.log(pc.green(`\u2713 '${options.adapter}:${pkgName}' marked as TRUSTED`));
+            console.log(pc.dim('  Future installations will bypass security evaluation.'));
+            return;
+        }
+
+        if (action === 'block') {
+            if (!pkgName) return console.log(pc.red('Package name required.'));
+            cache.markBlocked(options.adapter, pkgName);
+            console.log(pc.red(`\u26d4 '${options.adapter}:${pkgName}' permanently BLOCKED`));
+            return;
+        }
+
+        if (action === 'list') {
+            const entries = cache.all();
+            const keys = Object.keys(entries);
+            if (keys.length === 0) return console.log(pc.dim('Trust Cache is empty.'));
+            console.log(pc.cyan(`\n\ud83d\udcc6  TRUST CACHE (${keys.length} entries)\n`));
+            for (const [key, val] of Object.entries(entries)) {
+                const color = val.verdict === 'TRUSTED' ? pc.green : (val.verdict === 'BLOCKED' ? pc.red : pc.yellow);
+                const age   = Math.floor((Date.now() - val.ts) / 86400000);
+                console.log(`  ${color(val.verdict.padEnd(10))} ${key.padEnd(30)} ${pc.dim(`${age}d ago  [${val.hash}]`)}`);
+            }
+            console.log('');
+            return;
+        }
+
+        if (action === 'clear') {
+            cache._cache = {};
+            cache._save();
+            console.log(pc.yellow('\u26a0  Trust Cache cleared. All packages will be re-evaluated.'));
+            return;
+        }
+
+        console.log(pc.red(`Unknown action '${action}'. Use: add | block | list | clear`));
     });
 
 // ─── sentinel explain (v3.6) ───

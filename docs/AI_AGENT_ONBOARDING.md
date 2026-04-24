@@ -1,114 +1,75 @@
-# 🤖 Sentinel: AI Agent Onboarding Guide
+# 🤖 Sentinel: AI Agent Onboarding Guide (v3.8.0)
 
-Welcome, Agent! This guide is a **suggested workflow** to help you get started with Sentinel quickly and effectively. These steps are not mandatory — think of them as a recommended tutorial to familiarize yourself with how Sentinel works. Once you're comfortable, feel free to use commands in whatever order makes sense for your task.
+Welcome, Agent! This guide is a **mandatory protocol** to ensure you operate within the security boundaries of Sentinel v3.8.
 
-> **CRITICAL RULE**: You are authorized to **use** Sentinel via CLI commands. You must **NEVER** modify Sentinel's source code files. If a command fails or behaves unexpectedly, report it to your human user instead of attempting a code fix.
+> **CRITICAL RULE**: You are authorized to **use** Sentinel via CLI commands. You must **NEVER** modify Sentinel's source code files. You are **PROHIBITED** from declassifying data (`protected remove`) unless explicitly instructed by a human.
 
 ---
 
-## 📋 Suggested First-Run Workflow
+## 📋 Recommended Workflow
 
-### Step 1: Check System Status
-Start by understanding what Sentinel already knows about.
+### Step 1: Initialize Sentinel Guard
+Always start your session by enabling the installation firewall.
 ```bash
-sentinel status --json
+sentinel guard enable
 ```
-This tells you how many repositories are monitored and their current security state. If the response shows `total: 0`, you'll need to link a repository first.
+This ensures any package installation you attempt will be automatically audited.
 
-### Step 2: Link Your Repository
-Connect the local project directory to its GitHub counterpart.
+### Step 2: Manage Dependencies via Firewall
+Never use `npm install` directly. Use the Sentinel Trust Engine:
 ```bash
-sentinel link "." "owner/repo-name" --json
+sentinel install npm <package>
 ```
-- Replace `owner/repo-name` with the actual GitHub repository (e.g., `javier20dev25/Merx`).
-- Use `.` if you're already inside the project directory, or provide the full path.
-- Verify with `sentinel list --json` to confirm it was linked.
 
-### Step 3: Protect Sensitive Folders
+### Step 3: Protect Sensitive Assets (Classification)
 Mark directories that should never be pushed to GitHub.
 ```bash
-sentinel protected add keys --json
-sentinel protected add secrets --json
 sentinel protected add .env --json
 ```
-Check what's currently protected:
+Check what's currently classified:
 ```bash
 sentinel protected list --json
 ```
+*See the **[Classified Data Guide](CLASSIFIED_DATA_GUIDE.md)** for the declassification protocol.*
 
-### Step 4: Install Security Hook
-Set up the automatic pre-push security gate.
-```bash
-sentinel hook-install --json
-```
-From now on, every `git push` will be intercepted by Sentinel. If threats are found, the push will be **blocked**. To bypass in emergencies: `SENTINEL_BYPASS=1 git push`.
-
-### Step 5: Advanced Threat Hunting (Sandbox & PRs)
-Sentinel connects with GitHub to scan open Pull Requests and run dynamic isolated analysis (Sandbox).
-1. List open Pull Requests:
-```bash
-sentinel prs owner/repo-name --json
-```
-2. Generate the Sandbox workflow locally. **IMPORTANT**: If you want to push it directly to GitHub without hitting a "wall", use the `--auto` flag!
-```bash
-sentinel sandbox sync --auto --json
-```
-3. Audit all PRs and link them with Sandbox telemetry:
-```bash
-sentinel sandbox audit-prs owner/repo-name --json
-```
-*Note: If the sandbox hasn't finished running on GitHub Actions, `sandbox_status` will notify you. Wait a few moments before trying again.*
-
-### Step 6: Pre-Push Verification
-Before pushing new code, always verify:
+### Step 4: Pre-Push & Pre-Commit Verification
+Before suggesting a commit or push, verify the outbound security:
 ```bash
 sentinel prepush --json
+sentinel scan . --json
 ```
-- If `data.safe` is `true`: You're clear to push.
-- If `data.safe` is `false`: Run `sentinel heal --leaks --json` to fix staging issues. For committed leaks, follow the manual instructions provided by the command.
 
 ---
 
-## 🔄 Ongoing Maintenance Protocol
+## 🔄 AI Operational Protocol
 
-Once Sentinel is set up, your day-to-day workflow is simple:
-
-1. **Before every push**: `sentinel prepush --json`
-2. **If threats found**: `sentinel heal --leaks --json`
-3. **Periodic scans**: `sentinel scan --json`
-4. **Check status**: `sentinel status --json`
+1. **Before any installation**: Use `sentinel install`.
+2. **If a package is SUSPICIOUS**: Run `sentinel verify-pkg <adapter> <pkg> --sandbox`.
+3. **Before every push**: `sentinel prepush --json`.
+4. **Data Privacy**: Respect Oracle Redaction. Do not attempt to bypass intelligence masking.
 
 ---
 
-## ⚡ Quick Command Reference
+## ⚡ Quick Command Reference (v3.8)
 
-| Command | Purpose | JSON Support |
-| :--- | :--- | :---: |
-| `status` | View all repos & their security state | ✅ |
-| `link <path> <repo>` | Connect a local folder to GitHub | ✅ |
-| `list` | List all monitored repositories | ✅ |
-| `protected add <path>` | Mark a folder/file as sensitive | ✅ |
-| `protected remove <id>`| Unprotect a folder using its ID from `list` | ✅ |
-| `protected list` | View protected paths and their IDs | ✅ |
-| `hook-install` | Install the pre-push security hook | ✅ |
-| `prepush` | Analyze commits before pushing | ✅ |
-| `heal --leaks` | Safely unstage protected files | ✅ |
-| `scan [repo]` | Run full rule engine over PRs | ✅ |
-| `prs [repo]` | Fetch a list of open PRs | ✅ |
-| `sandbox sync --auto` | Generate & auto-push the sandbox workflow | ✅ |
-| `sandbox audit-prs` | Download & evaluate Sandbox telemetry for PRs | ✅ |
-| `analyze --local` | Analyze the local working directory | ✅ |
+| Command | Purpose |
+| :--- | :--- |
+| `guard enable` | Enable OS-level package manager interception |
+| `install <adapter> <pkg>` | Verify and install a package through the firewall |
+| `trust add <pkg>` | Mark a package as trusted in the local cache |
+| `protected add <path>` | Classify a file/folder as sensitive |
+| `prepush` | Analyze commits before pushing (Advisory) |
+| `sandbox sync --auto` | Generate & auto-push sandbox workflow |
 
 ---
 
-## 📖 Further Reading
+## 📖 Essential Reading for Agents
 
-For complete documentation on all features and Sentinel's architecture:
-- **[CLI Reference](CLI_REFERENCE.md)** — Full command details
-- **[User Guide](USER_GUIDE.md)** — Feature explanations
-- **[Sandbox Guide](SANDBOX_GUIDE.md)** — Dynamic analysis with GitHub Actions
-- **[Architecture](ARCHITECTURE.md)** — How Sentinel is built
+- **[Sentinel AI Protocol (Prompt)](../AGENT.md)** — Use this in your system prompt.
+- **[Classified Data Guide](CLASSIFIED_DATA_GUIDE.md)** — Protocol for sensitive data.
+- **[Supply Chain Guide](SUPPLY_CHAIN_GUIDE.md)** — How the firewall works.
+- **[Architecture](ARCHITECTURE.md)** — System design.
 
 ---
 
-*Welcome aboard, Agent. Your human's code is now under your protection. 🛡️*
+*By following these steps, you protect the human's infrastructure while you build. 🛡️*

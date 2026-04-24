@@ -5,19 +5,34 @@ Sentinel is an auditable security decision engine designed for high-velocity CI/
 
 ## 2. Theoretical Framework
 
-### 2.1. Intent-Based Heuristics
-Unlike signature-based antivirus solutions, Sentinel's core engine (SARB) operates on a **Signal Composition Matrix**. Each signal $s_i$ carries a weight $w_i \in [0, 100]$. The final risk level $R$ for a given file is calculated through a logistic transformation of the cumulative signal weights:
+### 2.1. Probabilistic Risk Aggregation
+Unlike additive scoring models, Sentinel's core engine aggregates risk using a **Probabilistic Composition Matrix**. Each finding $i$ contributes a normalized base risk $r_i \in [0, 1]$. To prevent score saturation from redundant signals, the aggregated risk $R$ is calculated as the probability of compromise:
 
-$$S_{raw} = w_{max} + \sum_{i \neq max} f(w_i)$$
+$$R = 1 - \prod_{i=1}^{n} (1 - (r_i \times w_i))$$
 
-Where $f(w_i)$ is a decaying accumulation factor to prevent artificial score bloating from redundant signals. The raw score is then passed through a corporate noise cap $C$ and a logistic sigmoid to map the result to the $[0, 100]$ interval.
+Where $w_i$ is contextual weight (e.g., $w=1.2$ for findings in `package.json`, $w=0.8$ for obfuscation in `.test.js`). 
 
-### 2.2. Entropy & Information Theory
+### 2.2. Quantization and Stable Jitter (Oracle Mode)
+To prevent side-channel inversion (Oracle Attacks), Sentinel obscures the raw probabilistic risk $R_c$ for unauthorized observers. The score is mapped to discrete buckets $B = \{0.0, 0.25, 0.50, 0.75, 1.0\}$, and obscured with Stable Jitter ($\epsilon$):
+
+$$R_r = \text{clamp}(\text{nearest}(R_c, B) + \epsilon, 0, 1)$$
+
+$$\epsilon = \text{Hash}(F \cdot U \cdot T) \pmod{0.06} - 0.03$$
+
+This yields an $\epsilon$ bound strictly between $\pm 0.03$, ensuring mathematical reproducibility within a session window ($T$) while remaining non-invertible across sessions.
+
+### 2.3. Entropy & Information Theory
 For binary masquerading and obfuscation detection, Sentinel utilizes Shannon Entropy ($H$):
 
 $$H(X) = -\sum_{i=1}^{n} P(x_i) \log_b P(x_i)$$
 
 Sentinel triggers a **Security Finding** if $H(X) > 7.5$ in source code (suggesting packing or base64 payloads) or a **Policy Violation** if $H(X) < 1.0$ in large files (suggesting low-entropy junk padding used for masquerading).
+
+### 2.4. Input Sanitization & Signal Integrity (v3.7.1)
+Sentinel implements a three-stage sanitization pipeline to guarantee signal quality:
+1. **Path Guard**: `resolvedPath.startsWith(rootPath)` logic to prevent recursive directory traversal and symlink-based exfiltration.
+2. **Binary Sampling**: High-efficiency first 512-byte inspection to classify files and skip non-text assets without full I/O saturation.
+3. **Incremental Cache**: Fast metadata-tracking (path/size/mtime) to avoid redundant analysis of unchanged files.
 
 ## 3. Algorithmic Complexity
 
@@ -49,8 +64,8 @@ Sentinel implements a state-machine that escalates the analysis depth based on t
 | :--- | :--- | :--- | :--- |
 | Single File (10KB) | 12ms | 45MB | 98% |
 | PR Diff (5 files) | 45ms | 52MB | 95% |
-| Full Audit (1.5K files) | 1.8s | 125MB | 92% |
-| Forensic Scan (10K+ files) | 8.4s | 340MB | 88% |
+| Full Audit (1.5K files) | 2.1s | 145MB | 94% |
+| Forensic Scan (10K+ files) | 9.2s | 410MB | 90% |
 
 ## 6. Formal Exit Code Contract
 Sentinel communicates with the orchestration layer (Jenkins, GitHub Actions, GitLab CI) through standard POSIX exit codes:
