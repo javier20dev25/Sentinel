@@ -1,0 +1,19 @@
+// Sentinel Playbook: Global Sync Intelligence Test
+// Validates that networked reputation influences local decisions.
+
+workflow "networked-intelligence-test" {
+  target package
+  profile strict
+
+  when install package {
+    run risk_graph_enrichment
+    
+    // Total risk integrates global intelligence (30% weight)
+    if package.global.risk_score > 0.20 {
+      block
+      audit trace
+    } else {
+      allow
+    }
+  }
+}

@@ -22,16 +22,28 @@ class RiskGraphEnricher {
         // 1. Enrich Package Metadata
         if (context.package && context.package.name) {
             const stats = riskGraph.getPackageStats(context.package.name);
+            const node = riskGraph.nodes.package[context.package.name] || {};
+            
+            // ─── Federated Risk Calculation (v1.0) ───
+            const localScore = stats.risk_score || 0;
+            const globalScore = node.global_risk_score || 0;
+            const spikes = riskGraph.getTemporalSpikes(`package:${context.package.name}`, 24);
+            const spikeScore = Math.min(spikes.count / 10, 1.0); // Normalized spike score
+
+            const totalRisk = (localScore * 0.5) + (globalScore * 0.3) + (spikeScore * 0.2);
+
             context.package.global = {
-                risk_score: stats.risk_score || 0,
+                risk_score: totalRisk,
+                local_contribution: localScore,
+                network_contribution: globalScore,
+                temporal_contribution: spikeScore,
                 seen_count: stats.seen_count || 0,
-                block_count: stats.block_count || 0,
-                is_previously_blocked: stats.block_count > 0,
-                last_seen: stats.last_seen
+                block_count: stats.block_count || (node.global_block_count || 0),
+                is_previously_blocked: stats.block_count > 0 || (node.global_block_count > 0),
+                last_seen: stats.last_seen,
+                network_signals: node.global_signals || []
             };
             
-            // Detect temporal spikes (burst signals in last 24h)
-            const spikes = riskGraph.getTemporalSpikes(`package:${context.package.name}`, 24);
             context.package.global.temporal_spike_24h = spikes.count;
         }
 

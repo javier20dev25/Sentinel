@@ -1829,6 +1829,48 @@ program
         console.error("Unknown action. Use 'run', 'validate', 'compile', 'explain', 'pack', or 'simulate'.");
     });
 
+// ─── Sentinel Global Intelligence Sync (Phase 4) ───
+
+program
+    .command('sync <action>')
+    .description('Synchronize local Risk Graph with Global Intelligence Network')
+    .action(async (action) => {
+        const syncManager = require('../backend/scanner/aggregators/sync_manager');
+
+        if (action === 'push') {
+            console.log("Starting local intelligence export...");
+            const result = await syncManager.push();
+            if (result.success) {
+                console.log(`\x1b[32m\u2713 Successfully synchronized ${result.count} local signals to the network.\x1b[0m`);
+            }
+            return;
+        }
+
+        if (action === 'pull') {
+            console.log("Fetching global intelligence updates...");
+            const result = await syncManager.pull();
+            if (result.success) {
+                console.log(`\x1b[32m\u2713 Merged ${result.count} verified threat signals into the local Risk Graph.\x1b[0m`);
+            }
+            return;
+        }
+
+        if (action === 'status') {
+            const riskGraph = require('../backend/scanner/aggregators/risk_graph');
+            const stats = {
+                nodes: Object.values(riskGraph.nodes).reduce((acc, val) => acc + Object.keys(val).length, 0),
+                edges: riskGraph.edges.length,
+                lastSync: syncManager.lastSync || 'Never'
+            };
+            console.log(`\n\x1b[1mSentinel Intelligence Status:\x1b[0m`);
+            console.log(`  Local Graph Size: ${stats.nodes} nodes, ${stats.edges} edges`);
+            console.log(`  Last Global Sync: ${stats.lastSync}`);
+            return;
+        }
+
+        console.error("Unknown action. Use 'push', 'pull', or 'status'.");
+    });
+
 // ─── Sentinel Risk Graph (Phase 3) ───
 
 program
