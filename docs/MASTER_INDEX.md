@@ -16,9 +16,10 @@ Documentation for the stateful graph and networked intelligence modules.
 - [Risk Graph Technical Specification](file:///c:/Users/sleyt/sentinel-local/docs/RISK_GRAPH_SPEC.md)
 - [Global Sync Protocol (SSP)](file:///c:/Users/sleyt/sentinel-local/docs/SYNC_PROTOCOL.md)
 
-## 4. Implementation Walkthroughs
-Sequential records of the project evolution.
+## 4. Implementation and Validation
+Sequential records of project evolution and quality assurance.
 - [Walkthrough Index](file:///C:/Users/sleyt/.gemini/antigravity/brain/6fe87f69-a18f-409b-b1bd-1db4df1704bf/walkthrough.md)
+- [Master Test Report](file:///c:/Users/sleyt/sentinel-local/docs/TEST_MASTER_REPORT.md)
 
 ---
 *Document managed by Sentinel Internal Governance.*

@@ -17,6 +17,7 @@ const KNOWN_ENGINES = new Set([
     'pr_policy_engine',
     'policy_engine',
     'trust_engine',
+    'risk_graph_enrichment',
     'decision_explainer',
     'ci_sandbox',
     'scanner'
