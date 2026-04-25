@@ -30,6 +30,10 @@ const FileClassifier = require('./file_classifier');
 const RiskOrchestrator = require('./risk_orchestrator');
 const { signReport } = require('../lib/signature');
 
+// Phase 10.6 AppSec Pro Modules
+const ForensicAudit = require('./forensics');
+const SandboxScanner = require('./sandbox');
+
 let compiledRules = [];
 const MAX_REGEX_LENGTH = 500;
 const MAX_SCAN_LINES = 10000;
@@ -154,7 +158,15 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
     const startTime = Date.now();
     const profile = CONFIG.PROFILES[options.profile] || CONFIG.PROFILES.DEFAULT;
     const absRoot = path.resolve(dirPath);
-    const results = { threats: 0, filesScanned: 0, skipped: { binary: 0, excluded: 0, large: 0, unsupported: 0, cached: 0 }, rawAlerts: [], performance: { startTime, durationMs: 0, filesPerSec: 0 } };
+    const results = { 
+        threats: 0, 
+        filesScanned: 0, 
+        skipped: { binary: 0, excluded: 0, large: 0, unsupported: 0, cached: 0 }, 
+        rawAlerts: [], 
+        performance: { startTime, durationMs: 0, filesPerSec: 0 },
+        riskScore: 0,
+        verdict: 'SAFE'
+    };
 
     const fileQueue = [];
     async function collectFiles(currentPath, currentDepth) {
@@ -184,6 +196,25 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                     results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
                     results.verdict = results.riskScore > 0.8 ? 'CRITICAL' : (results.riskScore > 0.4 ? 'SUSPICIOUS' : 'SAFE');
+                    
+                    // AppSec Pro: Forensic Enrichment
+                    if (options.forensics && fs.existsSync(path.join(absRoot, '.git'))) {
+                        const alertsToEnrich = results.rawAlerts.slice(0, 50);
+                        console.log(`[FORENSICS] Enriching up to ${alertsToEnrich.length} alerts (Cap applied)...`);
+                        let enrichedCount = 0;
+                        for (const alert of alertsToEnrich) {
+                            if (alert.line_number && alert._fullPath) {
+                                const relPath = path.relative(absRoot, alert._fullPath);
+                                const forensicData = ForensicAudit.blame(absRoot, relPath, alert.line_number);
+                                if (!forensicData.error) {
+                                    alert.forensics = forensicData;
+                                    enrichedCount++;
+                                }
+                            }
+                        }
+                        console.log(`[FORENSICS] Completed. Enriched: ${enrichedCount}`);
+                    }
+
                     CacheEngine.save();
                     resolve(results);
                 }
@@ -196,8 +227,10 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                 if (profile.allowedCategories.includes(category) && stats.size <= profile.maxFileSize) {
                     const cached = CacheEngine.isValid(fullPath, stats);
                     if (cached) {
-                        results.skipped.cached++; results.filesScanned++; results.rawAlerts.push(...cached);
-                        fileRisks.push(ScoringEngine.calculateFileRisk(cached, fullPath));
+                        results.skipped.cached++; results.filesScanned++; 
+                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath }));
+                        results.rawAlerts.push(...enrichedCached);
+                        fileRisks.push(ScoringEngine.calculateFileRisk(enrichedCached, fullPath));
                     } else {
                         let currentAlerts = [];
                         if (category === 'BINARY') {
@@ -267,4 +300,46 @@ function logScanAudit(context) {
     return event;
 }
 
-module.exports = { scanFile, scanLocalFile: (p, c, o) => scanFile(path.basename(p), c, null, o), scanDirectory, loadRules, finalizeVerdict, generateHardenedFingerprint, logScanAudit };
+async function auditWithSurgicalSandbox(repoPath, options = { profile: 'BALANCED' }) {
+    console.log(`\n\x1b[34m[APPSEC-PRO] Starting Surgical Sandbox Audit for: ${repoPath}\x1b[0m`);
+    
+    // 1. Fast Static Sweep
+    console.log(`  -> [PHASE 1] Executing Static Heuristics...`);
+    const staticResults = await scanDirectory(repoPath, null, 3, { ...options, forensics: false });
+    
+    console.log(`  -> [PHASE 1] Static Verdict: ${staticResults.verdict} (Score: ${staticResults.riskScore.toFixed(2)})`);
+
+    // 2. Surgical Auto-Trigger
+    if (staticResults.riskScore >= 0.60) {
+        console.log(`  -> \x1b[31m[TRIGGER] Risk threshold exceeded (>= 0.60). Activating Docker Sandbox...\x1b[0m`);
+        const sandboxResult = await SandboxScanner.scanSupplyChain(repoPath);
+        
+        staticResults.sandbox_triggered = true;
+        
+        if (!sandboxResult.success) {
+            console.log(`  -> [PHASE 2] Sandbox Error: ${sandboxResult.error}`);
+            staticResults.sandbox_execution_success = false;
+        } else {
+            console.log(`  -> [PHASE 2] Sandbox Execution Captured Successfully.`);
+            staticResults.sandbox_execution_success = true;
+            // In a full implementation, we would analyze the container logs (e.g. syscalls, network output)
+            staticResults.sandbox_output_snippet = sandboxResult.output ? sandboxResult.output.substring(0, 500) : '';
+        }
+    } else {
+        console.log(`  -> \x1b[32m[PASS] Risk is acceptable. Bypassing Sandbox Execution.\x1b[0m`);
+        staticResults.sandbox_triggered = false;
+    }
+
+    return staticResults;
+}
+
+module.exports = { 
+    scanFile, 
+    scanLocalFile: (p, c, o) => scanFile(path.basename(p), c, null, o), 
+    scanDirectory, 
+    auditWithSurgicalSandbox, // Phase 5 Surgical Sandbox Auto-Trigger
+    loadRules, 
+    finalizeVerdict, 
+    generateHardenedFingerprint, 
+    logScanAudit 
+};

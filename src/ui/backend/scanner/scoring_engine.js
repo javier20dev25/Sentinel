@@ -15,18 +15,37 @@ class ScoringEngine {
 
     /**
      * Calculates the Risk Score for a set of findings in a specific context.
+     * Now includes Trust Modeling (Forensics) and Noise Reduction (Path context).
      */
     calculateFileRisk(alerts, fullPath) {
         if (!alerts || alerts.length === 0) return 0;
 
         const deduplicated = this._deduplicate(alerts, fullPath);
         const weight = this.getContextWeight(fullPath);
+        
+        // NOISE REDUCTION: Discount risk for non-critical manifests and test files
+        let pathDiscount = 1.0;
+        if (fullPath.endsWith('package-lock.json') || fullPath.endsWith('yarn.lock')) pathDiscount = 0.3; // High noise in lockfiles
+        if (fullPath.includes('/tests/') || fullPath.includes('/__tests__/')) pathDiscount = 0.5; // Tests are lower risk
+
         let survivalProbability = 1.0;
 
         deduplicated.forEach(alert => {
             let p = this.severityMap[alert.severity] || 0.1;
+            
+            // TRUST MODELING: Adjust risk based on forensic author
+            let trustFactor = 1.0;
+            if (alert.forensics && alert.forensics.author) {
+                const author = alert.forensics.author;
+                // Core maintainers (trusted authors)
+                if (['javier20dev25', 'Javier Astaroth'].includes(author)) {
+                    trustFactor = 0.5; // High trust but never 0
+                }
+            }
+
             const isOverridden = CONFIG.SCORING.OVERRIDES.some(o => alert.category === o || (alert.type && alert.type.includes(o)));
-            const effectiveWeight = isOverridden ? 1.0 : weight;
+            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor);
+            
             survivalProbability *= (1 - (p * effectiveWeight));
         });
 
@@ -82,17 +101,19 @@ class ScoringEngine {
 
     /**
      * Aggregates multiple file risks into a Repo Global Score.
+     * Phase 5 Calibration: Volume-Dampened Aggregation.
      */
     calculateGlobalScore(fileRisks) {
         if (!fileRisks || fileRisks.length === 0) return 0;
         
-        // Aggregate assuming independence (conservative approach)
-        let survival = 1.0;
-        fileRisks.forEach(risk => {
-            survival *= (1 - risk);
-        });
+        // Volume-Dampened Aggregation: Prevents high-volume repos from 
+        // exponentially inflating the score just by having many low-risk files.
+        const maxRisk = Math.max(...fileRisks);
+        const avgRisk = fileRisks.reduce((sum, val) => sum + val, 0) / fileRisks.length;
+        
+        // Anchor on the worst file, plus a fraction of the repo's average noise
+        const globalRaw = maxRisk + (avgRisk * 0.25); 
 
-        const globalRaw = 1 - survival;
         return 1 - Math.exp(-this.damping * globalRaw);
     }
 }

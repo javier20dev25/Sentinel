@@ -51,6 +51,11 @@ const CONFIG = {
             'config': 0.9,
             'scripts': 0.85,
             'tests': 0.6,
+            '__tests__': 0.5,
+            'vendor': 0.1,
+            'public': 0.2,
+            'assets': 0.2,
+            'fixtures': 0.2,
             'dist': 0.4,
             'docs': 0.3,
             'default': 0.7

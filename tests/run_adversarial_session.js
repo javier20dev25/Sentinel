@@ -2,10 +2,10 @@ const lab = require('../src/ui/backend/lab/orchestrator');
 
 (async () => {
     try {
-        // Running a 2-minute session for validation (can be adjusted to 5)
-        await lab.runTimeLimitedSession(2);
-        console.log("Adversarial combat session successful.");
+        console.log("Starting Round 6: The Persona Round (Contextual Correlation)...");
+        await lab.runTimeLimitedSession(3);
+        console.log("Round 6 finished. Measuring impact of Correlation & Persona on FPR.");
     } catch (e) {
-        console.error("Adversarial combat session failed:", e);
+        console.error("Round 6 failed:", e);
     }
 })();

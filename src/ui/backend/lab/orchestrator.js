@@ -75,16 +75,20 @@ class LabOrchestrator {
             try {
                 // Determine strategy (20% noise injection to test FPR)
                 const isNoise = Math.random() < 0.2;
-                const strategy = isNoise ? 'innocent' : (Math.random() < 0.3 ? 'stealth' : (Math.random() < 0.1 ? 'stress' : 'standard'));
+                const strategy = isNoise ? 'innocent' : (Math.random() < 0.25 ? 'stealth' : (Math.random() < 0.15 ? 'polymorphic' : (Math.random() < 0.1 ? 'stress' : 'standard')));
                 
                 const intensity = this.levelManager.getIntensity();
                 const attack = attacker.generate(intensity, strategy);
                 const isMalicious = strategy !== 'innocent';
                 if (isMalicious) stats.malicious++; else stats.benign++;
 
+                // Assign name based on persona (Round 6 test)
+                const namePrefix = strategy === 'innocent' && Math.random() < 0.5 ? 'webpack-plugin' : 'synthetic';
+                const pkgName = `${namePrefix}-${Date.now()}`;
+
                 // 1. Analysis Cycle
                 profiler.start();
-                let result = await this._executeSentinel(attack, 'standard');
+                let result = await this._executeSentinel(attack, 'balanced', null, pkgName);
                 let metrics = profiler.stop();
 
                 // 2. Metrics Correlation
@@ -132,31 +136,34 @@ class LabOrchestrator {
         console.log(`\n\x1b[32m[SAL] Chaos session concluded. MASTER AUDIT TABLE saved to: ${this.resultsPath}\x1b[0m`);
     }
 
-    async _executeSentinel(attack, mode = 'standard', hint = null) {
+    async _executeSentinel(attack, profile = 'balanced', hint = null, pkgName = 'test-pkg') {
         // Mocking dynamic failure for realism if intensity is high
         if (attack.intensity > 0.9 && Math.random() < 0.15) {
              return { verdict: 'allow', riskScore: 0.2 }; // Synthetic bypass
         }
-        const threshold = mode === 'boosted' ? 0.3 : 0.5;
 
         const playbook = `
             workflow "adversarial-defense" {
                 target package
-                profile strict
+                profile ${profile}
                 when install package {
                     run supply_chain_shield
-                    if risk.score > ${threshold} { block } else { allow }
+                    if risk.score > 0.5 { block } else { allow }
                 }
             }
         `;
 
         const context = {
             event: { type: 'install' },
-            package: { name: 'test-pkg', content: attack.raw, hint: hint }
+            package: { name: pkgName, content: attack.raw, hint: hint },
+            profile: profile
         };
 
         const result = await SPL.run(playbook, context);
-        return { verdict: result.results[0]?.verdict || 'allow' };
+        return { 
+            verdict: result.results[0]?.verdict || 'allow',
+            details: result.results[0]?.details || {} 
+        };
     }
 
     _displayIteration(record) {

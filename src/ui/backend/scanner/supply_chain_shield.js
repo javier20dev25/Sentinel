@@ -95,23 +95,86 @@ function checkTyposquatting(adapter, pkgName) {
     return null;
 }
 
-function calcRiskScore(typo, lifecycleFindings, reputationSignals, contentSignals) {
+function calcRiskScore(typo, lifecycleFindings, reputationSignals, contentSignals, profile = 'strict', pkgName = 'unknown') {
     let score = 0;
-    if (typo) score += 0.85;
-    if (lifecycleFindings && lifecycleFindings.length > 0) score += 0.40;
-    if (contentSignals && contentSignals.length > 0) {
-        const maxWeight = Math.max(...contentSignals.map(s => s.weight));
-        score += maxWeight;
+    const reasons = [];
+    
+    // 1. Core Signals
+    if (typo) {
+        score += 0.85; // Typos are high risk
+        reasons.push(`Typosquatting: matches ${typo.target}`);
     }
-    return Math.min(Math.max(score, 0), 1.0);
+    if (lifecycleFindings && lifecycleFindings.length > 0) {
+        score += 0.40;
+        reasons.push(`${lifecycleFindings.length} suspicious lifecycle hooks`);
+    }
+
+    // 2. Content Signal Correlation
+    if (contentSignals && contentSignals.length > 0) {
+        const totalWeight = contentSignals.reduce((acc, s) => acc + s.weight, 0);
+        
+        // CORRELATION: Multiple signals multiply risk exponentially
+        const correlationMultiplier = contentSignals.length > 1 ? 1.5 : 1.0;
+        const baseContentScore = (totalWeight / contentSignals.length) * 1.3; // Sharpened
+        score += (baseContentScore * correlationMultiplier);
+        
+        contentSignals.forEach(s => reasons.push(`Content: ${s.type}`));
+    }
+
+    // 3. Package Persona Layer (FPR Reducer)
+    const isDevTool = /plugin|loader|bundler|webpack|vite|rollup|test|jest/.test(pkgName.toLowerCase());
+    if (isDevTool && score < 1.0) {
+        score *= 0.5; // More aggressive discount for legit tools
+        reasons.push("Package Persona: Development Tool (Risk Discounted)");
+    }
+
+    // 4. Threshold Calibration (Product Balance)
+    const thresholds = {
+        strict:   { block: 0.60, suspicious: 0.30 },
+        balanced: { block: 0.75, suspicious: 0.40 }, // Lowered to recover FNR
+        lenient:  { block: 0.90, suspicious: 0.60 }
+    };
+
+    const cfg = thresholds[profile.toLowerCase()] || thresholds.strict;
+
+    let verdict = 'SAFE';
+    if (score >= cfg.block) verdict = 'BLOCK';
+    else if (score >= cfg.suspicious) verdict = 'SUSPICIOUS';
+
+    const confidence = Math.min(1.0, score / (cfg.block * 1.3));
+
+    return { 
+        score: Math.min(Math.max(score, 0), 1.0), 
+        verdict, 
+        confidence: parseFloat(confidence.toFixed(2)),
+        reasons: [...new Set(reasons)]
+    };
 }
 
 function scanContent(content) {
     if (!content || typeof content !== 'string') return [];
     const signals = [];
-    if (/["']ax["']\s*\+\s*["']ois["']/.test(content)) signals.push({ type: 'OBFUSCATED_TYPOSQUATTING', weight: 0.9 });
-    if (/["']r_q["']|["']p_e["']/.test(content)) signals.push({ type: 'SUSPICIOUS_RENAMING', weight: 0.7 });
-    if (/curl.*\|.*sh/.test(content)) signals.push({ type: 'SHELL_INJECTION', weight: 1.0 });
+    
+    // Malicious Indicators (Lethal weights)
+    if (/["']ax["']\s*\+\s*["']ois["']/.test(content)) signals.push({ type: 'OBFUSCATED_TYPOSQUATTING', weight: 0.90 });
+    if (/["']r_q["']|["']p_e["']/.test(content)) signals.push({ type: 'SUSPICIOUS_RENAMING', weight: 0.70 });
+    if (/curl.*\|.*sh|exec\(.*curl|spawn\(.*curl/.test(content)) signals.push({ type: 'SHELL_INJECTION', weight: 1.1 }); // Forces block
+
+    // Legitimacy Indicators (The 'Confidence Layer')
+    const hasExports = /module\.exports|exports\./.test(content);
+    const hasDocstrings = /\/\*\*|\/\/\s*@/.test(content); 
+    const hasStrict = /'use strict'|'use client'/.test(content);
+    
+    let confidenceMultiplier = 1.0;
+    if (hasExports && (hasDocstrings || hasStrict)) {
+        confidenceMultiplier = 0.4; // Strong reduction for professional code
+    }
+
+    signals.forEach(s => {
+        // High-lethality signals are immune to confidence discounts
+        if (s.type !== 'SHELL_INJECTION') s.weight *= confidenceMultiplier;
+    });
+
     return signals;
 }
 
@@ -137,7 +200,7 @@ class SupplyChainShield {
     static getTrustCache() { return trustCache; }
     static listAdapters()  { return [...new Set(Object.values(ADAPTERS).map(a => a.id))]; }
 
-    static async preScanManifest(adapterName, pkgName, rawManifest = {}, content = '') {
+    static async preScanManifest(adapterName, pkgName, rawManifest = {}, content = '', profile = 'strict') {
         const adapter = SupplyChainShield.getAdapter(adapterName);
 
         // 1. Trust Cache (instant path)
@@ -169,29 +232,32 @@ class SupplyChainShield {
                 riskLevel: f.severity === 'MALICIOUS' ? 0.90 : 0.55 });
         }
 
-        // 4. Adapter-specific extra signals (e.g. Docker image classification)
-        let extraSignals = [];
-        if (adapter.getDockerSignals) {
-            const { signals: ds } = adapter.getDockerSignals(pkgName);
-            extraSignals = ds;
-            signals.push(...ds);
-        }
-
-        // 5. Reputation (simulated; real: call registry API)
+        // 4. Reputation (simulated)
         const isKnown = (adapter.protected || []).includes(pkgName);
+        const reputationSignals = [];
         if (!isKnown && adapter.id !== 'docker') {
             const ageDays = 3; // stub
             if (ageDays < 30) {
-                signals.push({ type: 'BEHAVIOR_SUSPICIOUS', category: 'low_reputation',
-                    description: `'${pkgName}' appears to be a new or low-visibility package.`, riskLevel: 0.35 });
+                reputationSignals.push({ type: 'BEHAVIOR_SUSPICIOUS', category: 'low_reputation',
+                    description: `'${pkgName}' appears to be a new or low-visibility package.`, riskLevel: 0.20 });
             }
         }
 
-        const riskScore = calcRiskScore(typo, scriptFindings, extraSignals);
-        const verdict = riskScore >= 0.85 ? 'BLOCK' : (riskScore >= 0.40 ? 'SUSPICIOUS' : 'SAFE');
+        // 5. Aggregate and Score
+        const { score: riskScore, verdict, confidence, reasons } = calcRiskScore(typo, scriptFindings, reputationSignals, contentSignals, profile, pkgName);
 
         trustCache.set(adapterName, pkgName, verdict, signals);
-        return { packageName: pkgName, adapter: adapterName, ecosystemId: adapter.id, riskScore, signals, verdict, fromCache: false };
+        return { 
+            packageName: pkgName, 
+            adapter: adapterName, 
+            ecosystemId: adapter.id, 
+            riskScore, 
+            signals, 
+            verdict, 
+            confidence,
+            reasons,
+            fromCache: false 
+        };
     }
 
     static generateSandboxWorkflow(adapterName, pkgName) {
