@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="topbar">
+        <div class="logo">Sentinel <span>Oracle</span></div>
+        <div class="user-menu">Welcome, User Alpha</div>
+    </div>
+
+    <div class="container">
+        <!-- 1. Threat Overview -->
+        <div class="panel overview-panel">
+            <h2 class="panel-title">Threat Overview (Last 7 Days)</h2>
+            <div class="stats-container">
+                <div class="stat-box glass">
+                    <div class="stat-title">Total Events</div>
+                    <div class="stat-value" id="val-total">0</div>
+                </div>
+                <div class="stat-box glass">
+                    <div class="stat-title">Avg Risk Score</div>
+                    <div class="stat-value" id="val-risk">0.00</div>
+                </div>
+                <div class="stat-box glass critical-box">
+                    <div class="stat-title">Critical Events</div>
+                    <div class="stat-value critical-value" id="val-critical">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- 2. Top Threats -->
+            <div class="panel">
+                <h2 class="panel-title">Top Threats</h2>
+                <div class="chart-wrapper">
+                    <canvas id="topThreatsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. Risk Trend -->
+            <div class="panel">
+                <h2 class="panel-title">Risk Trend</h2>
+                <div class="chart-wrapper">
+                    <canvas id="riskTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Events by Repository -->
+        <div class="panel">
+            <h2 class="panel-title">Events by Repository</h2>
+            <div class="table-container">
+                <table class="apple-table">
+                    <thead>
+                        <tr>
+                            <th>Repository Hash</th>
+                            <th>Total Events</th>
+                            <th>Average Risk</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="repo-table-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

