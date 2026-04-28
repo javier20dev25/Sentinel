@@ -2,9 +2,9 @@
   "name": "sentinel-security-engine",
   "version": "3.8.0",
   "description": "Enterprise-grade auditable security decision engine for CI/CD pipelines",
-  "main": "src/ui/cli/index.js",
+  "main": "packages/sentinel-cli/cli/index.js",
   "bin": {
-    "sentinel": "src/ui/cli/index.js"
+    "sentinel": "packages/sentinel-cli/cli/index.js"
   },
   "files": [
     "src/ui/backend",

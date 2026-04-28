@@ -57,7 +57,7 @@ async function processJob(job) {
       .from('intelligence_events')
       .insert({
         user_id: job.user_id,
-        repo_hash: job.repo_full_name,
+        repo_hash: job.repo_hash,
         event_hash: eventHash,
         category: 'FORENSIC_SCAN',
         pattern: 'heuristic_scan',
