@@ -1,6 +1,13 @@
 import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
+import { exec } from "child_process";
+import { promisify } from "util";
+import { createRequire } from "module";
+import fs from "fs";
+
+const require = createRequire(import.meta.url);
+const execAsync = promisify(exec);
 
 // Inicializar Supabase con Service Role Key
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -42,35 +49,63 @@ async function processJob(job) {
       return;
     }
 
-    // 2. Simulación de Motor de Análisis Pesado (Acá iría el Sentinel Core real)
-    // Simulamos un análisis que tarda entre 2 y 5 segundos
-    const scanDuration = Math.floor(Math.random() * 3000) + 2000;
-    await new Promise(resolve => setTimeout(resolve, scanDuration));
+    // 2. Clone the repository
+    const tmpDir = `/tmp/repo_${job.id}`;
+    console.log(`[JOB ${job.id}] Cloning repository ${job.repo_full_name}...`);
+    
+    // Fallback if /tmp does not exist (e.g. Windows local testing)
+    const cloneDir = fs.existsSync('/tmp') ? tmpDir : `./tmp_repo_${job.id}`;
+    
+    try {
+      await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
+    } catch (cloneErr) {
+      console.error(`[JOB ${job.id}] Clone failed:`, cloneErr.message);
+      throw new Error(`Failed to clone repository: ${cloneErr.message}`);
+    }
 
-    const vulnerabilitiesFound = Math.floor(Math.random() * 500) + 1;
-    const riskScore = Math.random(); // 0.0 to 1.0
+    // 3. Run the core engine
+    console.log(`[JOB ${job.id}] Starting AST scan on ${cloneDir}...`);
+    const Scanner = require('../sentinel-core/scanner/index.js');
+    const scanResults = await Scanner.scanDirectory(cloneDir, job.repo_hash, 5, { mode: 'cloud', profile: 'DEFAULT' });
 
-    // 3. Escribir resultados finales en la tabla de telemetría (intelligence_events)
-    // Esto es el historial persistente.
+    const vulnerabilitiesFound = scanResults.threats || 0;
+    const riskScore = scanResults.riskScore || 0;
+    const topAlerts = scanResults.rawAlerts ? scanResults.rawAlerts.slice(0, 10) : [];
+
+    // 4. Cleanup cloned directory
+    console.log(`[JOB ${job.id}] Cleaning up ${cloneDir}...`);
+    try {
+       fs.rmSync(cloneDir, { recursive: true, force: true });
+    } catch(e) {
+       console.error(`[JOB ${job.id}] Warning: Could not delete temp dir:`, e);
+    }
+
+    // 5. Escribir resultados finales en la tabla de telemetría (intelligence_events)
+    // Usamos event_hash como hash criptográfico
     const eventHash = `evt_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const { error: insertError } = await supabase
       .from('intelligence_events')
       .insert({
         user_id: job.user_id,
-        repo_hash: job.repo_hash,
+        repo_hash: job.repo_hash || 'unknown',
         event_hash: eventHash,
         category: 'FORENSIC_SCAN',
-        pattern: 'heuristic_scan',
+        pattern: 'core_ast_scan',
         risk_score: riskScore,
-        confidence: 0.95
+        confidence: 0.98,
+        metadata: {
+           filesScanned: scanResults.filesScanned,
+           verdict: scanResults.verdict,
+           topAlerts: topAlerts
+        }
       });
 
     if (insertError) {
       console.error(`[JOB ${job.id}] Failed to insert telemetry:`, insertError);
-      throw insertError; // Pass to catch block
+      throw insertError; 
     }
 
-    // 4. Marcar el job como COMPLETED
+    // 6. Marcar el job como COMPLETED
     const executionTime = Date.now() - startTime;
     await supabase
       .from('scan_jobs')
@@ -81,12 +116,13 @@ async function processJob(job) {
           ...job.metadata,
           vulnerabilities: vulnerabilitiesFound,
           execution_time_ms: executionTime,
-          risk_score: riskScore
+          risk_score: riskScore,
+          verdict: scanResults.verdict
         }
       })
       .eq('id', job.id);
 
-    console.log(`[JOB ${job.id}] Completed successfully in ${executionTime}ms. Vulns: ${vulnerabilitiesFound}`);
+    console.log(`[JOB ${job.id}] Completed successfully in ${executionTime}ms. Vulns: ${vulnerabilitiesFound}, Score: ${riskScore}`);
 
   } catch (error) {
     console.error(`[JOB ${job.id}] FAILED:`, error);
