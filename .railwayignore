@@ -1,0 +1,8 @@
+node_modules
+.git
+.sentinel
+dist
+build
+*.db
+tmp_repo_*
+/tmp

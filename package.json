@@ -21,6 +21,7 @@
     "benchmark": "node scripts/benchmark_suite.js",
     "dashboard": "node src/ui/backend/server/index.js",
     "service": "node src/ui/backend/services/polling.js",
+    "worker": "node packages/sentinel-worker/index.js",
     "ui": "npm --prefix src/ui run electron:dev",
     "start": "node src/start.js",
     "sentinel-link": "node src/ui/cli/index.js link",
