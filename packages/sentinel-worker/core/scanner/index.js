@@ -84,42 +84,59 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
     let isEarlyExit = false;
     let suspiciousActivity = false;
 
-    // LEVEL 1 & 2: Primary Scan
-    linesToScan.forEach((line, index) => {
-        if (isEarlyExit) return;
-        if (line.length > 8192) {
-            const entropyCheck = detectHighEntropy(line);
-            if (entropyCheck.some(a => a.severity === 'CRITICAL')) {
-                results.alerts.push({
-                    line_number: index + 1,
-                    type: 'OVERSIZED_PAYLOAD_CRITICAL',
-                    description: `Payload masivo (${(line.length / 1024).toFixed(1)}KB) con entropía crítica.`,
-                    riskLevel: 10,
-                    classification: 'SECURITY'
-                });
-                isEarlyExit = true; suspiciousActivity = true;
-            }
-            return;
-        }
-        if (line.length > 1024) suspiciousActivity = true;
-        compiledRules.forEach(rule => {
+    // Context-aware file classification: determine which rules apply
+    const ext = path.extname(filename).toLowerCase();
+    const isLockfile = /^(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb)$/i.test(filename);
+    const isConfig = ['.json', '.yml', '.yaml', '.toml', '.ini', '.npmrc', '.yarnrc'].includes(ext);
+    const isEnvFile = filename.match(/\.env/i);
+    // Lockfiles: NO regex rules at all (handled by specialized analyzers below)
+    // Config/JSON (non-lock): only secrets rules
+    // .env files: only secrets rules  
+    // Code/Scripts: full rule arsenal
+    const skipRegexEntirely = isLockfile;
+    const secretsOnly = !isLockfile && (isConfig || isEnvFile);
+
+    // LEVEL 1 & 2: Primary Scan (context-aware)
+    if (!skipRegexEntirely) {
+        linesToScan.forEach((line, index) => {
             if (isEarlyExit) return;
-            try {
-                rule.regex.lastIndex = 0;
-                const isMatch = line.length < 1024 ? rule.regex.test(line) : safeRegexTest(rule.regex, line);
-                if (isMatch) {
-                    suspiciousActivity = true;
+            if (line.length > 8192) {
+                const entropyCheck = detectHighEntropy(line);
+                if (entropyCheck.some(a => a.severity === 'CRITICAL')) {
                     results.alerts.push({
                         line_number: index + 1,
-                        type: rule.id,
-                        description: rule.description,
-                        riskLevel: rule.severity,
+                        type: 'OVERSIZED_PAYLOAD_CRITICAL',
+                        description: `Payload masivo (${(line.length / 1024).toFixed(1)}KB) con entropía crítica.`,
+                        riskLevel: 10,
                         classification: 'SECURITY'
                     });
+                    isEarlyExit = true; suspiciousActivity = true;
                 }
-            } catch (e) { }
+                return;
+            }
+            if (line.length > 1024) suspiciousActivity = true;
+            const rulesToApply = secretsOnly 
+                ? compiledRules.filter(r => r.category === 'secrets')
+                : compiledRules;
+            rulesToApply.forEach(rule => {
+                if (isEarlyExit) return;
+                try {
+                    rule.regex.lastIndex = 0;
+                    const isMatch = line.length < 1024 ? rule.regex.test(line) : safeRegexTest(rule.regex, line);
+                    if (isMatch) {
+                        suspiciousActivity = true;
+                        results.alerts.push({
+                            line_number: index + 1,
+                            type: rule.id,
+                            description: rule.description,
+                            riskLevel: rule.severity,
+                            classification: 'SECURITY'
+                        });
+                    }
+                } catch (e) { }
+            });
         });
-    });
+    }
 
     results.alerts.push(...detectInvisibleChars(content).map(a => ({ ...a, classification: 'SECURITY' })));
 
@@ -194,6 +211,25 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                 if (running === 0) {
                     results.performance.durationMs = Date.now() - startTime;
                     results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
+
+                    // DEDUPLICATION: Consolidate repeated findings (same file + same rule = 1 alert)
+                    const deduped = new Map();
+                    for (const alert of results.rawAlerts) {
+                        const key = `${alert._file || alert.filename}::${alert.type}`;
+                        if (deduped.has(key)) {
+                            deduped.get(key).occurrences++;
+                        } else {
+                            deduped.set(key, { ...alert, occurrences: 1 });
+                        }
+                    }
+                    results.rawAlerts = Array.from(deduped.values()).map(a => {
+                        if (a.occurrences > 1) {
+                            a.description = `${a.description} [Detected ${a.occurrences} times]`;
+                        }
+                        return a;
+                    });
+                    results.threats = results.rawAlerts.length;
+
                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
                     results.verdict = results.riskScore > 0.8 ? 'CRITICAL' : (results.riskScore > 0.4 ? 'SUSPICIOUS' : 'SAFE');
                     
