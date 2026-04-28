@@ -63,10 +63,10 @@ async function processJob(job) {
       throw new Error(`Failed to clone repository: ${cloneErr.message}`);
     }
 
-    // 3. Run the core engine
+    // 3. Run the core engine via CJS bridge (scanner uses CommonJS require())
     console.log(`[JOB ${job.id}] Starting AST scan on ${cloneDir}...`);
-    const Scanner = require('../sentinel-core/scanner/index.js');
-    const scanResults = await Scanner.scanDirectory(cloneDir, job.repo_hash, 5, { mode: 'cloud', profile: 'DEFAULT' });
+    const bridge = require('./scan-bridge.cjs');
+    const scanResults = await bridge.scanDirectory(cloneDir, job.repo_hash, 5, { mode: 'cloud', profile: 'DEFAULT' });
 
     const vulnerabilitiesFound = scanResults.threats || 0;
     const riskScore = scanResults.riskScore || 0;
@@ -163,6 +163,20 @@ const channel = supabase.channel('worker_job_listener')
   });
 
 const port = process.env.PORT || 8080;
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Sentinel Worker HTTP listening on port ${port}`);
+  
+  // Procesar jobs que quedaron pendientes mientras el worker estaba offline
+  console.log("Checking for existing PENDING jobs...");
+  const { data: existingJobs } = await supabase
+    .from('scan_jobs')
+    .select('*')
+    .eq('status', 'PENDING');
+  
+  if (existingJobs && existingJobs.length > 0) {
+    console.log(`Found ${existingJobs.length} existing PENDING jobs. Processing...`);
+    for (const job of existingJobs) {
+      await processJob(job);
+    }
+  }
 });

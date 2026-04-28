@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "name": "Sentinel Enterprise Threat Spec",
+  "data_flow": {
+    "ast_taint_tracking": {
+      "sources": [
+        "req.query",
+        "req.body",
+        "process.argv",
+        "req.headers",
+        "input",
+        "fs.readFileSync"
+      ],
+      "sinks": [
+        "eval",
+        "exec",
+        "setTimeout",
+        "setInterval",
+        "new Function",
+        "child_process.exec",
+        "child_process.spawn",
+        "os.system",
+        "subprocess.Popen"
+      ],
+      "scoring": {
+        "sink_match_only": {
+          "severity": "HIGH",
+          "riskLevel": 8
+        },
+        "source_to_sink_tainted": {
+          "severity": "CRITICAL",
+          "riskLevel": 10
+        }
+      }
+    },
+    "geofencing": {
+      "indicators": [
+        { "object": "process.env", "properties": ["TZ", "LANG", "LC_ALL"] },
+        { "object": "navigator", "properties": ["language", "languages", "geolocation"] },
+        { "object": "Intl", "properties": ["DateTimeFormat"] }
+      ],
+      "scoring": {
+        "severity": "HIGH",
+        "riskLevel": 8
+      }
+    }
+  },
+  "dependency_risk": {
+    "versioning": {
+      "unpinned": {
+        "patterns": ["latest", "*"],
+        "weight": 60,
+        "severity": "HIGH"
+      },
+      "floating": {
+        "patterns": ["^", "~"],
+        "weight": 20,
+        "severity": "WARNING"
+      }
+    },
+    "typosquatting": {
+      "known_targets": ["lodash", "react", "express", "jquery", "nodemon"],
+      "common_anomalies": ["lodasb", "reaact", "exprss", "jquey", "nodemoon"],
+      "heuristics": ["contains_space", "double_underscore"],
+      "weight": 90,
+      "severity": "CRITICAL"
+    }
+  }
+}

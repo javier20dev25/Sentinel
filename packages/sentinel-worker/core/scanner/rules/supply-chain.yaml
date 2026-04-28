@@ -1,0 +1,13 @@
+- id: "pnpm-suspicious-mirror"
+  name: "Suspicious Mirror Registry (pnpm)"
+  category: "supply-chain"
+  severity: 10
+  pattern: "registry(?:.npmjs.org|.yarnpkg.com).+@.+/(?:.*)?"
+  description: "Detects injected registries in pnpm-lock.yaml or yarn.lock to malicious mirrors"
+
+- id: "bun-malicious-postinstall"
+  name: "Obfuscated lifecycle script in bun"
+  category: "supply-chain"
+  severity: 9
+  pattern: "postinstall.+&&.+(curl|wget).+\\|.+(bash|sh)"
+  description: "Detects hidden post-install scripts downloading and executing external payloads"

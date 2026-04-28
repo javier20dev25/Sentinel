@@ -1,0 +1,20 @@
+- id: "python-pip-obfuscated-install"
+  name: "Obfuscated Pip Install Script"
+  category: "supply-chain"
+  severity: 10
+  pattern: "os\\.system\\(['\"]curl.*\\|.*sh['\"]\\)"
+  description: "Detects hidden bash/sh executions inside Python setup.py or package init files"
+
+- id: "python-requirements-typosquatting"
+  name: "Suspicious Python Package Registry"
+  category: "supply-chain"
+  severity: 9
+  pattern: "--extra-index-url\\s+http[A-Za-z0-9:/\\.-]+(?<!pypi\\.org)"
+  description: "Detects injected --extra-index-url pointing to non-PyPI registries in requirements.txt"
+
+- id: "python-base64-exec"
+  name: "Python Base64 Payload Execution"
+  category: "obfuscation"
+  severity: 9
+  pattern: "exec\\(base64\\.b64decode\\("
+  description: "Detects execution of base64 encoded strings, often used for malware payloads in setup.py"
