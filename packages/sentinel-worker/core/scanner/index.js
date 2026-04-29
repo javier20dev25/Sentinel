@@ -205,22 +205,6 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                     results.performance.durationMs = Date.now() - startTime;
                     results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
 
-                    // DEDUPLICATION: Consolidate repeated findings (same file + same rule = 1 alert)
-                    const deduped = new Map();
-                    for (const alert of results.rawAlerts) {
-                        const key = `${alert._file || alert.filename}::${alert.type}`;
-                        if (deduped.has(key)) {
-                            deduped.get(key).occurrences++;
-                        } else {
-                            deduped.set(key, { ...alert, occurrences: 1 });
-                        }
-                    }
-                    results.rawAlerts = Array.from(deduped.values()).map(a => {
-                        if (a.occurrences > 1) {
-                            a.description = `${a.description} [Detected ${a.occurrences} times]`;
-                        }
-                        return a;
-                    });
                     results.threats = results.rawAlerts.length;
 
                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
