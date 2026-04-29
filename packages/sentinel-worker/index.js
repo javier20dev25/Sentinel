@@ -78,7 +78,7 @@ async function processJob(job) {
 
     const vulnerabilitiesFound = scanResults.threats || 0;
     const riskScore = scanResults.riskScore || 0;
-    const topAlerts = scanResults.rawAlerts ? scanResults.rawAlerts.slice(0, 10) : [];
+    const topAlerts = scanResults.rawAlerts ? scanResults.rawAlerts.slice(0, 50) : [];
 
     // 4. Cleanup cloned directory
     console.log(`[JOB ${job.id}] Cleaning up ${cloneDir}...`);
