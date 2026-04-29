@@ -149,7 +149,12 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
                 const scorer = new ConfidenceScorer();
                 const orchestrator = new TriggerLevelOrchestrator(scorer);
                 orchestrator.analyze(content, filename);
-                results.alerts.push(...scorer.evaluateAll().map(t => ({ ...t, classification: 'SECURITY' })));
+                results.alerts.push(...scorer.evaluateAll().map(t => ({
+                    ...t,
+                    type: t.type || t.category || 'adaptive-engine',
+                    riskLevel: Math.min(10, Math.round((t.riskLevel || 0) / 10)),
+                    classification: 'SECURITY'
+                })));
             } catch (e) {}
         }
     }
