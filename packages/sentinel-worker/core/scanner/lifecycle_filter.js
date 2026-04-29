@@ -115,7 +115,9 @@ function analyzeLifecycleScripts(packageJsonContent, authorMeta = null) {
                     evidence: `Original: ${original}\nNormalized: ${normalized}\nIndicators: ${detectionEvidence.join(', ') || 'Direct execution'}`,
                     riskLevel: risk,
                     severity: 'CRITICAL',
-                    author: authorMeta ? authorMeta.username : 'Unknown'
+                    author: authorMeta ? authorMeta.username : 'Unknown',
+                    impact: "Remote Code Execution (RCE) automático al instalar dependencias. Puede inyectar malware en los desarrolladores o servidores CI.",
+                    remediation: "Auditar o remover el paquete. Si es propio, eliminar el script de lifecycle que descarga código o usar firmas criptográficas."
                 });
             } else if (risk >= 4) {
                 alerts.push({
@@ -235,7 +237,9 @@ function analyzeTransitiveDeps(lockfileContent, authorMeta = null) {
                 message: `[Dep transitivo] '${pkgName}@${version}' no tiene campo de integridad en el lockfile (posible manifest-swap en sub-dependencia).`,
                 evidence: `Package path: ${pkgPath}`,
                 package: pkgName,
-                depth: (pkgPath.match(/node_modules/g) || []).length
+                depth: (pkgPath.match(/node_modules/g) || []).length,
+                impact: "Pérdida de la garantía de inmutabilidad. Un atacante podría interceptar la red o el registry para entregar un payload malicioso diferente al revisado.",
+                remediation: "Ejecutar 'npm install' nuevamente para regenerar el package-lock.json con los hashes de integridad correctos y bloquear las versiones."
             });
         }
     }

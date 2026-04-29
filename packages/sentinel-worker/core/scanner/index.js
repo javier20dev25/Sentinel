@@ -120,7 +120,10 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
                             type: rule.id,
                             description: rule.description,
                             riskLevel: rule.severity,
-                            classification: 'SECURITY'
+                            classification: 'SECURITY',
+                            line: line.trim().substring(0, 500),
+                            impact: rule.impact || null,
+                            remediation: rule.remediation || null
                         });
                     }
                 } catch (e) { }
