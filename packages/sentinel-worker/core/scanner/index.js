@@ -205,6 +205,33 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                     results.performance.durationMs = Date.now() - startTime;
                     results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
 
+                    // SMART DEDUPLICATION: Only collapse POLICY noise (same file+rule=1 alert with count).
+                    // SECURITY alerts are kept individually for full audit granularity.
+                    const securityAlerts = [];
+                    const policyMap = new Map();
+                    for (const alert of results.rawAlerts) {
+                        if (alert.classification === 'POLICY') {
+                            const key = `${alert._file || ''}::${alert.type}`;
+                            if (policyMap.has(key)) {
+                                policyMap.get(key).occurrences++;
+                            } else {
+                                policyMap.set(key, { ...alert, occurrences: 1 });
+                            }
+                        } else {
+                            securityAlerts.push(alert);
+                        }
+                    }
+                    const collapsedPolicy = Array.from(policyMap.values()).map(a => {
+                        if (a.occurrences > 1) {
+                            a.description = `${a.description} [${a.occurrences} occurrences]`;
+                        }
+                        return a;
+                    });
+                    // Sort: SECURITY first (by riskLevel desc), then collapsed POLICY
+                    results.rawAlerts = [
+                        ...securityAlerts.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0)),
+                        ...collapsedPolicy.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0))
+                    ];
                     results.threats = results.rawAlerts.length;
 
                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
