@@ -57,7 +57,15 @@ async function processJob(job) {
     const cloneDir = fs.existsSync('/tmp') ? tmpDir : `./tmp_repo_${job.id}`;
     
     try {
-      await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
+      if (job.pr_number) {
+        // PR scan: clone then fetch the PR head ref to scan the actual PR code
+        await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
+        await execAsync(`git fetch origin pull/${job.pr_number}/head:pr-branch && git checkout pr-branch`, { cwd: cloneDir });
+        console.log(`[JOB ${job.id}] Checked out PR #${job.pr_number} branch`);
+      } else {
+        // Full repo scan: just clone default branch
+        await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
+      }
     } catch (cloneErr) {
       console.error(`[JOB ${job.id}] Clone failed:`, cloneErr.message);
       throw new Error(`Failed to clone repository: ${cloneErr.message}`);

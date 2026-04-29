@@ -84,20 +84,13 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
     let isEarlyExit = false;
     let suspiciousActivity = false;
 
-    // Context-aware file classification: determine which rules apply
-    const ext = path.extname(filename).toLowerCase();
+    // Context-aware: ONLY lockfiles skip regex (they have specialized analyzers).
+    // ALL other files (package.json, .env, .js, .ts, etc.) get the FULL rule arsenal.
+    // This matches the original Sentinel Core behavior.
     const isLockfile = /^(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb)$/i.test(filename);
-    const isConfig = ['.json', '.yml', '.yaml', '.toml', '.ini', '.npmrc', '.yarnrc'].includes(ext);
-    const isEnvFile = filename.match(/\.env/i);
-    // Lockfiles: NO regex rules at all (handled by specialized analyzers below)
-    // Config/JSON (non-lock): only secrets rules
-    // .env files: only secrets rules  
-    // Code/Scripts: full rule arsenal
-    const skipRegexEntirely = isLockfile;
-    const secretsOnly = !isLockfile && (isConfig || isEnvFile);
 
-    // LEVEL 1 & 2: Primary Scan (context-aware)
-    if (!skipRegexEntirely) {
+    // LEVEL 1 & 2: Primary Scan
+    if (!isLockfile) {
         linesToScan.forEach((line, index) => {
             if (isEarlyExit) return;
             if (line.length > 8192) {
@@ -115,10 +108,7 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
                 return;
             }
             if (line.length > 1024) suspiciousActivity = true;
-            const rulesToApply = secretsOnly 
-                ? compiledRules.filter(r => r.category === 'secrets')
-                : compiledRules;
-            rulesToApply.forEach(rule => {
+            compiledRules.forEach(rule => {
                 if (isEarlyExit) return;
                 try {
                     rule.regex.lastIndex = 0;
