@@ -124,8 +124,86 @@ export default function LandingPage() {
           </div>
       </section>
 
-      <footer className="p-20 text-center border-t border-gray-100">
-        <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-gray-300">
+      {/* CLI Terminal Section */}
+      <section className="py-32 px-8 bg-black text-white border-t border-gray-800">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="inline-block bg-white/10 text-[10px] font-bold px-3 py-1 mb-6 uppercase tracking-[0.2em] text-gray-400">
+                Sentinel CLI // v4.0 Oracle Lite
+              </span>
+              <h2 className="text-5xl font-bold uppercase tracking-tighter mb-8 leading-[0.95]">
+                Your Terminal,<br />
+                <span className="text-gray-600">Instrumented.</span>
+              </h2>
+              <p className="text-gray-400 leading-relaxed mb-8 text-sm">
+                The same Sentinel engine that powers the cloud platform runs natively in your terminal.
+                Supply chain enforcement, SAST scanning, integrity verification, and signal vault persistence.
+                Zero cloud dependency. Full forensic capability.
+              </p>
+              <div className="space-y-3 mb-10">
+                {[
+                  { cmd: 'sentinel scan ./src', desc: 'Static analysis with 30 SAST rules' },
+                  { cmd: 'sentinel verify-pkg dotenv', desc: 'Audit npm packages before install' },
+                  { cmd: 'sentinel doctor --deep', desc: 'System health and threat assessment' },
+                  { cmd: 'sentinel integrity', desc: 'Runtime tamper verification' },
+                ].map((item) => (
+                  <div key={item.cmd} className="flex items-center gap-4 text-xs">
+                    <span className="font-mono text-green-400/80 truncate min-w-0">$ {item.cmd}</span>
+                    <span className="text-gray-600 hidden md:inline whitespace-nowrap">// {item.desc}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-4">
+                <a
+                  href="/cli"
+                  className="inline-block bg-white text-black px-10 py-4 font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-all"
+                >
+                  View CLI Reference
+                </a>
+                <a
+                  href="https://github.com/javier20dev25/sentinel-cli"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block border border-white/20 text-white px-10 py-4 font-bold uppercase text-xs tracking-widest hover:bg-white/10 transition-all"
+                >
+                  GitHub Repository
+                </a>
+              </div>
+            </div>
+
+            {/* Terminal Mockup */}
+            <div className="border border-white/10 bg-zinc-900 rounded-sm overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center gap-2 px-4 py-3 bg-zinc-800 border-b border-white/10">
+                <div className="w-3 h-3 rounded-full bg-red-500/60"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/60"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/60"></div>
+                <span className="text-[10px] text-gray-500 font-mono ml-2">sentinel — npm install — 80×24</span>
+              </div>
+              <div className="p-6 font-mono text-xs leading-relaxed space-y-2">
+                <div className="text-green-400/80">$ <span className="text-white">npm install -g @sentinel/cli</span></div>
+                <div className="text-gray-500">added 142 packages in 3.2s</div>
+                <div className="text-green-400/80">$ <span className="text-white">sentinel scan ./src --json</span></div>
+                <div className="text-green-400/80">{`{`}</div>
+                <div className="pl-4 text-gray-400">{`"findings": [],`}</div>
+                <div className="pl-4 text-gray-400">{`"verdict": {`}</div>
+                <div className="pl-8 text-gray-400">{`"band": "SAFE",`}</div>
+                <div className="pl-8 text-gray-400">{`"decision": "PASS"`}</div>
+                <div className="pl-4 text-gray-400">{`}`}</div>
+                <div className="text-green-400/80">{`}`}</div>
+                <div className="text-gray-500 pt-1">// 0 threats detected. 30 rules applied.</div>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-green-400/80">$</span>
+                  <span className="animate-pulse text-gray-400">_</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="p-20 text-center border-t border-gray-100 bg-black text-gray-800">
+        <div className="text-[10px] font-bold uppercase tracking-[0.5em]">
           SENTINEL // SECURITY SIGNAL ORCHESTRATOR // 2026
         </div>
       </footer>
