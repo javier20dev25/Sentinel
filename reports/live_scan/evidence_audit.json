@@ -1,0 +1,12 @@
+{
+  "ts": "2026-05-14T20:52:19.177Z",
+  "stats": {
+    "total_records": 15,
+    "invalid_sha_count": 0,
+    "missing_provenance_count": 0,
+    "duplicate_pr_sha_count": 0,
+    "mismatch_count": 0,
+    "failures": []
+  },
+  "integrity_ok": true
+}

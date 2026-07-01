@@ -1933,6 +1933,231 @@ program
         console.error("Unknown action. Use 'stats' or 'edges'.");
     });
 
+// ─── sentinel permissions (Capability Governance) ───
+program
+    .command('permissions')
+    .description('List and audit package capabilities (Capability Governance).')
+    .argument('[package]', 'Package name to audit')
+    .action(async (pkgName) => {
+        console.log(pc.magenta('\n📋 SENTINEL CAPABILITY AUDIT'));
+        
+        function walkDir(dir) {
+            let results = [];
+            if (!fs.existsSync(dir)) return results;
+            try {
+                const list = fs.readdirSync(dir);
+                list.forEach(file => {
+                    const lowerFile = file.toLowerCase();
+                    if (lowerFile === 'test' || lowerFile === 'tests' || lowerFile === 'example' || 
+                        lowerFile === 'examples' || lowerFile === 'benchmark' || lowerFile === 'docs' || 
+                        lowerFile === 'node_modules' || file.startsWith('.')) {
+                        return;
+                    }
+
+                    const fullPath = path.join(dir, file);
+                    try {
+                        const stat = fs.statSync(fullPath);
+                        if (stat && stat.isDirectory()) {
+                            results = results.concat(walkDir(fullPath));
+                        } else {
+                            results.push(fullPath);
+                        }
+                    } catch (err) {}
+                });
+            } catch (err) {}
+            return results;
+        }
+
+        function scanPatch(filename, patch) {
+            const findings = [];
+            const lines = patch.split('\n');
+            let currentLine = 0;
+
+            const RULES = [
+                { regex: /\beval\s*\(|\bnew\s+Function\s*\(|globalThis\[\s*['"]ev['"]\s*\+\s*['"]al['"]\s*\]/, type: 'UNSAFE_EVAL',          intent: 'MALICIOUS', severity: 'CRITICAL', description: 'Obfuscated or dynamic code execution detected.' },
+                { regex: /require\s*\(['"]child_process['"]\)|(?<!\.)\bspawn\b|(?<!\.)\bexec\b|(?<!\.)\bexecSync\b/, type: 'OS_CAPABILITY', intent: 'SUSPICIOUS', severity: 'MEDIUM', description: 'OS process spawning capability introduced.' },
+                { regex: /\bfetch\s*\(|https?\.request|axios\.|got\.|curl|wget/,                  type: 'NETWORK_ACTIVITY',     intent: 'NEUTRAL',    severity: 'LOW',    description: 'Outbound network communication detected.' },
+                { regex: /process\.env\.[A-Z_]{4,}|secrets\.|private_key/,                      type: 'ENV_ACCESS',           intent: 'SUSPICIOUS', severity: 'MEDIUM', description: 'Access to system environment variables or secrets.' },
+                { regex: /Buffer\.from\s*\(.*['"]base64['"]\)/,                                 type: 'POTENTIAL_SECRET',     intent: 'MALICIOUS',  severity: 'HIGH',   description: 'Base64 decoding detected (potential obfuscation).' },
+                { regex: /innerHTML\s*=|outerHTML\s*=/,                                         type: 'DOM_INJECTION',        intent: 'VULNERABILITY', severity: 'HIGH',   description: 'Unsafe DOM manipulation detected (XSS risk).' },
+                { regex: /vm\.runInContext|vm\.runInNewContext/,                                type: 'SANDBOX_ESCAPE',       intent: 'SUSPICIOUS', severity: 'HIGH',   description: 'Code execution in VM context detected.' }
+            ];
+
+            lines.forEach(line => {
+                if (line.startsWith('@@')) {
+                    const match = line.match(/\+(\d+)/);
+                    if (match) currentLine = parseInt(match[1]) - 1;
+                    return;
+                }
+
+                if (line.startsWith('+') && !line.startsWith('+++')) {
+                    currentLine++;
+                    const code = line.substring(1).trim();
+                    if (!code) return;
+
+                    RULES.forEach(r => {
+                        if (r.regex.test(code)) {
+                            findings.push({
+                                file: filename,
+                                line: currentLine,
+                                type: r.type,
+                                intent: r.intent,
+                                severity: r.severity,
+                                description: r.description,
+                                snippet: code.substring(0, 150)
+                            });
+                        }
+                    });
+                } else if (!line.startsWith('-')) {
+                    currentLine++;
+                }
+            });
+
+            return findings;
+        }
+
+        function analyzeCapabilities(findings) {
+            const capabilities = new Map();
+
+            findings.forEach(f => {
+                let cap = null;
+                
+                switch (f.type) {
+                    case 'NETWORK_ACTIVITY': cap = 'NETWORK'; break;
+                    case 'OS_CAPABILITY': cap = 'PROCESS_EXEC'; break;
+                    case 'ENV_ACCESS': cap = 'ENV_ACCESS'; break;
+                    case 'UNSAFE_EVAL': cap = 'DYNAMIC_EXEC'; break;
+                    case 'DOM_INJECTION': cap = 'FILESYSTEM'; break;
+                    case 'SANDBOX_ESCAPE': cap = 'PROCESS_EXEC'; break;
+                }
+
+                if (cap) {
+                    const existing = capabilities.get(cap);
+                    let riskLevel = f.severity;
+                    if (f.intent === 'MALICIOUS') riskLevel = 'CRITICAL';
+                    if (f.intent === 'VULNERABILITY' && riskLevel === 'CRITICAL') riskLevel = 'HIGH';
+
+                    const levels = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4 };
+                    if (!existing || levels[riskLevel] > levels[existing.risk]) {
+                        capabilities.set(cap, {
+                            capability: cap,
+                            risk: riskLevel,
+                            evidence: f.snippet
+                        });
+                    }
+                }
+            });
+
+            return Array.from(capabilities.values());
+        }
+
+        if (pkgName) {
+            console.log(pc.cyan(`   Analyzing real capabilities for: ${pkgName}...\n`));
+            
+            const pkgPath = path.join(process.cwd(), 'node_modules', pkgName);
+            if (!fs.existsSync(pkgPath)) {
+                console.error(pc.red(`Error: Package ${pkgName} not found in node_modules.`));
+                return;
+            }
+
+            const allFindings = [];
+            const files = walkDir(pkgPath).filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.mjs'));
+            
+            files.forEach(f => {
+                try {
+                    const content = fs.readFileSync(f, 'utf8');
+                    const patch = `@@ -0,0 +1,1 @@\n+${content.split('\n').join('\n+')}`;
+                    const findings = scanPatch(path.relative(pkgPath, f), patch);
+                    allFindings.push(...findings);
+                } catch (err) {}
+            });
+
+            if (allFindings.length === 0) {
+                console.log(pc.green('   ✓ No high-risk capabilities detected.'));
+            } else {
+                const caps = analyzeCapabilities(allFindings);
+                if (caps.length === 0) {
+                    console.log(pc.green('   ✓ No high-risk capabilities detected.'));
+                } else {
+                    caps.forEach(c => {
+                        const color = c.risk === 'CRITICAL' ? pc.red : (c.risk === 'HIGH' ? pc.yellow : pc.cyan);
+                        console.log(`${color(`  ${c.capability.padEnd(15)}`)} [${c.risk}]`);
+                        console.log(pc.dim(`    Evidence: ${c.evidence.substring(0, 80)}...`));
+                    });
+                }
+            }
+        } else {
+            console.log(pc.cyan('   Scanning local workspace node_modules for capability matrix...\n'));
+            const pkgJsonPath = path.join(process.cwd(), 'package.json');
+            if (!fs.existsSync(pkgJsonPath)) {
+                console.error(pc.red('Error: package.json not found in current directory.'));
+                return;
+            }
+
+            let pkgJson;
+            try {
+                pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+            } catch (e) {
+                console.error(pc.red('Error: Failed to parse package.json.'));
+                return;
+            }
+
+            const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
+            const depNames = Object.keys(deps);
+
+            if (depNames.length === 0) {
+                console.log(pc.yellow('   No dependencies found in package.json.'));
+                return;
+            }
+
+            console.log(pc.cyan(`   Found ${depNames.length} dependencies in package.json. Starting recursive audit...\n`));
+
+            let auditedCount = 0;
+            let totalCapabilitiesFound = 0;
+
+            depNames.forEach(depName => {
+                const pkgPath = path.join(process.cwd(), 'node_modules', depName);
+                if (!fs.existsSync(pkgPath)) {
+                    return; // Skip if not installed locally
+                }
+
+                auditedCount++;
+                const allFindings = [];
+                const files = walkDir(pkgPath).filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.mjs'));
+                
+                files.forEach(f => {
+                    try {
+                        const content = fs.readFileSync(f, 'utf8');
+                        const patch = `@@ -0,0 +1,1 @@\n+${content.split('\n').join('\n+')}`;
+                        const findings = scanPatch(path.relative(pkgPath, f), patch);
+                        allFindings.push(...findings);
+                    } catch (err) {}
+                });
+
+                if (allFindings.length > 0) {
+                    const caps = analyzeCapabilities(allFindings);
+                    if (caps.length > 0) {
+                        totalCapabilitiesFound += caps.length;
+                        console.log(pc.white(pc.bold(`  📦 ${depName}`)));
+                        caps.forEach(c => {
+                            const color = c.risk === 'CRITICAL' ? pc.red : (c.risk === 'HIGH' ? pc.yellow : pc.cyan);
+                            console.log(`     ↳ ${color(c.capability.padEnd(15))} [${c.risk}]`);
+                            console.log(pc.dim(`       Evidence: ${c.evidence.substring(0, 100)}`));
+                        });
+                        console.log('');
+                    }
+                }
+            });
+
+            if (totalCapabilitiesFound === 0) {
+                console.log(pc.green(`   ✓ All ${auditedCount} installed packages audited. No high-risk capabilities detected.`));
+            } else {
+                console.log(pc.green(`   ✓ Audited ${auditedCount} installed dependencies. Found capabilities mapped above.`));
+            }
+        }
+        console.log(pc.dim('\nRun "sentinel policy" to apply governance rules.'));
+    });
+
 // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
 function run(args = process.argv) {
     if (args.length === 2) {

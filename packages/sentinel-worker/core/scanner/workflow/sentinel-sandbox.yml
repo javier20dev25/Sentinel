@@ -45,6 +45,10 @@ on:
         required: false
         default: false
         type: boolean
+      sentinel_signature:
+        description: "Firma JWT temporal de validación"
+        required: true
+        type: string
 
   repository_dispatch:
     types: [sentinel-sandbox-run]
@@ -63,6 +67,14 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: "🔐 Validar Firma y Entorno"
+        run: |
+          if [ -z "${{ inputs.sentinel_signature }}" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::error::Firma SENTINEL_SIGNATURE requerida para ejecución."
+            exit 1
+          fi
+          echo "SENTINEL_SIGNATURE=${{ inputs.sentinel_signature }}" >> $GITHUB_ENV
+
       - name: "🔒 Habilitar monitoreo de red (Harden-Runner)"
         uses: step-security/harden-runner@v2
         with:
@@ -85,10 +97,17 @@ jobs:
         with:
           node-version: "20"
 
-      - name: "🧬 Setup Sentinel X-Ray Toolkit & Profile Spoofing"
+      - name: "🧬 Setup Sentinel X-Ray Toolkit & Camuflaje Avanzado"
         run: |
-          # 1. Profile Locale Spoofing based on SENTINEL_SANDBOX_PROFILE
-          PROFILE="${SENTINEL_SANDBOX_PROFILE:-safe}"
+          # 1. Camuflaje Anti-Huella (Virtualización de entorno)
+          echo "GITHUB_ACTIONS=false" >> $GITHUB_ENV
+          echo "CI=false" >> $GITHUB_ENV
+          echo "USER=developer" >> $GITHUB_ENV
+          # HoneyToken Señuelo
+          echo "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" >> $GITHUB_ENV
+
+          # 2. Profile Locale Spoofing based on SENTINEL_SANDBOX_PROFILE
+          PROFILE="${SENTINEL_SANDBOX_PROFILE:-evasion-detect}"
           if [ "$PROFILE" = "aggressive" ] || [ "$PROFILE" = "evasion-detect" ]; then
             echo "TZ=Europe/Moscow" >> $GITHUB_ENV
             echo "LANG=ru_RU.UTF-8" >> $GITHUB_ENV
@@ -99,23 +118,67 @@ jobs:
             echo "[SENTINEL] Active Profile: Safe (No spoofing)"
           fi
 
-          # 2. Inject X-Ray Hooking Engine
+          # 3. Inject X-Ray Hooking Engine (Deep Userland Inspection)
           cat << 'EOF' > /tmp/sentinel-xray.js
+          const fs = require('fs');
+          function logAlert(msg) {
+              fs.appendFileSync('/tmp/xray-alerts.txt', `[SENTINEL-XRAY] 🚨 ${msg}\n`);
+          }
+
+          // Hook: eval & new Function
           const originalEval = global.eval;
-          global.eval = function (code) {
-              console.log("\n[SENTINEL-XRAY] 🚨 INTERCEPTED EVAL PAYLOAD 🚨");
-              console.log(code, "\n");
-              return originalEval(code);
-          };
+          global.eval = function (code) { logAlert('INTERCEPTED EVAL PAYLOAD'); return originalEval(code); };
           const originalFunction = global.Function;
           global.Function = new Proxy(originalFunction, {
-              construct(target, args) {
-                  console.log("\n[SENTINEL-XRAY] 🚨 INTERCEPTED 'new Function' PAYLOAD 🚨");
-                  console.log(args[args.length - 1], "\n");
-                  return new target(...args);
-              }
+              construct(target, args) { logAlert('INTERCEPTED new Function'); return new target(...args); }
           });
+
+          // Hook: child_process
+          try {
+              const cp = require('child_process');
+              const origSpawn = cp.spawn;
+              const origExec = cp.exec;
+              const origExecSync = cp.execSync;
+              cp.spawn = function() { logAlert(`NATIVE PROCESS SPAWN: ${arguments[0]}`); return origSpawn.apply(this, arguments); };
+              cp.exec = function() { logAlert(`NATIVE PROCESS EXEC: ${arguments[0]}`); return origExec.apply(this, arguments); };
+              cp.execSync = function() { logAlert(`NATIVE PROCESS EXECSYNC: ${arguments[0]}`); return origExecSync.apply(this, arguments); };
+          } catch(e) {}
+
+          // Hook: process.binding (Advanced Evasion)
+          try {
+              const origBinding = process.binding;
+              process.binding = function(name) {
+                  logAlert(`SENSITIVE PROCESS BINDING: ${name}`);
+                  return origBinding.apply(this, arguments);
+              };
+          } catch(e) {}
+
+          // Hook: Module Load (Dependency Hijacking)
+          try {
+              const Module = require('module');
+              const origLoad = Module._load;
+              Module._load = function(request) {
+                  if (request.includes('../') || request.startsWith('/')) {
+                      logAlert(`SUSPICIOUS MODULE LOAD: ${request}`);
+                  }
+                  return origLoad.apply(this, arguments);
+              };
+          } catch(e) {}
+
+          // Hook: WebAssembly
+          try {
+              const origInstantiate = WebAssembly.instantiate;
+              WebAssembly.instantiate = function() { logAlert('WASM BINARY INSTANTIATION ATTEMPT'); return origInstantiate.apply(this, arguments); };
+          } catch(e) {}
+
+          // Hook: vm module
+          try {
+              const vm = require('vm');
+              const origRunInNewContext = vm.runInNewContext;
+              vm.runInNewContext = function() { logAlert('VM NEW CONTEXT EXECUTION'); return origRunInNewContext.apply(this, arguments); };
+          } catch(e) {}
           EOF
+          
           # Export to node process
           echo "NODE_OPTIONS=--require /tmp/sentinel-xray.js" >> $GITHUB_ENV
 
@@ -125,9 +188,11 @@ jobs:
           cp package-lock.json /tmp/before-lock.json 2>/dev/null || echo "{}" > /tmp/before-lock.json
           ss -tunp 2>/dev/null > /tmp/netstat-before.txt || echo "netstat not available" > /tmp/netstat-before.txt
 
-      - name: "📦 npm ci --ignore-scripts (Baseline mode)"
+      - name: "📦 Dynamic Installation (Detonation Mode con strace)"
         run: |
-          npm ci --ignore-scripts --no-audit | tee /tmp/npm-install-output.txt || true
+          sudo apt-get update && sudo apt-get install -y strace
+          echo "Ejecutando detonación en Sandbox..."
+          strace -f -e trace=execve,connect,openat -o /tmp/syscalls.txt npm install --no-audit | tee /tmp/npm-install-output.txt || true
         env:
           NO_COLOR: "1"
 
@@ -148,6 +213,8 @@ jobs:
             /tmp/netstat-after.txt
             /tmp/npm-install-output.txt
             /tmp/executables.txt
+            /tmp/syscalls.txt
+            /tmp/xray-alerts.txt
           retention-days: 7
 
       - name: "📊 Resumen de análisis"

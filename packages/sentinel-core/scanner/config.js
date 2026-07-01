@@ -60,11 +60,28 @@ const CONFIG = {
             'docs': 0.3,
             'default': 0.7
         },
-        SEVERITY_MAP: {
-            'CRITICAL': 0.95,
-            'HIGH': 0.8,
-            'WARNING': 0.4,
-            'LOW': 0.1
+        MULTIPLIERS: {
+            ORIGIN: {
+                baseline: 0.6,
+                pr: 1.0,
+                runtime: 1.2,
+                sandbox: 1.2
+            },
+            CONFIDENCE: {
+                static: 0.7,
+                heuristic: 1.0,
+                dynamic: 1.3,
+                discrepancy: 1.5
+            },
+            UNCERTAINTY: {
+                clear: 1.0,
+                obfuscated: 1.5,
+                unintelligible: 2.0
+            }
+        },
+        EDS: {
+            BASE: 1.0,
+            SIGNAL_WEIGHT: 0.2
         },
         OVERRIDES: ['SECRET', 'API_KEY', 'PRIVATE_KEY'] // High severity regardless of context
     }

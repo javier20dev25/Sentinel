@@ -1,0 +1,24 @@
+{
+  "ts": "2026-05-11T17-49-02-299Z",
+  "version": "v8.4.0",
+  "stats": {
+    "total": 99,
+    "verdicts": {
+      "PASS": 89,
+      "REVIEW": 7,
+      "REVIEW_HIGH_SIGNAL": 0,
+      "BLOCK": 3
+    },
+    "latency": {
+      "p50": 0,
+      "p95": 1
+    },
+    "canary": {
+      "blocks": 3,
+      "shadow_blocks": 0
+    },
+    "fpRate": 0
+  },
+  "status": "GREEN",
+  "anomalies": []
+}

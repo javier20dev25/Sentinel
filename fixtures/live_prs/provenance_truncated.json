@@ -1,0 +1,20 @@
+{
+  "fixture_type": "risk",
+  "ts": "2026-05-12T02:00:00.000Z",
+  "repo": "vercel/next.js",
+  "pr": 93770,
+  "sha": "57a8287d9b2d037bdd59ea98c31b23c92f60589f",
+  "verdict": "PASS",
+  "impact": 3,
+  "filesCount": 1,
+  "provenance": [
+    {
+      "intent": "NETWORK",
+      "severity": 5,
+      "file": "test.js",
+      "line": 42
+    }
+  ],
+  "reasoningTrace": "Base(32) | Path(0.05) -> Final(1.6)",
+  "decision_hash": "e11d656a07982fcb"
+}

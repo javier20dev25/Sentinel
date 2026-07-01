@@ -1,0 +1,57 @@
+{
+  "expressjs/express": {
+    "rollingRisk": 0.309765625,
+    "trustTrend": 0.20000000000000007,
+    "seenIntents": [],
+    "convergenceScore": 0.2,
+    "rollingConfidence": 0.99,
+    "scanCount": 4,
+    "trajectory": [
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 50,
+        "timestamp": 1778448910504
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 49,
+        "timestamp": 1778448910690
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 43,
+        "timestamp": 1778448910824
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 43,
+        "timestamp": 1778448911019
+      }
+    ],
+    "lastScan": 1778448911019
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "rt-056_mut_obfuscation_base64",
+  "name": "exfiltration_beacon",
+  "repo": "lodash/lodash",
+  "repoProfile": "libraries",
+  "category": "malicious",
+  "file": "lib/index.js",
+  "signals": [
+    "EXFILTRATION",
+    "OBFUSCATION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "OBFUSCATION_BASE64",
+  "base_case": "rt-056"
+}

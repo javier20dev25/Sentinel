@@ -1,0 +1,19 @@
+{
+  "id": "rt-040_mut_dynamic_exec",
+  "name": "supply_chain_postinstall",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "malicious",
+  "file": "package.json",
+  "signals": [
+    "SUPPLY_CHAIN_TAMPERING",
+    "EVASION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DYNAMIC_EXEC",
+  "base_case": "rt-040"
+}

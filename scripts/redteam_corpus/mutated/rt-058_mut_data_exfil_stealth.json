@@ -1,0 +1,20 @@
+{
+  "id": "rt-058_mut_data_exfil_stealth",
+  "name": "exfiltration_beacon",
+  "repo": "lodash/lodash",
+  "repoProfile": "libraries",
+  "category": "malicious",
+  "file": "lib/index.js",
+  "signals": [
+    "EXFILTRATION",
+    "NETWORK",
+    "ENCODING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DATA_EXFIL_STEALTH",
+  "base_case": "rt-058"
+}

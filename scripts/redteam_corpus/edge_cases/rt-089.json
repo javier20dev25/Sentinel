@@ -1,0 +1,16 @@
+{
+  "id": "rt-089",
+  "name": "fp_trap_analytics",
+  "repo": "vercel/next.js",
+  "repoProfile": "frontend",
+  "category": "edge_cases",
+  "file": "src/analytics.js",
+  "signals": [
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

@@ -1,0 +1,16 @@
+{
+  "id": "rt-027",
+  "name": "backend_db",
+  "repo": "nestjs/nest",
+  "repoProfile": "default",
+  "category": "benign",
+  "file": "src/db.js",
+  "signals": [
+    "SYSTEM_ACCESS"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

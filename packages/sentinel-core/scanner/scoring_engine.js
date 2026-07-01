@@ -30,6 +30,10 @@ class ScoringEngine {
 
         let survivalProbability = 1.0;
 
+        // 0. EDS (Environmental Dependency Score) calculation for the whole file context
+        const sensitiveFeatures = new Set(alerts.map(a => a.type));
+        const edsMultiplier = CONFIG.SCORING.EDS.BASE + (sensitiveFeatures.size * CONFIG.SCORING.EDS.SIGNAL_WEIGHT);
+
         deduplicated.forEach(alert => {
             let p = this.severityMap[alert.severity] || 0.1;
             
@@ -37,19 +41,38 @@ class ScoringEngine {
             let trustFactor = 1.0;
             if (alert.forensics && alert.forensics.author) {
                 const author = alert.forensics.author;
-                // Core maintainers (trusted authors)
                 if (['javier20dev25', 'Javier Astaroth'].includes(author)) {
-                    trustFactor = 0.5; // High trust but never 0
+                    trustFactor = 0.5;
                 }
             }
 
+            // 1. M_origin (baseline vs pr vs runtime)
+            const mOrigin = CONFIG.SCORING.MULTIPLIERS.ORIGIN[alert.origin] || CONFIG.SCORING.MULTIPLIERS.ORIGIN.pr;
+
+            // 2. M_confidence (estático vs dinámico)
+            let mConfidence = CONFIG.SCORING.MULTIPLIERS.CONFIDENCE[alert.analysis_type] || CONFIG.SCORING.MULTIPLIERS.CONFIDENCE.heuristic;
+
+            // 3. M_uncertainty (ofuscación y entropía)
+            let mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.clear;
+            if (alert.entropy && alert.entropy > 5.5) mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.obfuscated;
+            if (alert.category === 'OBFUSCATION') mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.unintelligible;
+
             const isOverridden = CONFIG.SCORING.OVERRIDES.some(o => alert.category === o || (alert.type && alert.type.includes(o)));
-            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor);
+            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor * mOrigin * mConfidence * mUncertainty * edsMultiplier);
             
-            survivalProbability *= (1 - (p * effectiveWeight));
+            survivalProbability *= (1 - Math.min((p * effectiveWeight), 0.999));
         });
 
-        const rawRisk = 1 - survivalProbability;
+        // DISCREPANCY BOOST: Evasión Inteligente Detectada (Static Low + Dynamic High)
+        const hasStaticLow = deduplicated.some(a => a.analysis_type === 'static' && (a.severity === 'LOW' || a.severity === 'INFO' || a.severity === 'WARNING'));
+        const hasDynamicHigh = deduplicated.some(a => (a.analysis_type === 'dynamic' || a.origin === 'runtime') && (a.severity === 'HIGH' || a.severity === 'CRITICAL'));
+
+        let rawRisk = 1 - survivalProbability;
+        
+        if (hasStaticLow && hasDynamicHigh) {
+            rawRisk = 1.0; // Override total: Evasión de AST detectada en Sandbox
+        }
+
         return 1 - Math.exp(-this.damping * rawRisk);
     }
 

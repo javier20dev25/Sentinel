@@ -1,0 +1,20 @@
+{
+  "id": "rt-074_mut_supply_chain_postinstall",
+  "name": "obfuscation_eval",
+  "repo": "facebook/react",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "src/core.js",
+  "signals": [
+    "ENCODING",
+    "EXECUTION",
+    "SUPPLY_CHAIN_TAMPERING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "SUPPLY_CHAIN_POSTINSTALL",
+  "base_case": "rt-074"
+}

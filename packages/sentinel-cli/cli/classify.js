@@ -8,13 +8,7 @@ const readline = require('readline');
 const { spawnSync } = require('child_process');
 const { printMetrics } = require('./telemetry');
 
-function askQuestion(query) {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise(resolve => rl.question(query, ans => {
-        rl.close();
-        resolve(ans.trim());
-    }));
-}
+
 
 function getSentinelGlobalDir() {
     const dir = path.join(os.homedir(), '.sentinel');
@@ -109,7 +103,7 @@ sentinel check-classified "$PWD" || exit 1
     fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
 }
 
-async function handleClassifiedMenu(lang) {
+async function handleClassifiedMenu(lang, askQuestion) {
     console.clear();
     console.log(pc.magenta(pc.bold('⬡ '.repeat(20))));
     console.log(pc.magenta(pc.bold('⬡ '))) + process.stdout.write(pc.cyan(pc.bold('    S E N T I N E L   C L A S S I F I E D   '))); console.log(pc.magenta(pc.bold('⬡ ')));

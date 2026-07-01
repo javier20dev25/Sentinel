@@ -1,0 +1,244 @@
+{
+  "expressjs/express": {
+    "rollingRisk": 0.9408493009209633,
+    "trustTrend": 0,
+    "seenIntents": [],
+    "convergenceScore": 0.4,
+    "rollingConfidence": 0.99,
+    "scanCount": 13,
+    "trajectory": [
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 28,
+        "timestamp": 1778429107879
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 90,
+        "timestamp": 1778429109655
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778445884368
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778445884562
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778445884745
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778445884943
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778447632294
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778447632460
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778447632683
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778447632912
+      }
+    ],
+    "lastScan": 1778447632912
+  },
+  "attacker/chaos-repo": {
+    "rollingRisk": 0.9999409841998892,
+    "trustTrend": 0,
+    "seenIntents": [],
+    "convergenceScore": 0.6000000000000001,
+    "rollingConfidence": 0.99,
+    "scanCount": 34,
+    "trajectory": [
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778441632151
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778441633101
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443041401
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443042424
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443197688
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443198563
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443522136
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778443523108
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778446773868
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778446775028
+      }
+    ],
+    "lastScan": 1778446775028
+  }
+}

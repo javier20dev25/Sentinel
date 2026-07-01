@@ -1,0 +1,20 @@
+{
+  "id": "rt-079_mut_data_exfil_stealth",
+  "name": "gh_actions_abuse",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "malicious",
+  "file": ".github/workflows/ci.yml",
+  "signals": [
+    "EXFILTRATION",
+    "NETWORK",
+    "ENCODING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DATA_EXFIL_STEALTH",
+  "base_case": "rt-079"
+}

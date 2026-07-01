@@ -1,0 +1,14 @@
+{
+    "ts":  "2026-05-12T02:15:20.603Z",
+    "repo":  "facebook/react",
+    "pr":  36451,
+    "sha":  "71fb62938eceae54a50ccbbfa43b7b4a4c39e53d",
+    "verdict":  "PASS",
+    "impact":  0,
+    "filesCount":  2,
+    "provenance":  [
+
+                   ],
+    "reasoningTrace":  "Base(0) | Path(1) -\u003e Final(0)",
+    "decision_hash":  "b892a005857a5242"
+}

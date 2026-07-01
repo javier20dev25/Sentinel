@@ -1,0 +1,17 @@
+{
+  "id": "rt-076",
+  "name": "gh_actions_abuse",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "malicious",
+  "file": ".github/workflows/ci.yml",
+  "signals": [
+    "EXFILTRATION",
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true
+}

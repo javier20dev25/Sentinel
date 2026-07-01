@@ -1,0 +1,18 @@
+{
+  "id": "rt-091",
+  "name": "stealth_combo",
+  "repo": "lodash/lodash",
+  "repoProfile": "libraries",
+  "category": "edge_cases",
+  "file": "lib/utils.js",
+  "signals": [
+    "SYSTEM_ACCESS",
+    "NETWORK",
+    "ENCODING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true
+}

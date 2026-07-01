@@ -1,0 +1,2769 @@
+﻿diff --git a/packages/sentinel-cli/cli/classify.js b/packages/sentinel-cli/cli/classify.js
+index 5a5bc03..3b3d57a 100644
+--- a/packages/sentinel-cli/cli/classify.js
++++ b/packages/sentinel-cli/cli/classify.js
+@@ -8,13 +8,7 @@ const readline = require('readline');
+ const { spawnSync } = require('child_process');
+ const { printMetrics } = require('./telemetry');
+ 
+-function askQuestion(query) {
+-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+-    return new Promise(resolve => rl.question(query, ans => {
+-        rl.close();
+-        resolve(ans.trim());
+-    }));
+-}
++
+ 
+ function getSentinelGlobalDir() {
+     const dir = path.join(os.homedir(), '.sentinel');
+@@ -109,7 +103,7 @@ sentinel check-classified "$PWD" || exit 1
+     fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
+ }
+ 
+-async function handleClassifiedMenu(lang) {
++async function handleClassifiedMenu(lang, askQuestion) {
+     console.clear();
+     console.log(pc.magenta(pc.bold('Ô¼í '.repeat(20))));
+     console.log(pc.magenta(pc.bold('Ô¼í '))) + process.stdout.write(pc.cyan(pc.bold('    S E N T I N E L   C L A S S I F I E D   '))); console.log(pc.magenta(pc.bold('Ô¼í ')));
+diff --git a/packages/sentinel-cli/cli/index.js b/packages/sentinel-cli/cli/index.js
+index 257f976..7a0b0c5 100644
+--- a/packages/sentinel-cli/cli/index.js
++++ b/packages/sentinel-cli/cli/index.js
+@@ -1933,6 +1933,231 @@ program
+         console.error("Unknown action. Use 'stats' or 'edges'.");
+     });
+ 
++// ÔöÇÔöÇÔöÇ sentinel permissions (Capability Governance) ÔöÇÔöÇÔöÇ
++program
++    .command('permissions')
++    .description('List and audit package capabilities (Capability Governance).')
++    .argument('[package]', 'Package name to audit')
++    .action(async (pkgName) => {
++        console.log(pc.magenta('\n­ƒôï SENTINEL CAPABILITY AUDIT'));
++        
++        function walkDir(dir) {
++            let results = [];
++            if (!fs.existsSync(dir)) return results;
++            try {
++                const list = fs.readdirSync(dir);
++                list.forEach(file => {
++                    const lowerFile = file.toLowerCase();
++                    if (lowerFile === 'test' || lowerFile === 'tests' || lowerFile === 'example' || 
++                        lowerFile === 'examples' || lowerFile === 'benchmark' || lowerFile === 'docs' || 
++                        lowerFile === 'node_modules' || file.startsWith('.')) {
++                        return;
++                    }
++
++                    const fullPath = path.join(dir, file);
++                    try {
++                        const stat = fs.statSync(fullPath);
++                        if (stat && stat.isDirectory()) {
++                            results = results.concat(walkDir(fullPath));
++                        } else {
++                            results.push(fullPath);
++                        }
++                    } catch (err) {}
++                });
++            } catch (err) {}
++            return results;
++        }
++
++        function scanPatch(filename, patch) {
++            const findings = [];
++            const lines = patch.split('\n');
++            let currentLine = 0;
++
++            const RULES = [
++                { regex: /\beval\s*\(|\bnew\s+Function\s*\(|globalThis\[\s*['"]ev['"]\s*\+\s*['"]al['"]\s*\]/, type: 'UNSAFE_EVAL',          intent: 'MALICIOUS', severity: 'CRITICAL', description: 'Obfuscated or dynamic code execution detected.' },
++                { regex: /require\s*\(['"]child_process['"]\)|(?<!\.)\bspawn\b|(?<!\.)\bexec\b|(?<!\.)\bexecSync\b/, type: 'OS_CAPABILITY', intent: 'SUSPICIOUS', severity: 'MEDIUM', description: 'OS process spawning capability introduced.' },
++                { regex: /\bfetch\s*\(|https?\.request|axios\.|got\.|curl|wget/,                  type: 'NETWORK_ACTIVITY',     intent: 'NEUTRAL',    severity: 'LOW',    description: 'Outbound network communication detected.' },
++                { regex: /process\.env\.[A-Z_]{4,}|secrets\.|private_key/,                      type: 'ENV_ACCESS',           intent: 'SUSPICIOUS', severity: 'MEDIUM', description: 'Access to system environment variables or secrets.' },
++                { regex: /Buffer\.from\s*\(.*['"]base64['"]\)/,                                 type: 'POTENTIAL_SECRET',     intent: 'MALICIOUS',  severity: 'HIGH',   description: 'Base64 decoding detected (potential obfuscation).' },
++                { regex: /innerHTML\s*=|outerHTML\s*=/,                                         type: 'DOM_INJECTION',        intent: 'VULNERABILITY', severity: 'HIGH',   description: 'Unsafe DOM manipulation detected (XSS risk).' },
++                { regex: /vm\.runInContext|vm\.runInNewContext/,                                type: 'SANDBOX_ESCAPE',       intent: 'SUSPICIOUS', severity: 'HIGH',   description: 'Code execution in VM context detected.' }
++            ];
++
++            lines.forEach(line => {
++                if (line.startsWith('@@')) {
++                    const match = line.match(/\+(\d+)/);
++                    if (match) currentLine = parseInt(match[1]) - 1;
++                    return;
++                }
++
++                if (line.startsWith('+') && !line.startsWith('+++')) {
++                    currentLine++;
++                    const code = line.substring(1).trim();
++                    if (!code) return;
++
++                    RULES.forEach(r => {
++                        if (r.regex.test(code)) {
++                            findings.push({
++                                file: filename,
++                                line: currentLine,
++                                type: r.type,
++                                intent: r.intent,
++                                severity: r.severity,
++                                description: r.description,
++                                snippet: code.substring(0, 150)
++                            });
++                        }
++                    });
++                } else if (!line.startsWith('-')) {
++                    currentLine++;
++                }
++            });
++
++            return findings;
++        }
++
++        function analyzeCapabilities(findings) {
++            const capabilities = new Map();
++
++            findings.forEach(f => {
++                let cap = null;
++                
++                switch (f.type) {
++                    case 'NETWORK_ACTIVITY': cap = 'NETWORK'; break;
++                    case 'OS_CAPABILITY': cap = 'PROCESS_EXEC'; break;
++                    case 'ENV_ACCESS': cap = 'ENV_ACCESS'; break;
++                    case 'UNSAFE_EVAL': cap = 'DYNAMIC_EXEC'; break;
++                    case 'DOM_INJECTION': cap = 'FILESYSTEM'; break;
++                    case 'SANDBOX_ESCAPE': cap = 'PROCESS_EXEC'; break;
++                }
++
++                if (cap) {
++                    const existing = capabilities.get(cap);
++                    let riskLevel = f.severity;
++                    if (f.intent === 'MALICIOUS') riskLevel = 'CRITICAL';
++                    if (f.intent === 'VULNERABILITY' && riskLevel === 'CRITICAL') riskLevel = 'HIGH';
++
++                    const levels = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4 };
++                    if (!existing || levels[riskLevel] > levels[existing.risk]) {
++                        capabilities.set(cap, {
++                            capability: cap,
++                            risk: riskLevel,
++                            evidence: f.snippet
++                        });
++                    }
++                }
++            });
++
++            return Array.from(capabilities.values());
++        }
++
++        if (pkgName) {
++            console.log(pc.cyan(`   Analyzing real capabilities for: ${pkgName}...\n`));
++            
++            const pkgPath = path.join(process.cwd(), 'node_modules', pkgName);
++            if (!fs.existsSync(pkgPath)) {
++                console.error(pc.red(`Error: Package ${pkgName} not found in node_modules.`));
++                return;
++            }
++
++            const allFindings = [];
++            const files = walkDir(pkgPath).filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.mjs'));
++            
++            files.forEach(f => {
++                try {
++                    const content = fs.readFileSync(f, 'utf8');
++                    const patch = `@@ -0,0 +1,1 @@\n+${content.split('\n').join('\n+')}`;
++                    const findings = scanPatch(path.relative(pkgPath, f), patch);
++                    allFindings.push(...findings);
++                } catch (err) {}
++            });
++
++            if (allFindings.length === 0) {
++                console.log(pc.green('   Ô£ô No high-risk capabilities detected.'));
++            } else {
++                const caps = analyzeCapabilities(allFindings);
++                if (caps.length === 0) {
++                    console.log(pc.green('   Ô£ô No high-risk capabilities detected.'));
++                } else {
++                    caps.forEach(c => {
++                        const color = c.risk === 'CRITICAL' ? pc.red : (c.risk === 'HIGH' ? pc.yellow : pc.cyan);
++                        console.log(`${color(`  ${c.capability.padEnd(15)}`)} [${c.risk}]`);
++                        console.log(pc.dim(`    Evidence: ${c.evidence.substring(0, 80)}...`));
++                    });
++                }
++            }
++        } else {
++            console.log(pc.cyan('   Scanning local workspace node_modules for capability matrix...\n'));
++            const pkgJsonPath = path.join(process.cwd(), 'package.json');
++            if (!fs.existsSync(pkgJsonPath)) {
++                console.error(pc.red('Error: package.json not found in current directory.'));
++                return;
++            }
++
++            let pkgJson;
++            try {
++                pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
++            } catch (e) {
++                console.error(pc.red('Error: Failed to parse package.json.'));
++                return;
++            }
++
++            const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
++            const depNames = Object.keys(deps);
++
++            if (depNames.length === 0) {
++                console.log(pc.yellow('   No dependencies found in package.json.'));
++                return;
++            }
++
++            console.log(pc.cyan(`   Found ${depNames.length} dependencies in package.json. Starting recursive audit...\n`));
++
++            let auditedCount = 0;
++            let totalCapabilitiesFound = 0;
++
++            depNames.forEach(depName => {
++                const pkgPath = path.join(process.cwd(), 'node_modules', depName);
++                if (!fs.existsSync(pkgPath)) {
++                    return; // Skip if not installed locally
++                }
++
++                auditedCount++;
++                const allFindings = [];
++                const files = walkDir(pkgPath).filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.mjs'));
++                
++                files.forEach(f => {
++                    try {
++                        const content = fs.readFileSync(f, 'utf8');
++                        const patch = `@@ -0,0 +1,1 @@\n+${content.split('\n').join('\n+')}`;
++                        const findings = scanPatch(path.relative(pkgPath, f), patch);
++                        allFindings.push(...findings);
++                    } catch (err) {}
++                });
++
++                if (allFindings.length > 0) {
++                    const caps = analyzeCapabilities(allFindings);
++                    if (caps.length > 0) {
++                        totalCapabilitiesFound += caps.length;
++                        console.log(pc.white(pc.bold(`  ­ƒôª ${depName}`)));
++                        caps.forEach(c => {
++                            const color = c.risk === 'CRITICAL' ? pc.red : (c.risk === 'HIGH' ? pc.yellow : pc.cyan);
++                            console.log(`     Ôå│ ${color(c.capability.padEnd(15))} [${c.risk}]`);
++                            console.log(pc.dim(`       Evidence: ${c.evidence.substring(0, 100)}`));
++                        });
++                        console.log('');
++                    }
++                }
++            });
++
++            if (totalCapabilitiesFound === 0) {
++                console.log(pc.green(`   Ô£ô All ${auditedCount} installed packages audited. No high-risk capabilities detected.`));
++            } else {
++                console.log(pc.green(`   Ô£ô Audited ${auditedCount} installed dependencies. Found capabilities mapped above.`));
++            }
++        }
++        console.log(pc.dim('\nRun "sentinel policy" to apply governance rules.'));
++    });
++
+ // Note: Manual PR remote scanner has been deprecated in favor of 'sentinel audit-prs'.
+ function run(args = process.argv) {
+     if (args.length === 2) {
+diff --git a/packages/sentinel-cli/cli/interactive.js b/packages/sentinel-cli/cli/interactive.js
+index 6813ada..43d0698 100644
+--- a/packages/sentinel-cli/cli/interactive.js
++++ b/packages/sentinel-cli/cli/interactive.js
+@@ -3,6 +3,7 @@
+ const readline = require('readline');
+ const pc = require('picocolors');
+ const { spawnSync } = require('child_process');
++const path = require('path');
+ const { printMetrics } = require('./telemetry');
+ const gh = require('../../sentinel-core/lib/gh_bridge');
+ const scanner = require('../../sentinel-core/scanner/index');
+@@ -21,8 +22,9 @@ const i18n = {
+         menu_opt1: 'Select Workspaces & Run Audits',
+         menu_opt2: 'Sentinel Guard & Configuration (NPM Intercept)',
+         menu_opt3: 'View CLI Manual & Run Commands',
+-        menu_opt4: 'Classified Documents',
+-        menu_opt5: 'Exit',
++        menu_opt4: 'Permissions Audit',
++        menu_opt5: 'Classified Documents',
++        menu_opt6: 'Exit',
+         select_opt: 'Select option',
+         invalid_sel: 'Invalid selection.',
+         workspace_title: 'Workspace Discovery',
+@@ -86,8 +88,9 @@ const i18n = {
+         menu_opt1: 'Seleccionar Repositorios y Ejecutar Auditor├¡as',
+         menu_opt2: 'Sentinel Guard y Configuraci├│n (Interceptar NPM)',
+         menu_opt3: 'Ver Manual CLI y Ejecutar Comandos',
+-        menu_opt4: 'Documentos Clasificados',
+-        menu_opt5: 'Salir',
++        menu_opt4: 'Auditor├¡a de Permisos',
++        menu_opt5: 'Documentos Clasificados',
++        menu_opt6: 'Salir',
+         select_opt: 'Selecciona una opci├│n',
+         invalid_sel: 'Selecci├│n inv├ílida.',
+         workspace_title: 'Descubrimiento de Espacios de Trabajo',
+@@ -146,10 +149,17 @@ const i18n = {
+ let lang = 'en';
+ const t = (key) => i18n[lang][key];
+ 
++let rlInstance = null;
++
++function getRl() {
++    if (!rlInstance) {
++        rlInstance = readline.createInterface({ input: process.stdin, output: process.stdout });
++    }
++    return rlInstance;
++}
++
+ function askQuestion(query) {
+-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+-    return new Promise(resolve => rl.question(query, ans => {
+-        rl.close();
++    return new Promise(resolve => getRl().question(query, ans => {
+         resolve(ans.trim());
+     }));
+ }
+@@ -208,10 +218,11 @@ async function startInteractiveHub() {
+         console.log(pc.blue('  1.') + pc.white(` ­ƒôª ${t('menu_opt1')}`));
+         console.log(pc.blue('  2.') + pc.white(` ÔÜÖ´©Å  ${t('menu_opt2')}`));
+         console.log(pc.blue('  3.') + pc.white(` ­ƒôû ${t('menu_opt3')}`));
+-        console.log(pc.blue('  4.') + pc.white(` ­ƒöÉ ${t('menu_opt4')}`));
+-        console.log(pc.blue('  5.') + pc.white(` ­ƒÜ¬ ${t('menu_opt5')}`));
++        console.log(pc.blue('  4.') + pc.white(` ­ƒôï ${t('menu_opt4')}`));
++        console.log(pc.blue('  5.') + pc.white(` ­ƒöÉ ${t('menu_opt5')}`));
++        console.log(pc.blue('  6.') + pc.white(` ­ƒÜ¬ ${t('menu_opt6')}`));
+         
+-        const mainAction = await askQuestion(pc.blue('  ÔØ» ') + pc.bold(`${t('select_opt')} (1-5): `));
++        const mainAction = await askQuestion(pc.blue('  ÔØ» ') + pc.bold(`${t('select_opt')} (1-6): `));
+ 
+         if (mainAction === '1') {
+             await handleWorkspaceDiscovery();
+@@ -220,11 +231,24 @@ async function startInteractiveHub() {
+         } else if (mainAction === '3') {
+             await handleInteractiveShell();
+         } else if (mainAction === '4') {
+-            const { handleClassifiedMenu } = require('./classify');
+-            await handleClassifiedMenu(lang);
++            const pkg = await askQuestion(pc.blue('  ÔØ» ') + pc.bold(lang === 'es' ? 'Ingresa el nombre del paquete para auditar (vac├¡o para workspace): ' : 'Enter package name to audit (leave empty for workspace): '));
++            getRl().pause();
++            const args = ['permissions'];
++            if (pkg.trim()) args.push(pkg.trim());
++            const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
++            spawnSync(cmd, [path.join(__dirname, 'index.js'), ...args], { stdio: 'inherit', env: { ...process.env, FORCE_COLOR: '1' } });
++            getRl().resume();
++            await askQuestion(pc.dim(`\n${t('press_enter')}`));
+             printHeader();
+         } else if (mainAction === '5') {
++            const { handleClassifiedMenu } = require('./classify');
++            await handleClassifiedMenu(lang, askQuestion);
++            printHeader();
++        } else if (mainAction === '6') {
+             console.log(pc.cyan(`\n${t('session_end')}\n`));
++            if (rlInstance) {
++                rlInstance.close();
++            }
+             process.exit(0);
+         } else {
+             console.log(pc.red(`    ${t('invalid_sel')}\n`));
+@@ -304,7 +328,9 @@ async function handleInteractiveShell() {
+         if (cmd.trim() !== '') {
+             const args = cmd.split(' ').map(s => s.trim()).filter(s => s.length > 0);
+             console.log(pc.dim('\n  Ejecutando: sentinel ' + cmd + '...\n'));
++            getRl().pause();
+             spawnSync('node', [__dirname + '/index.js', ...args], { stdio: 'inherit' });
++            getRl().resume();
+             console.log('');
+         }
+     }
+@@ -325,13 +351,21 @@ async function handleConfigurationMenu() {
+ 
+         console.log('');
+         if (action === '1') {
++            getRl().pause();
+             spawnSync('node', [__dirname + '/index.js', 'guard', 'status'], { stdio: 'inherit' });
++            getRl().resume();
+         } else if (action === '2') {
++            getRl().pause();
+             spawnSync('node', [__dirname + '/index.js', 'guard', 'enable'], { stdio: 'inherit' });
++            getRl().resume();
+         } else if (action === '3') {
++            getRl().pause();
+             spawnSync('node', [__dirname + '/index.js', 'guard', 'disable'], { stdio: 'inherit' });
++            getRl().resume();
+         } else if (action === '4') {
++            getRl().pause();
+             spawnSync('node', [__dirname + '/index.js', 'trust', 'list'], { stdio: 'inherit' });
++            getRl().resume();
+         } else if (action === '5') {
+             console.clear();
+             printHeader();
+diff --git a/packages/sentinel-core/scanner/config.js b/packages/sentinel-core/scanner/config.js
+index 5fd5054..84d37e7 100644
+--- a/packages/sentinel-core/scanner/config.js
++++ b/packages/sentinel-core/scanner/config.js
+@@ -60,11 +60,28 @@ const CONFIG = {
+             'docs': 0.3,
+             'default': 0.7
+         },
+-        SEVERITY_MAP: {
+-            'CRITICAL': 0.95,
+-            'HIGH': 0.8,
+-            'WARNING': 0.4,
+-            'LOW': 0.1
++        MULTIPLIERS: {
++            ORIGIN: {
++                baseline: 0.6,
++                pr: 1.0,
++                runtime: 1.2,
++                sandbox: 1.2
++            },
++            CONFIDENCE: {
++                static: 0.7,
++                heuristic: 1.0,
++                dynamic: 1.3,
++                discrepancy: 1.5
++            },
++            UNCERTAINTY: {
++                clear: 1.0,
++                obfuscated: 1.5,
++                unintelligible: 2.0
++            }
++        },
++        EDS: {
++            BASE: 1.0,
++            SIGNAL_WEIGHT: 0.2
+         },
+         OVERRIDES: ['SECRET', 'API_KEY', 'PRIVATE_KEY'] // High severity regardless of context
+     }
+diff --git a/packages/sentinel-core/scanner/index.js b/packages/sentinel-core/scanner/index.js
+index e7c7fbf..bf27989 100644
+--- a/packages/sentinel-core/scanner/index.js
++++ b/packages/sentinel-core/scanner/index.js
+@@ -131,7 +131,8 @@ async function scanFile(filename, content, authorMeta = null, options = { mode:
+             type: a.type,
+             description: a.message,
+             riskLevel: a.severity === 'CRITICAL' ? 10 : 7,
+-            classification: 'OBFUSCATION'
++            classification: 'OBFUSCATION',
++            needs_dynamic_confirmation: true // Alta entrop├¡a requiere validaci├│n din├ímica
+         }));
+         const isCode = filename.match(/\.(js|ts)$/i);
+         if (isCode) {
+@@ -193,7 +194,44 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
+             if (index >= fileQueue.length) {
+                 if (running === 0) {
+                     results.performance.durationMs = Date.now() - startTime;
+-                    results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
++                    // SMART DEDUPLICATION: Only collapse POLICY noise (same file+rule=1 alert with count).
++                    // SECURITY alerts are kept individually for full audit granularity.
++                    const securityAlerts = [];
++                    const policyMap = new Map();
++                    for (const alert of results.rawAlerts) {
++                        if (alert.classification === 'POLICY') {
++                            const key = `${alert._file || ''}::${alert.type}`;
++                            if (policyMap.has(key)) {
++                                policyMap.get(key).occurrences++;
++                            } else {
++                                policyMap.set(key, { ...alert, occurrences: 1 });
++                            }
++                        } else {
++                            securityAlerts.push(alert);
++                        }
++                    }
++                    const collapsedPolicy = Array.from(policyMap.values()).map(a => {
++                        if (a.occurrences > 1) {
++                            a.description = `${a.description} [${a.occurrences} occurrences]`;
++                        }
++                        return a;
++                    });
++                    
++                    // Add dynamic confirmation flag to alerts that match evasion criteria
++                    const finalRawAlerts = [
++                        ...securityAlerts,
++                        ...collapsedPolicy
++                    ].map(a => {
++                        if (a.classification === 'OBFUSCATION' || (a.type && a.type.includes('EVAL')) || (a.entropy && a.entropy > 5.5)) {
++                            a.needs_dynamic_confirmation = true;
++                        }
++                        return a;
++                    });
++
++                    // Sort: SECURITY first (by riskLevel desc)
++                    results.rawAlerts = finalRawAlerts.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0));
++                    results.threats = results.rawAlerts.length;
++
+                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
+                     results.verdict = results.riskScore > 0.8 ? 'CRITICAL' : (results.riskScore > 0.4 ? 'SUSPICIOUS' : 'SAFE');
+                     
+@@ -224,11 +262,17 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
+             running++;
+             try {
+                 const category = FileClassifier.classify(item, fullPath);
+-                if (profile.allowedCategories.includes(category) && stats.size <= profile.maxFileSize) {
++                
++                // Anti-DoS Filters: Strict checks for Baseline
++                const maxFileSize = options.scanType === 'BASELINE' ? 1048576 : profile.maxFileSize; // 1MB max for baseline
++                const isAllowedFile = profile.allowedCategories.includes(category) && stats.size <= maxFileSize;
++                const isSupportedExtension = options.scanType === 'BASELINE' ? !!item.match(/\.(js|ts|json)$/i) : true;
++
++                if (isAllowedFile && isSupportedExtension) {
+                     const cached = CacheEngine.isValid(fullPath, stats);
+                     if (cached) {
+                         results.skipped.cached++; results.filesScanned++; 
+-                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath }));
++                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath, origin: options.scanType === 'BASELINE' ? 'baseline' : 'pr' }));
+                         results.rawAlerts.push(...enrichedCached);
+                         fileRisks.push(ScoringEngine.calculateFileRisk(enrichedCached, fullPath));
+                     } else {
+@@ -242,7 +286,7 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
+                             currentAlerts = scan.alerts;
+                             CacheEngine.update(fullPath, stats, currentAlerts);
+                         }
+-                        currentAlerts.forEach(a => results.rawAlerts.push({ ...a, _file: item, _fullPath: fullPath }));
++                        currentAlerts.forEach(a => results.rawAlerts.push({ ...a, _file: item, _fullPath: fullPath, origin: options.scanType === 'BASELINE' ? 'baseline' : 'pr' }));
+                         results.threats += currentAlerts.length;
+                         results.filesScanned++;
+                         fileRisks.push(ScoringEngine.calculateFileRisk(currentAlerts, fullPath));
+diff --git a/packages/sentinel-core/scanner/scoring_engine.js b/packages/sentinel-core/scanner/scoring_engine.js
+index c45dcb4..9e8f6cf 100644
+--- a/packages/sentinel-core/scanner/scoring_engine.js
++++ b/packages/sentinel-core/scanner/scoring_engine.js
+@@ -30,6 +30,10 @@ class ScoringEngine {
+ 
+         let survivalProbability = 1.0;
+ 
++        // 0. EDS (Environmental Dependency Score) calculation for the whole file context
++        const sensitiveFeatures = new Set(alerts.map(a => a.type));
++        const edsMultiplier = CONFIG.SCORING.EDS.BASE + (sensitiveFeatures.size * CONFIG.SCORING.EDS.SIGNAL_WEIGHT);
++
+         deduplicated.forEach(alert => {
+             let p = this.severityMap[alert.severity] || 0.1;
+             
+@@ -37,19 +41,38 @@ class ScoringEngine {
+             let trustFactor = 1.0;
+             if (alert.forensics && alert.forensics.author) {
+                 const author = alert.forensics.author;
+-                // Core maintainers (trusted authors)
+                 if (['javier20dev25', 'Javier Astaroth'].includes(author)) {
+-                    trustFactor = 0.5; // High trust but never 0
++                    trustFactor = 0.5;
+                 }
+             }
+ 
++            // 1. M_origin (baseline vs pr vs runtime)
++            const mOrigin = CONFIG.SCORING.MULTIPLIERS.ORIGIN[alert.origin] || CONFIG.SCORING.MULTIPLIERS.ORIGIN.pr;
++
++            // 2. M_confidence (est├ítico vs din├ímico)
++            let mConfidence = CONFIG.SCORING.MULTIPLIERS.CONFIDENCE[alert.analysis_type] || CONFIG.SCORING.MULTIPLIERS.CONFIDENCE.heuristic;
++
++            // 3. M_uncertainty (ofuscaci├│n y entrop├¡a)
++            let mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.clear;
++            if (alert.entropy && alert.entropy > 5.5) mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.obfuscated;
++            if (alert.category === 'OBFUSCATION') mUncertainty = CONFIG.SCORING.MULTIPLIERS.UNCERTAINTY.unintelligible;
++
+             const isOverridden = CONFIG.SCORING.OVERRIDES.some(o => alert.category === o || (alert.type && alert.type.includes(o)));
+-            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor);
++            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor * mOrigin * mConfidence * mUncertainty * edsMultiplier);
+             
+-            survivalProbability *= (1 - (p * effectiveWeight));
++            survivalProbability *= (1 - Math.min((p * effectiveWeight), 0.999));
+         });
+ 
+-        const rawRisk = 1 - survivalProbability;
++        // DISCREPANCY BOOST: Evasi├│n Inteligente Detectada (Static Low + Dynamic High)
++        const hasStaticLow = deduplicated.some(a => a.analysis_type === 'static' && (a.severity === 'LOW' || a.severity === 'INFO' || a.severity === 'WARNING'));
++        const hasDynamicHigh = deduplicated.some(a => (a.analysis_type === 'dynamic' || a.origin === 'runtime') && (a.severity === 'HIGH' || a.severity === 'CRITICAL'));
++
++        let rawRisk = 1 - survivalProbability;
++        
++        if (hasStaticLow && hasDynamicHigh) {
++            rawRisk = 1.0; // Override total: Evasi├│n de AST detectada en Sandbox
++        }
++
+         return 1 - Math.exp(-this.damping * rawRisk);
+     }
+ 
+diff --git a/packages/sentinel-worker/core/lib/ci_sandbox.js b/packages/sentinel-worker/core/lib/ci_sandbox.js
+index 87d56f1..28e78f1 100644
+--- a/packages/sentinel-worker/core/lib/ci_sandbox.js
++++ b/packages/sentinel-worker/core/lib/ci_sandbox.js
+@@ -39,6 +39,7 @@
+ const fs   = require('fs');
+ const path = require('path');
+ const os   = require('os');
++const crypto = require('crypto');
+ const { execFileSync } = require('child_process');
+ const { isValidOwnerRepo } = require('./sanitizer');
+ 
+@@ -208,11 +209,17 @@ async function triggerSandboxRun(ownerRepo, branch = 'main', token = null) {
+         // as├¡ que guardamos el timestamp y lo buscamos despu├®s.
+         const beforeDispatch = Date.now();
+ 
++        // Generate a context-bound JWT signature (simulated with HMAC for now)
++        const runSignature = crypto.createHmac('sha256', process.env.SENTINEL_SECRET || 'dev_secret')
++                                   .update(`${ownerRepo}:${branch}:${beforeDispatch}`)
++                                   .digest('hex');
++
+         execFileSync('gh', [
+             'workflow', 'run', WORKFLOW_FILENAME,
+             '--repo', ownerRepo,
+             '--ref', branch,
+-            '--field', `target_branch=${branch}`
++            '--field', `target_branch=${branch}`,
++            '--field', `sentinel_signature=${runSignature}`
+         ], {
+             encoding: 'utf-8',
+             timeout: 30000,
+@@ -246,36 +253,6 @@ async function triggerSandboxRun(ownerRepo, branch = 'main', token = null) {
+     }
+ }
+ 
+-/**
+- * Fetch the latest Sentinel Sandbox workflow run for a specific branch.
+- *
+- * @param {string} ownerRepo - "owner/repo"
+- * @param {string} branch - Branch name
+- * @param {string} [token] - GitHub Token
+- * @returns {object|null} - Run object or null
+- */
+-function getSandboxRunForBranch(ownerRepo, branch, token = null) {
+-    if (!isValidOwnerRepo(ownerRepo) || !branch) return null;
+-    const { execFileSync } = require('child_process');
+-    try {
+-        const output = execFileSync('gh', [
+-            'api', `/repos/${ownerRepo}/actions/workflows/${WORKFLOW_FILENAME}/runs`,
+-            '--field', `branch=${branch}`,
+-            '--jq', '.workflow_runs[0]'
+-        ], { 
+-            encoding: 'utf-8', 
+-            timeout: 10000,
+-            stdio: ['pipe', 'pipe', 'ignore'],
+-            env: token ? { ...process.env, GH_TOKEN: token } : process.env
+-        });
+-        
+-        const runs = JSON.parse(output);
+-        return runs && runs.id ? runs : null;
+-    } catch {
+-        return null;
+-    }
+-}
+-
+ /**
+  * Verifica el estado actual de un run de GitHub Actions.
+  *
+@@ -532,6 +509,43 @@ function analyzeTelemetry(tempDir, ownerRepo) {
+         }
+     }
+ 
++    // ÔöÇÔöÇ 6. Alertas de Hooking V8 (X-Ray Deep Userland) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
++    const xrayAlerts = readFile('xray-alerts.txt');
++    if (xrayAlerts && xrayAlerts.trim().length > 0) {
++        const lines = xrayAlerts.split('\n').filter(Boolean);
++        threats.push({
++            type: 'RUNTIME_EVASION_ATTEMPT',
++            severity: 'CRITICAL',
++            riskLevel: 10,
++            message: `[SANDBOX] M├│dulo X-Ray intercept├│ ${lines.length} llamadas a APIs nativas (child_process, vm, eval, wasm). Posible intento de evasi├│n de AST.`,
++            evidence: lines.slice(0, 10).join('\n'),
++            recommendation: 'ALERTA: C├│digo ofuscado ejecutando binarios o subprocesos ocultos. Bloquear inmediatamente.'
++        });
++        riskScore += 60; // Peso alt├¡simo (Correlaci├│n Probabil├¡stica)
++    }
++
++    // ÔöÇÔöÇ 7. Kernel-Level Boundaries (strace) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
++    const syscalls = readFile('syscalls.txt');
++    if (syscalls && syscalls.trim().length > 0) {
++        // Filtramos syscalls de npm/node normales para buscar cosas raras
++        const suspiciousSyscalls = syscalls.split('\n').filter(l => 
++            (l.includes('execve') && !l.includes('npm') && !l.includes('node') && !l.includes('sh')) ||
++            (l.includes('connect') && !l.includes('registry.npmjs.org') && !l.includes('127.0.0.1'))
++        );
++
++        if (suspiciousSyscalls.length > 0) {
++            threats.push({
++                type: 'KERNEL_SYSCALL_ANOMALY',
++                severity: 'CRITICAL',
++                riskLevel: 10,
++                message: `[SANDBOX] Monitor eBPF/strace detect├│ ejecuci├│n de subprocesos o conexiones no documentadas a nivel kernel.`,
++                evidence: suspiciousSyscalls.slice(0, 5).join('\n'),
++                recommendation: 'ALERTA MAXIMA: El c├│digo sobrepas├│ el engine JS y ejecut├│ binarios/red nativamente.'
++            });
++            riskScore += 80; // Evasi├│n total
++        }
++    }
++
+     // ÔöÇÔöÇ Score final ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+ 
+     // Normalizar a 0-10
+@@ -576,7 +590,6 @@ module.exports = {
+     checkWorkflowInstalled,
+     triggerSandboxRun,
+     getSandboxRunStatus,
+-    getSandboxRunForBranch,
+     waitForSandboxRun,
+     downloadSandboxArtifacts,
+     analyzeTelemetry,
+diff --git a/packages/sentinel-worker/core/scanner/config.js b/packages/sentinel-worker/core/scanner/config.js
+index 5fd5054..aab2032 100644
+--- a/packages/sentinel-worker/core/scanner/config.js
++++ b/packages/sentinel-worker/core/scanner/config.js
+@@ -46,6 +46,9 @@ const CONFIG = {
+         DAMPING_FACTOR: 1.5,
+         CONTEXT_WEIGHTS: {
+             'package.json': 1.2,
++            'package-lock.json': 1.1,
++            'pnpm-lock.yaml': 1.1,
++            'yarn.lock': 1.1,
+             'src': 1.0,
+             'lib': 1.0,
+             'config': 0.9,
+@@ -66,7 +69,44 @@ const CONFIG = {
+             'WARNING': 0.4,
+             'LOW': 0.1
+         },
+-        OVERRIDES: ['SECRET', 'API_KEY', 'PRIVATE_KEY'] // High severity regardless of context
++        MULTIPLIERS: {
++            ORIGIN: {
++                baseline: 0.6,
++                pr: 1.0,
++                runtime: 1.2,
++                sandbox: 1.4
++            },
++            CONFIDENCE: {
++                static: 0.4,
++                heuristic: 0.6,
++                dynamic: 0.9,
++                discrepancy: 1.5
++            }
++        },
++        
++        // Oracle Brain v4.0: Universal Intent Matrix
++        INTENT_MATRIX: {
++            EXECUTION: { baseSeverity: 0.8, weight: 1.2 },
++            EXFILTRATION: { baseSeverity: 0.9, weight: 1.3 },
++            EVASION: { baseSeverity: 0.7, weight: 1.1 },
++            PERSISTENCE: { baseSeverity: 0.85, weight: 1.2 },
++            PRIVILEGE_ABUSE: { baseSeverity: 0.9, weight: 1.4 },
++            SUPPLY_CHAIN_TAMPERING: { baseSeverity: 0.95, weight: 1.5 },
++            CI_CD_ABUSE: { baseSeverity: 0.9, weight: 1.3 },
++            POLICY_VIOLATION: { baseSeverity: 0.4, weight: 0.8 }
++        },
++
++        UNIVERSAL_NODES: {
++            PROCESS_EXEC: "execution",
++            NETWORK_CONNECT: "exfiltration",
++            FILE_WRITE: "persistence",
++            DYNAMIC_CODE_EXEC: "evasion",
++            ENV_ACCESS: "exfiltration",
++            SECRET_ACCESS: "exfiltration",
++            REGISTRY_CHANGE: "supply_chain",
++            PERMISSION_CHANGE: "privilege",
++            LIFECYCLE_SCRIPT: "supply_chain"
++        }
+     }
+ };
+ 
+diff --git a/packages/sentinel-worker/core/scanner/detector_binary.js b/packages/sentinel-worker/core/scanner/detector_binary.js
+deleted file mode 100644
+index 662ac38..0000000
+--- a/packages/sentinel-worker/core/scanner/detector_binary.js
++++ /dev/null
+@@ -1,317 +0,0 @@
+-/**
+- * Sentinel 3.3: Binary & WASM Asset Inspector
+- * 
+- * Scans binary files (.wasm, .exe, .dll, .so, .dylib) for:
+- *   1. Shannon entropy analysis (packed/encrypted payloads)
+- *   2. WASM Import Bridge Profiling (New in 3.3)
+- */
+-
+-'use strict';
+-
+-const BINARY_EXTENSIONS = new Set(['.wasm', '.exe', '.dll', '.so', '.dylib', '.bin', '.dat']);
+-const MIN_SCAN_SIZE = 64;
+-const ENTROPY_THRESHOLD = 7.2;
+-const KNOWN_SAFE_PRODUCERS = [
+-    'emscripten', 'rustc', 'assemblyscript', 'Go', 'clang',
+-    'llvm', 'binaryen', 'wasm-pack', 'webpack'
+-];
+-
+-/**
+- * Calculate Shannon entropy for a buffer.
+- */
+-function shannonEntropy(buffer) {
+-    if (!buffer || buffer.length === 0) return 0;
+-    const freq = new Array(256).fill(0);
+-    for (let i = 0; i < buffer.length; i++) freq[buffer[i]]++;
+-    let entropy = 0;
+-    const len = buffer.length;
+-    for (let i = 0; i < 256; i++) {
+-        if (freq[i] === 0) continue;
+-        const p = freq[i] / len;
+-        entropy -= p * Math.log2(p);
+-    }
+-    return entropy;
+-}
+-
+-/**
+- * Extract printable ASCII strings from a binary buffer.
+- */
+-function extractStrings(buffer, minLen = 6) {
+-    const strings = [];
+-    let current = '';
+-    for (let i = 0; i < buffer.length; i++) {
+-        const byte = buffer[i];
+-        if (byte >= 0x20 && byte <= 0x7E) current += String.fromCharCode(byte);
+-        else {
+-            if (current.length >= minLen) strings.push(current);
+-            current = '';
+-        }
+-    }
+-    if (current.length >= minLen) strings.push(current);
+-    return strings;
+-}
+-
+-/**
+- * Check if a WASM file has a known safe producer.
+- */
+-function hasKnownProducer(strings) {
+-    for (const s of strings) {
+-        for (const producer of KNOWN_SAFE_PRODUCERS) {
+-            if (s.toLowerCase().includes(producer.toLowerCase())) return producer;
+-        }
+-    }
+-    return null;
+-}
+-
+-/**
+- * Decode an unsigned LEB128 integer from a buffer at a specific offset.
+- * Returns { value, size }.
+- */
+-function decodeUleb128(buffer, offset) {
+-    let result = 0;
+-    let shift = 0;
+-    let i = offset;
+-    while (true) {
+-        const byte = buffer[i++];
+-        result |= (byte & 0x7f) << shift;
+-        if ((byte & 0x80) === 0) break;
+-        shift += 7;
+-    }
+-    return { value: result, size: i - offset };
+-}
+-
+-/**
+- * Decode a WASM-style string (length-prefixed) from a buffer.
+- */
+-function decodeWasmString(buffer, offset) {
+-    const { value: len, size: lenSize } = decodeUleb128(buffer, offset);
+-    const str = buffer.toString('utf8', offset + lenSize, offset + lenSize + len);
+-    return { value: str, size: lenSize + len };
+-}
+-
+-/**
+- * Basic WASM Section Parser.
+- * Extracts a map of sectionId -> { offset, size }
+- */
+-function getWasmSections(buffer) {
+-    const sections = {};
+-    if (buffer[0] !== 0x00 || buffer[1] !== 0x61 || buffer[2] !== 0x73 || buffer[3] !== 0x6d) return sections;
+-    
+-    // Skip magic (4) and version (4)
+-    let pos = 8;
+-    while (pos < buffer.length) {
+-        const id = buffer[pos++];
+-        const { value: size, size: sizeLen } = decodeUleb128(buffer, pos);
+-        pos += sizeLen;
+-        sections[id] = { offset: pos, size };
+-        pos += size;
+-    }
+-    return sections;
+-}
+-
+-/**
+- * Extract imports from the WASM Import Section (ID 2).
+- */
+-function getWasmImports(buffer, section) {
+-    const imports = [];
+-    if (!section) return imports;
+-    
+-    let pos = section.offset;
+-    const { value: count, size: countLen } = decodeUleb128(buffer, pos);
+-    pos += countLen;
+-    
+-    for (let i = 0; i < count; i++) {
+-        const { value: mod, size: modLen } = decodeWasmString(buffer, pos);
+-        pos += modLen;
+-        const { value: field, size: fieldLen } = decodeWasmString(buffer, pos);
+-        pos += fieldLen;
+-        
+-        const kind = buffer[pos++];
+-        // Skip description bytes based on kind
+-        if (kind === 0x00) { // function (type index)
+-            const { size: typeLen } = decodeUleb128(buffer, pos);
+-            pos += typeLen;
+-        } else if (kind === 0x01) { // table
+-            pos += 1; // elem type
+-            const { size: minLen } = decodeUleb128(buffer, pos);
+-            pos += minLen;
+-            if (buffer[pos-1] === 1) { // has max
+-                const { size: maxLen } = decodeUleb128(buffer, pos);
+-                pos += maxLen;
+-            }
+-        } else if (kind === 0x02) { // memory
+-            const hasMax = buffer[pos++];
+-            const { size: minLen } = decodeUleb128(buffer, pos);
+-            pos += minLen;
+-            if (hasMax) {
+-                const { size: maxLen } = decodeUleb128(buffer, pos);
+-                pos += maxLen;
+-            }
+-        } else if (kind === 0x03) { // global
+-            pos += 2; // type and mutability
+-        }
+-        
+-        imports.push({ module: mod, field });
+-    }
+-    return imports;
+-}
+-
+-/**
+- * Main analysis function for binary assets.
+- *
+- * @param {Buffer} buffer   - Raw file content as a Buffer
+- * @param {string} filename - Filename for context in alerts
+- * @returns {Array}         - List of threat alerts
+- */
+-function analyzeBinary(buffer, filename) {
+-    const alerts = [];
+-
+-    if (!buffer || buffer.length < MIN_SCAN_SIZE) return alerts;
+-
+-    // 1. Shannon entropy analysis
+-    const entropy = shannonEntropy(buffer);
+-    if (entropy > ENTROPY_THRESHOLD) {
+-        const producer = hasKnownProducer(extractStrings(buffer, 4));
+-        if (!producer) {
+-            alerts.push({
+-                ruleName: 'High-Entropy Binary Payload',
+-                category: 'binary-analysis',
+-                riskLevel: 7,
+-                description: `Binary asset '${filename}' has unusually high entropy (${entropy.toFixed(2)}/8.0), ` +
+-                    `suggesting packed, encrypted, or obfuscated content. No known compiler signature found.`,
+-                evidence: `Entropy: ${entropy.toFixed(4)} / 8.0 | Size: ${buffer.length} bytes`,
+-                severity: 'HIGH'
+-            });
+-        }
+-    }
+-
+-    // 2. Extract and analyze embedded strings
+-    const strings = extractStrings(buffer, 6);
+-
+-    // 2a. URL / IP detection
+-    const urlPatterns = [
+-        /https?:\/\/[^\s"'<>]{8,}/gi,
+-        /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g,
+-        /[a-z0-9][-a-z0-9]*\.(com|net|org|io|xyz|ru|cn|tk|ml|ga|cf|top|pw|cc|ws)\b/gi
+-    ];
+-
+-    const safeUrlPatterns = [
+-        /npmjs\.org/i, /github\.com/i, /nodejs\.org/i,
+-        /mozilla\.org/i, /w3\.org/i, /ietf\.org/i,
+-        /googleapis\.com/i, /cloudflare\.com/i
+-    ];
+-
+-    for (const str of strings) {
+-        for (const pattern of urlPatterns) {
+-            pattern.lastIndex = 0;
+-            const matches = str.match(pattern);
+-            if (matches) {
+-                for (const url of matches) {
+-                    const isSafe = safeUrlPatterns.some(sp => sp.test(url));
+-                    if (!isSafe) {
+-                        alerts.push({
+-                            ruleName: 'Embedded URL in Binary Asset',
+-                            category: 'binary-analysis',
+-                            riskLevel: 9,
+-                            description: `Binary file '${filename}' contains an embedded network address. ` +
+-                                `This is a strong indicator of a Command & Control (C2) beacon or data exfiltration endpoint.`,
+-                            evidence: `URL: ${url.substring(0, 200)}`,
+-                            severity: 'CRITICAL'
+-                        });
+-                    }
+-                }
+-            }
+-        }
+-    }
+-
+-    // 2b. Suspicious command strings inside binaries
+-    const suspiciousCommands = [
+-        /(?:\/bin\/sh|\/bin\/bash|cmd\.exe|powershell)/i,
+-        /(?:curl|wget|nc|ncat)\s/i,
+-        /(?:id_rsa|\.ssh|\.env|passwd|shadow)/i,
+-        /(?:eval|exec|spawn|system)\s*\(/i,
+-        /(?:DROP\s+TABLE|SELECT\s+\*|UNION\s+SELECT)/i
+-    ];
+-
+-    for (const str of strings) {
+-        for (const cmdPattern of suspiciousCommands) {
+-            if (cmdPattern.test(str)) {
+-                alerts.push({
+-                    ruleName: 'Suspicious Command String in Binary',
+-                    category: 'binary-analysis',
+-                    riskLevel: 8,
+-                    description: `Binary file '${filename}' contains shell/system command strings that should not be present in legitimate assets.`,
+-                    evidence: `String: "${str.substring(0, 200)}"`,
+-                    severity: 'HIGH'
+-                });
+-                break; // One alert per string is enough
+-            }
+-        }
+-    }
+-
+-    // 3. WASM-specific: Deep Profiling (Sentinel 3.3)
+-    if (filename.endsWith('.wasm')) {
+-        // Valid WASM magic: \0asm (0x00, 0x61, 0x73, 0x6d)
+-        const sections = getWasmSections(buffer);
+-        const hasMagic = sections[1] !== undefined || buffer[0] === 0x00;
+-
+-        if (!hasMagic) {
+-            alerts.push({
+-                ruleName: 'Invalid WASM Magic Bytes',
+-                category: 'binary-analysis',
+-                riskLevel: 9,
+-                description: `File '${filename}' does not have valid WASM magic bytes. Potential disguised payload.`,
+-                evidence: `Magic: ${buffer.subarray(0, 4).toString('hex')}`,
+-                severity: 'CRITICAL'
+-            });
+-        }
+-
+-        // Deep Import Analysis (Bridge Profiling)
+-        const imports = getWasmImports(buffer, sections[2]);
+-        const suspiciousImports = imports.filter(imp => 
+-            imp.field.includes('exec') || 
+-            imp.field.includes('eval') || 
+-            imp.field.includes('spawn') ||
+-            imp.module === 'wasi_snapshot_preview1' ||
+-            imp.module === 'env' && (imp.field === 'process' || imp.field === 'fs' || imp.field === 'net')
+-        );
+-
+-        if (suspiciousImports.length > 0) {
+-            alerts.push({
+-                ruleName: 'Suspicious WASM Bridge Imports',
+-                category: 'binary-analysis',
+-                riskLevel: 9,
+-                severity: 'CRITICAL',
+-                description: `WASM file '${filename}' imports sensitive system capabilities from the JS host. ` +
+-                             `This bypasses source code analysis by executing system calls from a binary module.`,
+-                evidence: `Suspicious Bridge: ${suspiciousImports.map(i => `${i.module}.${i.field}`).join(', ')}`
+-            });
+-        }
+-
+-        const producer = hasKnownProducer(strings);
+-        if (!producer && strings.length > 3 && !imports.length) {
+-            alerts.push({
+-                ruleName: 'WASM Without Known Compiler Signature',
+-                category: 'binary-analysis',
+-                riskLevel: 6,
+-                description: `WASM file '${filename}' does not contain signatures from known compilers (emscripten, rustc, etc.).`,
+-                evidence: `Extracted ${strings.length} strings, no typical producer section found.`,
+-                severity: 'MEDIUM'
+-            });
+-        }
+-    }
+-
+-    return alerts;
+-}
+-
+-/**
+- * Check if a filename should be scanned as a binary asset.
+- */
+-function isBinaryAsset(filename) {
+-    const ext = (filename.lastIndexOf('.') !== -1)
+-        ? filename.substring(filename.lastIndexOf('.')).toLowerCase()
+-        : '';
+-    return BINARY_EXTENSIONS.has(ext);
+-}
+-
+-module.exports = { analyzeBinary, isBinaryAsset, shannonEntropy, extractStrings };
+diff --git a/packages/sentinel-worker/core/scanner/detector_entropy.js b/packages/sentinel-worker/core/scanner/detector_entropy.js
+deleted file mode 100644
+index 8c1ef95..0000000
+--- a/packages/sentinel-worker/core/scanner/detector_entropy.js
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/**
+- * Sentinel: Entropy and Line Length Detector
+- * Detects obfuscated code based on line length and character distribution.
+- */
+-
+-const MAX_LINE_LENGTH = 1000;
+-const DENSITY_THRESHOLD = 0.20; // 20% of total file size in one line
+-
+-function detectHighEntropy(content) {
+-    const totalSize = content.length;
+-    const alerts = [];
+-    // Performance Guard: Sparse Sampling vs Top-K
+-    let chunksToAnalyze = [];
+-    if (totalSize > 1 * 1024 * 1024) {
+-        const mid = Math.floor(totalSize / 2);
+-        chunksToAnalyze = [
+-            content.substring(0, 8192),
+-            content.substring(mid, mid + 8192),
+-            content.substring(totalSize - 8192)
+-        ];
+-    } else {
+-        const lines = content.split('\n');
+-        chunksToAnalyze = lines
+-            .map((l, i) => ({ l, i }))
+-            .sort((a, b) => b.l.length - a.l.length)
+-            .slice(0, 5)
+-            .map(item => item.l);
+-    }
+-
+-    chunksToAnalyze.forEach((line, index) => {
+-        const lineSize = line.length;
+-        if (lineSize < 128) return; // Ignore small noise
+-
+-        const charMap = {};
+-        for (const char of line) charMap[char] = (charMap[char] || 0) + 1;
+-        let entropy = 0;
+-        for (const char in charMap) {
+-            const p = charMap[char] / lineSize;
+-            entropy -= p * Math.log2(p);
+-        }
+-
+-        if (entropy > 5.8) {
+-            alerts.push({
+-                line: index + 1,
+-                type: 'ENTROPY_CRITICAL',
+-                message: `High entropy detected (${entropy.toFixed(2)}). Possible base64 payload / shellcode.`,
+-                severity: 'CRITICAL',
+-                _isEarlyExitSignal: true
+-            });
+-        }
+-    });
+-
+-    return alerts;
+-}
+-
+-module.exports = { detectHighEntropy };
+diff --git a/packages/sentinel-worker/core/scanner/detector_unicode.js b/packages/sentinel-worker/core/scanner/detector_unicode.js
+deleted file mode 100644
+index 79e310c..0000000
+--- a/packages/sentinel-worker/core/scanner/detector_unicode.js
++++ /dev/null
+@@ -1,40 +0,0 @@
+-/**
+- * Sentinel: Invisible Unicode Detector
+- * Detects zero-width and non-printable characters used to hide malware.
+- */
+-
+-const INVISIBLE_UNICODE_REGEX = /[\u200B-\u200D\uFEFF]/g;
+-const CONSECUTIVE_THRESHOLD = 5;
+-
+-function detectInvisibleChars(content) {
+-    const lines = content.split('\n');
+-    const alerts = [];
+-
+-    lines.forEach((line, index) => {
+-        if (line.length > 8192) return;
+-        const matches = line.match(INVISIBLE_UNICODE_REGEX);
+-        if (matches) {
+-            // Check for consecutive characters
+-            const consecutivePattern = new RegExp(`[\\u200B-\\u200D\\uFEFF]{${CONSECUTIVE_THRESHOLD},}`, 'g');
+-            if (consecutivePattern.test(line)) {
+-                alerts.push({
+-                    line: index + 1,
+-                    type: 'INVISIBLE_UNICODE_CRITICAL',
+-                    message: `Detected more than ${CONSECUTIVE_THRESHOLD} consecutive invisible characters.`,
+-                    severity: 'CRITICAL'
+-                });
+-            } else {
+-                alerts.push({
+-                    line: index + 1,
+-                    type: 'INVISIBLE_UNICODE_WARNING',
+-                    message: `Detected ${matches.length} invisible characters.`,
+-                    severity: 'WARNING'
+-                });
+-            }
+-        }
+-    });
+-
+-    return alerts;
+-}
+-
+-module.exports = { detectInvisibleChars };
+diff --git a/packages/sentinel-worker/core/scanner/index.js b/packages/sentinel-worker/core/scanner/index.js
+index 6ef461b..b71487e 100644
+--- a/packages/sentinel-worker/core/scanner/index.js
++++ b/packages/sentinel-worker/core/scanner/index.js
+@@ -1,5 +1,5 @@
+ /**
+- * Sentinel: Main Scanner Orchestrator (Phase 10.5 - Oracle Brain)
++ * Sentinel: Main Scanner Orchestrator (v6.5 - Hero Mode)
+  */
+ 
+ 'use strict';
+@@ -12,379 +12,239 @@ const yaml = require('js-yaml');
+ const vm = require('vm');
+ const crypto = require('crypto');
+ 
+-const { detectInvisibleChars } = require('./detector_unicode');
+-const { detectHighEntropy } = require('./detector_entropy');
++const { detectInvisibleChars } = require('./detectors/unicode');
++const { detectHighEntropy } = require('./detectors/entropy');
+ const { analyzeLifecycleScripts, analyzeTransitiveDeps } = require('./lifecycle_filter');
+-const { analyzeLockfile, analyzePnpmLockfile } = require('./lockfile_filter');
+-const { analyzeNpmrc, analyzeYarnrcYml } = require('./config_integrity');
+-const ConfidenceScorer = require('./confidence_scorer');
+-const TriggerLevelOrchestrator = require('./trigger_levels');
+-const { analyzeBinary } = require('./detector_binary');
+-const { isValidRuleFilename, isPathWithinRoot } = require('../lib/sanitizer');
+-
+-// Phase 10.5 Modules
+-const CONFIG = require('./config');
++const { analyzeLockfile } = require('./lockfile_filter');
+ const ScoringEngine = require('./scoring_engine');
+-const CacheEngine = require('./cache_engine');
+-const FileClassifier = require('./file_classifier');
+ const RiskOrchestrator = require('./risk_orchestrator');
+-const { signReport } = require('../lib/signature');
+-
+-// Phase 10.6 AppSec Pro Modules
+-const ForensicAudit = require('./forensics');
+-const SandboxScanner = require('./sandbox');
++const SemanticNormalizer = require('./semantic_normalizer');
+ 
+ let compiledRules = [];
+-const MAX_REGEX_LENGTH = 500;
+-const MAX_SCAN_LINES = 10000;
++
++function mapIntent(type) {
++    if (!type) return 'POLICY_VIOLATION';
++    const upType = type.toUpperCase();
++    if (upType.includes('EXEC') || upType.includes('PROCESS') || upType.includes('SHELL') || upType.includes('SPAWN')) return 'EXECUTION';
++    if (upType.includes('SECRET') || upType.includes('KEY') || upType.includes('ENV') || upType.includes('TOKEN')) return 'EXFILTRATION';
++    if (upType.includes('OBFUSCATION') || upType.includes('ENTROPY') || upType.includes('BASE64') || upType.includes('EVASION') || upType.includes('RECONSTRUCTION')) return 'OBFUSCATION';
++    if (upType.includes('LIFECYCLE') || upType.includes('INSTALL') || upType.includes('DEPENDENCY')) return 'SUPPLY_CHAIN_TAMPERING';
++    if (upType.includes('NETWORK') || upType.includes('FETCH') || upType.includes('HTTP') || upType.includes('HTTPS')) return 'NETWORK';
++    if (upType.includes('CI') || upType.includes('WORKFLOW')) return 'CI_CD_ABUSE';
++    return 'POLICY_VIOLATION';
++}
+ 
+ function loadRules() {
+     compiledRules = [];
+-    const ruleDirs = [
+-        path.join(__dirname, 'rules'),
+-        path.join(os.homedir(), '.sentinel', 'rules')
+-    ];
+-    for (const dir of ruleDirs) {
+-        if (!fs.existsSync(dir)) continue;
+-        const files = fs.readdirSync(dir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'));
+-        for (const file of files) {
+-            if (!isValidRuleFilename(file)) continue;
+-            const resolvedPath = path.resolve(dir, file);
+-            if (!isPathWithinRoot(resolvedPath, dir)) continue;
++    const dir = path.join(__dirname, 'rules');
++    if (fs.existsSync(dir)) {
++        fs.readdirSync(dir).filter(f => f.endsWith('.yaml')).forEach(file => {
+             try {
+-                const content = fs.readFileSync(resolvedPath, 'utf8');
+-                const rules = yaml.load(content) || [];
++                const rules = yaml.load(fs.readFileSync(path.join(dir, file), 'utf8')) || [];
+                 rules.forEach(rule => {
+-                    if (rule.pattern && rule.pattern.length <= MAX_REGEX_LENGTH) {
+-                        try {
+-                            rule.regex = new RegExp(rule.pattern, 'g');
+-                            compiledRules.push(rule);
+-                        } catch (e) {}
++                    if (rule.pattern) {
++                        rule.regex = new RegExp(rule.pattern, 'g');
++                        compiledRules.push(rule);
+                     }
+                 });
+             } catch (err) {}
+-        }
++        });
+     }
+ }
+ try { loadRules(); } catch (e) {}
+ 
+-function safeRegexTest(regex, string, timeoutMs = CONFIG.PERFORMANCE.FILE_TIMEOUT_MS) {
+-    try {
+-        const context = vm.createContext({ regex, string, result: false });
+-        const script = new vm.Script('result = regex.test(string);');
+-        script.runInContext(context, { timeout: timeoutMs });
+-        return context.result;
+-    } catch (err) { return false; }
+-}
++const CapabilityGraph = require('./capability_graph');
+ 
+ async function scanFile(filename, content, authorMeta = null, options = { mode: 'local' }) {
+     const results = { filename, timestamp: new Date().toISOString(), alerts: [], authorMeta };
+-    const lines = content.split('\n');
+-    const linesToScan = lines.slice(0, MAX_SCAN_LINES);
+-    let isEarlyExit = false;
+-    let suspiciousActivity = false;
++    
++    // 1. Capability Graph Trace (v6.9 - Sovereign)
++    const capabilities = CapabilityGraph.trace(content);
++    capabilities.paths.forEach(p => {
++        const evidenceArr = [p.origin, ...p.intermediate, p.destination];
++        if (p.isHeuristic) evidenceArr.unshift('[HEURISTIC]');
++        
++        results.alerts.push({
++            type: `CAPABILITY_CHAIN`,
++            description: `Detected dangerous capability flow: ${p.origin} -> ${p.destination}`,
++            riskLevel: p.severity,
++            classification: 'SECURITY',
++            evidence: evidenceArr,
++            heuristicReasons: p.heuristicReasons || null
++        });
++    });
+ 
+-    // Context-aware: ONLY lockfiles skip regex (they have specialized analyzers).
+-    // ALL other files (package.json, .env, .js, .ts, etc.) get the FULL rule arsenal.
+-    // This matches the original Sentinel Core behavior.
+-    const isLockfile = /^(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb)$/i.test(filename);
++    const lines = content.split('\n').slice(0, 10000);
++    let suspiciousActivity = false;
+ 
+-    // LEVEL 1 & 2: Primary Scan
+-    if (!isLockfile) {
+-        linesToScan.forEach((line, index) => {
+-            if (isEarlyExit) return;
+-            if (line.length > 8192) {
+-                const entropyCheck = detectHighEntropy(line);
+-                if (entropyCheck.some(a => a.severity === 'CRITICAL')) {
+-                    results.alerts.push({
+-                        line_number: index + 1,
+-                        type: 'OVERSIZED_PAYLOAD_CRITICAL',
+-                        description: `Payload masivo (${(line.length / 1024).toFixed(1)}KB) con entrop├¡a cr├¡tica.`,
+-                        riskLevel: 10,
+-                        classification: 'SECURITY'
+-                    });
+-                    isEarlyExit = true; suspiciousActivity = true;
+-                }
+-                return;
++    // 1. Regex Rule Matching
++    lines.forEach((line, index) => {
++        compiledRules.forEach(rule => {
++            rule.regex.lastIndex = 0;
++            if (rule.regex.test(line)) {
++                suspiciousActivity = true;
++                results.alerts.push({
++                    line_number: index + 1,
++                    type: rule.id,
++                    description: rule.description,
++                    riskLevel: rule.severity,
++                    classification: 'SECURITY',
++                    line: line.trim().substring(0, 500)
++                });
+             }
+-            if (line.length > 1024) suspiciousActivity = true;
+-            compiledRules.forEach(rule => {
+-                if (isEarlyExit) return;
+-                try {
+-                    rule.regex.lastIndex = 0;
+-                    const isMatch = line.length < 1024 ? rule.regex.test(line) : safeRegexTest(rule.regex, line);
+-                    if (isMatch) {
+-                        suspiciousActivity = true;
+-                        results.alerts.push({
+-                            line_number: index + 1,
+-                            type: rule.id,
+-                            description: rule.description,
+-                            riskLevel: rule.severity,
+-                            classification: 'SECURITY',
+-                            line: line.trim().substring(0, 500),
+-                            impact: rule.impact || null,
+-                            remediation: rule.remediation || null
+-                        });
+-                    }
+-                } catch (e) { }
+-            });
+         });
+-    }
++    });
++
++    // 2. SEMANTIC INTENT ANALYSIS (v6.6)
++    const semanticNodes = SemanticNormalizer.analyze(content);
++    semanticNodes.forEach(node => {
++        suspiciousActivity = true;
++        results.alerts.push({
++            type: `SEMANTIC_${node}`,
++            description: `Normalized semantic intent detected: ${node}`,
++            riskLevel: 8,
++            classification: 'SECURITY',
++            intent: mapIntent(`SEMANTIC_${node}`)
++        });
++    });
+ 
+-    results.alerts.push(...detectInvisibleChars(content).map(a => ({ ...a, classification: 'SECURITY' })));
++    // 3. TAINT-LITE / COORDINATION ANALYSIS (v6.6)
++    const isSecretAccess = semanticNodes.includes('SECRET_ACCESS') || content.includes('process.env');
++    const isNetworkAccess = semanticNodes.includes('NETWORK_CAPABILITY') || content.includes('fetch') || content.includes('require(\'https\')');
++    
++    if (isSecretAccess && isNetworkAccess) {
++        results.alerts.push({
++            type: 'COORDINATED_NETWORK_EXFIL',
++            description: 'Detected suspicious coordination between sensitive data access and network exfiltration capabilities.',
++            riskLevel: 10,
++            classification: 'SECURITY',
++            intent: 'EXFILTRATION'
++        });
++    }
+ 
+-    // LEVEL 3: Activation of Deep Detectors (Conditional)
+-    if (suspiciousActivity && !isEarlyExit) {
++    // 4. Obfuscation & Entropy
++    if (suspiciousActivity || content.length > 5000) {
+         const entropyAlerts = detectHighEntropy(content);
+         entropyAlerts.forEach(a => results.alerts.push({
+             line_number: a.line,
+             type: a.type,
+             description: a.message,
+             riskLevel: a.severity === 'CRITICAL' ? 10 : 7,
+-            classification: 'OBFUSCATION'
++            classification: 'OBFUSCATION',
++            intent: 'OBFUSCATION'
+         }));
+-        const isCode = filename.match(/\.(js|ts)$/i);
+-        if (isCode) {
+-            try {
+-                const scorer = new ConfidenceScorer();
+-                const orchestrator = new TriggerLevelOrchestrator(scorer);
+-                orchestrator.analyze(content, filename);
+-                results.alerts.push(...scorer.evaluateAll().map(t => ({
+-                    ...t,
+-                    type: t.type || t.category || 'adaptive-engine',
+-                    riskLevel: Math.min(10, Math.round((t.riskLevel || 0) / 10)),
+-                    classification: 'SECURITY'
+-                })));
+-            } catch (e) {}
+-        }
+     }
+ 
++    results.alerts.push(...detectInvisibleChars(content).map(a => ({ ...a, classification: 'SECURITY', intent: 'OBFUSCATION' })));
++
+     if (filename.match(/(package\.json|pnpm-lock\.yaml|yarn\.lock)$/i)) {
+-        results.alerts.push(...analyzeLifecycleScripts(content, authorMeta).map(a => ({ ...a, classification: 'POLICY' })));
+-    }
+-    if (filename.match(/package-lock\.json$/i)) {
+-        results.alerts.push(...analyzeLockfile(content, null).map(a => ({ ...a, classification: 'POLICY' })));
+-        results.alerts.push(...analyzeTransitiveDeps(content, authorMeta).map(a => ({ ...a, classification: 'POLICY' })));
++        results.alerts.push(...analyzeLifecycleScripts(content, authorMeta).map(a => ({ ...a, classification: 'POLICY', intent: 'SUPPLY_CHAIN_TAMPERING' })));
+     }
++
++    // Ensure all alerts have an intent
++    results.alerts.forEach(a => {
++        if (!a.intent) a.intent = mapIntent(a.type);
++    });
++
+     return results;
+ }
+ 
+-async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mode: 'local', profile: 'DEFAULT' }) {
+-    const startTime = Date.now();
+-    const profile = CONFIG.PROFILES[options.profile] || CONFIG.PROFILES.DEFAULT;
++async function scanDirectory(dirPath, repoId = null, depth = 5, options = { mode: 'local', profile: 'DEFAULT' }) {
+     const absRoot = path.resolve(dirPath);
+-    const results = { 
+-        threats: 0, 
+-        filesScanned: 0, 
+-        skipped: { binary: 0, excluded: 0, large: 0, unsupported: 0, cached: 0 }, 
+-        rawAlerts: [], 
+-        performance: { startTime, durationMs: 0, filesPerSec: 0 },
+-        riskScore: 0,
+-        verdict: 'SAFE'
+-    };
+-
++    const results = { threats: 0, filesScanned: 0, rawAlerts: [], riskScore: 0 };
+     const fileQueue = [];
+-    async function collectFiles(currentPath, currentDepth) {
+-        if (currentDepth < 0) return;
+-        if (!FileClassifier.isPathSafe(currentPath, absRoot)) return;
++
++    async function collect(currentPath, d) {
++        if (d < 0) return;
+         const items = await fsPromises.readdir(currentPath).catch(() => []);
+-        await Promise.all(items.map(async (item) => {
+-            if (profile.excludedDirs.includes(item)) { results.skipped.excluded++; return; }
++        for (const item of items) {
++            if (item === 'node_modules' || item === '.git') continue;
+             const fullPath = path.join(currentPath, item);
+             const stats = await fsPromises.lstat(fullPath).catch(() => null);
+-            if (!stats || stats.isSymbolicLink()) return;
+-            if (stats.isDirectory()) await collectFiles(fullPath, currentDepth - 1);
++            if (!stats) continue;
++            if (stats.isDirectory()) await collect(fullPath, d - 1);
+             else if (stats.isFile()) fileQueue.push({ fullPath, item, stats });
++        }
++    }
++    await collect(absRoot, depth);
++
++    for (const file of fileQueue) {
++        results.filesScanned++;
++        const content = await fsPromises.readFile(file.fullPath, 'utf8').catch(() => null);
++        if (!content) continue;
++        const scan = await scanFile(file.item, content, null, options);
++        const enriched = scan.alerts.map(a => ({
++            ...a,
++            _file: file.item,
++            _fullPath: file.fullPath,
++            intent: mapIntent(a.type),
++            confidence: 0.6
+         }));
++        results.rawAlerts.push(...enriched);
+     }
+-    await collectFiles(absRoot, depth);
+-
+-    const fileRisks = [];
+-    const limit = Math.min(8, CONFIG.PERFORMANCE.CONCURRENCY_LIMIT);
+-    let running = 0, index = 0;
+-
+-    return new Promise((resolve) => {
+-        async function runNext() {
+-            if (index >= fileQueue.length) {
+-                if (running === 0) {
+-                    results.performance.durationMs = Date.now() - startTime;
+-                    results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
+-
+-                    // SMART DEDUPLICATION: Only collapse POLICY noise (same file+rule=1 alert with count).
+-                    // SECURITY alerts are kept individually for full audit granularity.
+-                    const securityAlerts = [];
+-                    const policyMap = new Map();
+-                    for (const alert of results.rawAlerts) {
+-                        if (alert.classification === 'POLICY') {
+-                            const key = `${alert._file || ''}::${alert.type}`;
+-                            if (policyMap.has(key)) {
+-                                policyMap.get(key).occurrences++;
+-                            } else {
+-                                policyMap.set(key, { ...alert, occurrences: 1 });
+-                            }
+-                        } else {
+-                            securityAlerts.push(alert);
+-                        }
+-                    }
+-                    const collapsedPolicy = Array.from(policyMap.values()).map(a => {
+-                        if (a.occurrences > 1) {
+-                            a.description = `${a.description} [${a.occurrences} occurrences]`;
+-                        }
+-                        return a;
+-                    });
+-                    // Sort: SECURITY first (by riskLevel desc), then collapsed POLICY
+-                    results.rawAlerts = [
+-                        ...securityAlerts.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0)),
+-                        ...collapsedPolicy.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0))
+-                    ];
+-                    results.threats = results.rawAlerts.length;
++    results.threats = results.rawAlerts.length;
++    return results;
++}
+ 
+-                    results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
+-                    results.verdict = results.riskScore > 0.8 ? 'CRITICAL' : (results.riskScore > 0.4 ? 'SUSPICIOUS' : 'SAFE');
+-                    
+-                    // AppSec Pro: Forensic Enrichment
+-                    if (options.forensics && fs.existsSync(path.join(absRoot, '.git'))) {
+-                        const alertsToEnrich = results.rawAlerts.slice(0, 50);
+-                        console.log(`[FORENSICS] Enriching up to ${alertsToEnrich.length} alerts (Cap applied)...`);
+-                        let enrichedCount = 0;
+-                        for (const alert of alertsToEnrich) {
+-                            if (alert.line_number && alert._fullPath) {
+-                                const relPath = path.relative(absRoot, alert._fullPath);
+-                                const forensicData = ForensicAudit.blame(absRoot, relPath, alert.line_number);
+-                                if (!forensicData.error) {
+-                                    alert.forensics = forensicData;
+-                                    enrichedCount++;
+-                                }
+-                            }
+-                        }
+-                        console.log(`[FORENSICS] Completed. Enriched: ${enrichedCount}`);
+-                    }
++function finalizeVerdict(results, externalSignals = [], profile = 'balanced', oracleCtx = {}) {
++    results.scan_id = crypto.randomBytes(8).toString('hex');
++    results.rawAlerts = results.rawAlerts || results.alerts || [];
++    const allSignals = [...results.rawAlerts, ...externalSignals];
++    allSignals.forEach(a => { 
++        if (!a.source) a.source = 'internal'; 
++        if (!a.file && !a._file && !a._fullPath && results.filename) a.file = results.filename;
++    });
++    
++    // Ensure Repo ID Persistence for Slow Poisoning
++    const repoId = oracleCtx.repoId || results.repoId || 'global-unassigned';
++    
++    const decision = RiskOrchestrator.arbitrate(allSignals, profile, { 
++        ...oracleCtx, 
++        repoId,
++        mode: results.mode || 'REPO' 
++    });
+ 
+-                    CacheEngine.save();
+-                    resolve(results);
+-                }
+-                return;
+-            }
+-            const { fullPath, item, stats } = fileQueue[index++];
+-            running++;
+-            try {
+-                const category = FileClassifier.classify(item, fullPath);
+-                if (profile.allowedCategories.includes(category) && stats.size <= profile.maxFileSize) {
+-                    const cached = CacheEngine.isValid(fullPath, stats);
+-                    if (cached) {
+-                        results.skipped.cached++; results.filesScanned++; 
+-                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath }));
+-                        results.rawAlerts.push(...enrichedCached);
+-                        fileRisks.push(ScoringEngine.calculateFileRisk(enrichedCached, fullPath));
+-                    } else {
+-                        let currentAlerts = [];
+-                        if (category === 'BINARY') {
+-                            const buf = await fsPromises.readFile(fullPath);
+-                            currentAlerts = analyzeBinary(buf, item);
+-                        } else {
+-                            const content = await fsPromises.readFile(fullPath, 'utf8');
+-                            const scan = await scanFile(item, content, null, options);
+-                            currentAlerts = scan.alerts;
+-                            CacheEngine.update(fullPath, stats, currentAlerts);
+-                        }
+-                        currentAlerts.forEach(a => results.rawAlerts.push({ ...a, _file: item, _fullPath: fullPath }));
+-                        results.threats += currentAlerts.length;
+-                        results.filesScanned++;
+-                        fileRisks.push(ScoringEngine.calculateFileRisk(currentAlerts, fullPath));
+-                    }
+-                } else { if (category === 'BINARY') results.skipped.binary++; else results.skipped.large++; }
+-            } catch (e) {}
+-            running--; runNext();
++    // --- CLEAN OUTPUT (no more schema drift) ---
++    // Canonical fields: verdict, impactScore, decisionConfidence, fingerprint
++    // Everything else is internal/trace-only
++    const evidenceGraph = allSignals.filter(s => s.type === 'CAPABILITY_CHAIN').map(s => {
++        let trace = s.evidence.join(' ÔåÆ ');
++        if (s.heuristicReasons && s.heuristicReasons.length > 0) {
++            const reasonsStr = s.heuristicReasons.map(r => `${r.signal} (wt: ${r.weight})`).join(' | ');
++            trace += ` (Reasons: ${reasonsStr})`;
+         }
+-        const startLimit = Math.min(limit, fileQueue.length);
+-        if (startLimit === 0) resolve(results);
+-        else for (let i = 0; i < startLimit; i++) runNext();
++        return trace;
+     });
+-}
+-
+-function generateHardenedFingerprint(dirPath) {
+-    try {
+-        const items = fs.readdirSync(dirPath).filter(f => !['node_modules', '.git'].includes(f)).sort();
+-        const components = items.slice(0, 50).map(item => {
+-            const stats = fs.lstatSync(path.join(dirPath, item));
+-            return `${item}:${stats.size}`;
+-        });
+-        return crypto.createHash('sha256').update(components.join('|')).digest('hex');
+-    } catch (err) { return 'deadbeef'; }
+-}
+ 
+-function finalizeVerdict(results, externalSignals = [], profile = 'balanced', oracleCtx = {}) {
+-    results.scan_id = crypto.randomBytes(8).toString('hex');
+-    const allSignals = [...(results.rawAlerts || []), ...externalSignals];
+-    results.rawAlerts.forEach(a => { if (!a.source) a.source = 'internal'; });
+-    const decision = RiskOrchestrator.arbitrate(allSignals, profile, oracleCtx);
+     Object.assign(results, {
+-        decisionVerdict: decision.decision,
+-        riskScore: decision.score,
+-        riskBand: decision.riskBand,
++        // --- CANONICAL (frozen) ---
++        verdict: decision.verdict,
++        impactScore: decision.impactScore,
+         decisionConfidence: decision.decisionConfidence,
+-        isAuthorized: decision.isAuthorized,
+-        trustLevel: decision.trustLevel,
+-        rationale: decision.rationale,
+-        activeProfile: profile,
++        fingerprint: decision.fingerprint,
+         traceId: decision.traceId,
+-        probingIntensity: decision.probingIntensity,
+-        delayMs: decision.delayMs
++        
++        // --- LEGACY COMPAT (deprecated, downstream should use canonical) ---
++        impact: decision.impactScore,
++        riskScore: decision.impactScore,
++
++        // --- FORENSIC ---
++        reasoningTrace: decision.reasoningTrace,
++        rationale: decision.rationale,
++        metrics: decision.metrics,
++        evidenceGraph
+     });
+-    const { signature, tier } = signReport(results, process.env.SENTINEL_LICENSE_KEY || null);
+-    results.report_signature = signature; results.verification_tier = tier;
+     return results;
+ }
+ 
+-function logScanAudit(context) {
+-    const event = { event: 'scan_completed', timestamp: new Date().toISOString(), ...context };
+-    try {
+-        const auditPath = path.join(os.homedir(), '.sentinel', 'sentinel-audit.jsonl');
+-        fs.appendFileSync(auditPath, JSON.stringify(event) + '\n');
+-    } catch (err) {}
+-    return event;
+-}
+-
+-async function auditWithSurgicalSandbox(repoPath, options = { profile: 'BALANCED' }) {
+-    console.log(`\n\x1b[34m[APPSEC-PRO] Starting Surgical Sandbox Audit for: ${repoPath}\x1b[0m`);
+-    
+-    // 1. Fast Static Sweep
+-    console.log(`  -> [PHASE 1] Executing Static Heuristics...`);
+-    const staticResults = await scanDirectory(repoPath, null, 3, { ...options, forensics: false });
+-    
+-    console.log(`  -> [PHASE 1] Static Verdict: ${staticResults.verdict} (Score: ${staticResults.riskScore.toFixed(2)})`);
+-
+-    // 2. Surgical Auto-Trigger
+-    if (staticResults.riskScore >= 0.60) {
+-        console.log(`  -> \x1b[31m[TRIGGER] Risk threshold exceeded (>= 0.60). Activating Docker Sandbox...\x1b[0m`);
+-        const sandboxResult = await SandboxScanner.scanSupplyChain(repoPath);
+-        
+-        staticResults.sandbox_triggered = true;
+-        
+-        if (!sandboxResult.success) {
+-            console.log(`  -> [PHASE 2] Sandbox Error: ${sandboxResult.error}`);
+-            staticResults.sandbox_execution_success = false;
+-        } else {
+-            console.log(`  -> [PHASE 2] Sandbox Execution Captured Successfully.`);
+-            staticResults.sandbox_execution_success = true;
+-            // In a full implementation, we would analyze the container logs (e.g. syscalls, network output)
+-            staticResults.sandbox_output_snippet = sandboxResult.output ? sandboxResult.output.substring(0, 500) : '';
+-        }
+-    } else {
+-        console.log(`  -> \x1b[32m[PASS] Risk is acceptable. Bypassing Sandbox Execution.\x1b[0m`);
+-        staticResults.sandbox_triggered = false;
+-    }
+-
+-    return staticResults;
++function generateHardenedFingerprint(dirPath) {
++    return crypto.createHash('sha256').update(dirPath).digest('hex');
+ }
+ 
+ module.exports = { 
+     scanFile, 
+-    scanLocalFile: (p, c, o) => scanFile(path.basename(p), c, null, o), 
+     scanDirectory, 
+-    auditWithSurgicalSandbox, // Phase 5 Surgical Sandbox Auto-Trigger
+-    loadRules, 
+     finalizeVerdict, 
+-    generateHardenedFingerprint, 
+-    logScanAudit 
++    generateHardenedFingerprint,
++    loadRules 
+ };
+diff --git a/packages/sentinel-worker/core/scanner/policy_engine.js b/packages/sentinel-worker/core/scanner/policy_engine.js
+index cef7666..a94d65f 100644
+--- a/packages/sentinel-worker/core/scanner/policy_engine.js
++++ b/packages/sentinel-worker/core/scanner/policy_engine.js
+@@ -20,7 +20,13 @@ const DEFAULT_POLICY = {
+     name: 'Standard Organizational Policy',
+     exposure_level: 'restricted',
+     redaction_mode: 'aggressive',
+-    enforcement_mode: 'strict',    // 'strict' | 'advisory'
++    enforcement_mode: 'canary',    // 'strict' | 'advisory' | 'canary'
++    canary_whitelist: [
++        'sentinel-canary-test', 
++        'facebook/react',        // High-Value Frontend
++        'expressjs/express',     // Infrastructure Core
++        'lodash/lodash'          // Low-Noise Library
++    ],
+     audit: {
+         enabled: true,
+         traceability: 'high',
+@@ -44,6 +50,20 @@ class PolicyEngine {
+     constructor() {
+         this.activePolicy = { ...DEFAULT_POLICY };
+         this._loadLocalPolicy();
++        this._loadCanaryTargets();
++    }
++
++    _loadCanaryTargets() {
++        const configPath = path.join(__dirname, '..', '..', '..', 'config', 'canary_targets.json');
++        if (fs.existsSync(configPath)) {
++            try {
++                const targets = JSON.parse(fs.readFileSync(configPath, 'utf8'));
++                this.activePolicy.canary_whitelist = targets.canary_whitelist.map(t => t.id);
++                this.activePolicy.canary_metadata = targets.canary_whitelist;
++            } catch (e) {
++                console.warn('[PolicyEngine] Failed to load canary_targets.json, falling back to default.');
++            }
++        }
+     }
+ 
+     _loadLocalPolicy() {
+@@ -58,8 +78,9 @@ class PolicyEngine {
+             }
+         }
+ 
+-        // CI/CD auto-detection: strict mode in non-interactive environments
+-        if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || !process.stdout.isTTY) {
++        // CI/CD auto-detection: force strict mode ONLY if currently advisory and in CI
++        const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || !process.stdout.isTTY;
++        if (isCI && this.activePolicy.enforcement_mode === 'advisory') {
+             this.activePolicy.enforcement_mode = 'strict';
+         }
+     }
+@@ -82,8 +103,31 @@ class PolicyEngine {
+     }
+ 
+     /** Should we actually exit(1) on a BLOCK verdict? */
+-    shouldEnforceBlock() {
+-        return this.isStrictMode();
++    shouldEnforceBlock(repoId = '') {
++        const mode = this.activePolicy.enforcement_mode;
++        const whitelist = this.activePolicy.canary_whitelist || [];
++        const isMatched = whitelist.includes(repoId);
++        
++        let decision = false;
++        let reason = 'NONE';
++
++        if (mode === 'strict') {
++            decision = true;
++            reason = 'POLICY_STRICT_GLOBAL';
++        } else if (mode === 'advisory') {
++            decision = false;
++            reason = 'POLICY_ADVISORY_GLOBAL';
++        } else if (mode === 'canary') {
++            decision = isMatched;
++            reason = isMatched ? 'CANARY_WHITELIST_MATCH' : 'SHADOW_MODE_NO_MATCH';
++        }
++
++        return {
++            enforce: decision,
++            policy_mode: mode,
++            canary_match_reason: reason,
++            policy_version: 'v8.4.0-gold'
++        };
+     }
+ 
+     /** Resolves the required exposure context based on current trust level. */
+diff --git a/packages/sentinel-worker/core/scanner/risk_orchestrator.js b/packages/sentinel-worker/core/scanner/risk_orchestrator.js
+index c3bd9ed..c77f5a7 100644
+--- a/packages/sentinel-worker/core/scanner/risk_orchestrator.js
++++ b/packages/sentinel-worker/core/scanner/risk_orchestrator.js
+@@ -1,177 +1,55 @@
+ /**
+- * Sentinel: Risk Orchestrator (v3.8)
++ * Sentinel: Risk Orchestrator (v8.5.1-hardened)
+  * 
+- * PATENT PENDING. Proprietary algorithms for security signal aggregation 
+- * and decision quantization. Unauthorized copying or conceptual derivation 
+- * is prohibited under BSL 1.1.
++ * DIRECTIVA: Determinismo absoluto y proveniencia forense.
+  */
+ 
+ 'use strict';
+ 
+ const crypto = require('crypto');
+-const ScoringEngine = require('./scoring_engine');
+-const PolicyEngine = require('./policy_engine');
+-
+-const SESSION_CACHE = new Map();
+-const COOLDOWN_MS = 60000;
+-
+-const TRUST_LEVELS = {
+-    AUTHORIZED: 2,
+-    PARTNER: 1,
+-    RESTRICTED: 0
+-};
+-
+-// ÔöÇÔöÇÔöÇ Scoring Configuration (Standard Engine) ÔöÇÔöÇÔöÇ
+-// These weights represent the community standard. Enterprise licenses 
+-// provide access to dynamically tuned weights via the Global Intelligence Sync.
+-const CONFIG = {
+-    WEIGHTS: {
+-        INTERNAL_SIGNALS: 0.50,
+-        NETWORK_REPUTATION: 0.30,
+-        TEMPORAL_DYNAMICS: 0.20
+-    },
+-    DEFENSE: {
+-        JITTER_ENABLED: true,
+-        QUANTIZATION_BANDS: [0.1, 0.25, 0.5, 0.75, 0.9],
+-        // Note: Advanced stochastic jitter algorithms are redacted in the community engine.
+-        STANDARD_JITTER_RANGE: 0.05 
+-    }
+-};
++const ScoringEngine = { calculateGlobalScore: (risks) => Math.max(...risks, 0) };
++const PolicyEngine = { shouldEnforceBlock: () => 'strict' };
++const ThreatMemory = { update: () => {}, generateFingerprint: () => 'stub' };
++const BayesianEngine = { calculatePosterior: () => 0.5 };
+ 
+ class RiskOrchestrator {
+-
+-    static quantizeWithJitter(score, jitterAmount = 0.05, fingerprint = '', user = 'anonymous') {
+-        const buckets = CONFIG.DEFENSE.QUANTIZATION_BANDS;
+-        let nearest = buckets[0];
+-        let minDist = Math.abs(score - nearest);
+-        for (const b of buckets) {
+-            const dist = Math.abs(score - b);
+-            if (dist < minDist) {
+-                minDist = dist;
+-                nearest = b;
+-            }
+-        }
+-        const hourWindow = Math.floor(Date.now() / (1000 * 60 * 60));
+-        const seed = `${fingerprint}:${user}:${hourWindow}`;
+-        const hash = crypto.createHash('sha256').update(seed).digest();
+-        const rawByte = hash.readUInt8(0);
+-        const jitter = ((rawByte / 255) * (jitterAmount * 2)) - jitterAmount;
+-        return Math.max(0, Math.min(1, nearest + jitter));
+-    }
+-
+-    static _generateTrace(fingerprint, user) {
+-        const salt = process.env.SENTINEL_TRACE_SALT || 's3cr3t_s4lt';
+-        return crypto.createHmac('sha256', salt)
+-            .update(`${fingerprint}:${user}:${Math.floor(Date.now() / (1000 * 60 * 60))}`)
+-            .digest('hex').substring(0, 16);
+-    }
+-
+-    static _calcProbingStats(fingerprint) {
+-        if (!fingerprint) return { intensity: 0, delayMs: 0 };
+-        const now = Date.now();
+-        const records = (SESSION_CACHE.get(fingerprint) || []).filter(t => now - t < COOLDOWN_MS);
+-        records.push(now);
+-        SESSION_CACHE.set(fingerprint, records);
+-        const count = records.length;
+-        let delayMs = 0;
+-        if (count >= 7) delayMs = Math.floor(Math.random() * 5000) + 3000;
+-        else if (count >= 4) delayMs = Math.floor(Math.random() * 2000) + 1000;
+-        return { intensity: count, delayMs };
+-    }
+-
+-    static getRiskBand(score) {
+-        const RISK_BANDS = {
+-            NEGLIGIBLE:       { min: 0.00, max: 0.15, priority: 'P4', action: 'NO_ACTION',                 label: 'Negligible Risk', message: 'No significant threats detected. Safe for deployment.' },
+-            LOW:              { min: 0.15, max: 0.35, priority: 'P3', action: 'MONITOR',                    label: 'Low Risk', message: 'Minor security anomalies detected. Recommended monitoring.' },
+-            MODERATE:         { min: 0.35, max: 0.60, priority: 'P2', action: 'REVIEW_RECOMMENDED',         label: 'Moderate Risk', message: 'Behavioral patterns suggest potential risk. Manual review recommended.' },
+-            HIGH:             { min: 0.60, max: 0.80, priority: 'P1', action: 'INVESTIGATION_REQUIRED',     label: 'High Risk', message: 'Suspicious signals detected in sensitive paths. Investigation required.' },
+-            HIGH_AGGREGATED:  { min: 0.80, max: 0.95, priority: 'P1', action: 'PATTERN_INVESTIGATION',      label: 'High Aggregated Risk', message: 'Multiple risk factors identified. Chain of execution suggests high threat.' },
+-            CRITICAL:         { min: 0.95, max: 1.00, priority: 'P0', action: 'IMMEDIATE_REMEDIATION',      label: 'Critical Risk', message: 'Exploitable vulnerability or malicious payload confirmed. Stop deployment.' }
+-        };
+-        for (const [name, band] of Object.entries(RISK_BANDS)) {
+-            if (score >= band.min && score < band.max) return { name, ...band, score };
+-        }
+-        return { name: 'CRITICAL', ...RISK_BANDS.CRITICAL, score };
+-    }
+-
+-    static arbitrate(signals, profileName = 'balanced', oracleCtx = {}) {
+-        const { isAuthorized = true, fingerprint = '', user = 'anonymous' } = oracleCtx;
++    static arbitrate(findings = [], mode = 'default', oracleCtx = {}) {
++        const startTime = Date.now();
++        const repoId = oracleCtx.repoId || 'unknown';
++        const traceId = crypto.randomBytes(8).toString('hex');
++
++        // Logic stub for arbitration
++        const intentSet = new Set(findings.map(f => f.intent));
++        const baseRisk = findings.length > 0 ? Math.max(...findings.map(f => f.severity)) * 10 : 0;
+         
+-        let trustLevel = TRUST_LEVELS.RESTRICTED;
+-        if (isAuthorized) trustLevel = TRUST_LEVELS.AUTHORIZED;
+-        else if (user.toLowerCase().includes('partner') || user.toLowerCase().includes('agent')) trustLevel = TRUST_LEVELS.PARTNER;
+-
+-        const exposure = PolicyEngine.resolveExposure(trustLevel);
+-        const probing = RiskOrchestrator._calcProbingStats(fingerprint);
+-        const traceId = RiskOrchestrator._generateTrace(fingerprint, user);
+-
+-        // LOCKDOWN Check (Anti-Exfiltration)
+-        if (exposure.isLockdown && probing.intensity > 10) {
+-            return { decision: 'BLOCK', score: 1.0, riskBand: RiskOrchestrator.getRiskBand(1.0), lockdown: true, traceId };
+-        }
+-
+-        if (!signals || signals.length === 0) {
+-            return { decision: 'PASS', score: 0, riskBand: RiskOrchestrator.getRiskBand(0), traceId, trustLevel, policy: PolicyEngine.getPolicyInfo() };
+-        }
+-
+-        const fileRisks = [];
+-        const fileMap = {};
+-        for (const s of signals) {
+-            const file = s._fullPath || s._file || 'unknown';
+-            if (!fileMap[file]) fileMap[file] = [];
+-            fileMap[file].push(s);
+-        }
+-        for (const file in fileMap) fileRisks.push(ScoringEngine.calculateFileRisk(fileMap[file], file));
+-
+-        let finalScore = ScoringEngine.calculateGlobalScore(fileRisks);
+-        if (trustLevel === TRUST_LEVELS.RESTRICTED && probing.intensity > 5) finalScore = Math.min(1.0, finalScore * 1.05);
+-
+-        const threshold = profileName === 'strict' ? 0.60 : 0.70;
+-        const decision = finalScore >= threshold ? 'BLOCK' : 'PASS';
+-
+-        const reportedScore = (exposure.redaction === 'none') 
+-            ? finalScore 
+-            : RiskOrchestrator.quantizeWithJitter(finalScore, exposure.jitter, fingerprint, user);
+-
+-        return {
+-            decision,
+-            score: Math.round(reportedScore * 100) / 100,
+-            riskBand: RiskOrchestrator.getRiskBand(finalScore),
++        const pathMultiplier = RiskOrchestrator._getPathMultiplier(findings);
++        const finalRisk = baseRisk * pathMultiplier;
++        const confidence = findings.length > 0 ? 0.95 : 0.01;
++        const verdict = finalRisk >= 90 ? 'BLOCK' : 'PASS';
++
++        const reasoningTrace = `Base(${baseRisk}) | Path(${pathMultiplier}) -> Final(${finalRisk})`;
++        const decisionHash = crypto.createHash('sha256').update(`${repoId}:${verdict}:${finalRisk.toFixed(2)}`).digest('hex').substring(0, 16);
++
++        return Object.freeze({
++            verdict,
++            decision: verdict,
++            impactScore: Math.round(finalRisk),
++            decisionConfidence: confidence,
+             traceId,
+-            probingIntensity: probing.intensity,
+-            delayMs: probing.delayMs,
+-            trustLevel,
+-            policy: PolicyEngine.getPolicyInfo(),
+-            rationale: {
+-                reason: decision === 'BLOCK' ? 'Aggregated Risk Threshold Exceeded' : 'Risk within acceptable bounds',
+-                topContributor: RiskOrchestrator._applyPolicyFilter(signals[0], exposure.redaction),
+-                contributors: signals.slice(0, 3).map(s => RiskOrchestrator._applyPolicyFilter(s, exposure.redaction))
+-            }
+-        };
++            reasoningTrace,
++            decision_hash: decisionHash,
++            provenance: findings,
++            rationale: { reason: "Audit complete.", detail: reasoningTrace }
++        });
+     }
+ 
+-    static _applyPolicyFilter(signal, mode) {
+-        if (!signal || mode === 'none') return signal;
+-        
+-        // Phase 13.5: Tactical Silence Redaction
+-        const redacted = { 
+-            severity: signal.severity, 
+-            riskLevel: signal.riskLevel,
+-            source: 'sentinel-policy-firewall'
+-        };
+-
+-        if (mode === 'balanced') {
+-            redacted.type = signal.type || 'SUSPICIOUS_BEHAVIOR';
+-            redacted.category = signal.category || 'POLICY_VIOLATION';
+-            redacted.description = signal.description || 'Action flagged by security policy.';
+-            redacted.evidence = '[CONTENT_REDACTED]';
+-        } else {
+-            // Aggressive Mode: Absolute intelligence suppression
+-            redacted.type = 'POLICY_ENFORCEMENT_SIGNAL';
+-            redacted.description = 'Access to specific threat intelligence is restricted under organizational policy.';
+-            redacted.evidence = '[REDACTED ÔÇö Authorized access required]';
+-        }
+-        return redacted;
++    static _getPathMultiplier(findings) {
++        let mult = 1.0;
++        findings.forEach(f => {
++            const p = (f.file || '').toLowerCase();
++            if (p.includes('/test/') || p.includes('/spec/')) mult = Math.min(mult, 0.05);
++        });
++        return mult;
+     }
+ }
+ 
+diff --git a/packages/sentinel-worker/core/scanner/rules/malware.yaml b/packages/sentinel-worker/core/scanner/rules/malware.yaml
+index 6978db8..7726acd 100644
+--- a/packages/sentinel-worker/core/scanner/rules/malware.yaml
++++ b/packages/sentinel-worker/core/scanner/rules/malware.yaml
+@@ -2,93 +2,89 @@
+   name: "Base64 Obfuscated Execution"
+   category: "obfuscation"
+   severity: 8
+-  pattern: "eval\\([^)]*atob\\([^)]*\\)"
++  pattern: "eval\\([^)]*(atob|Buffer\\.from)\\(|exec\\(Buffer\\.from"
+   description: "Detects execution of base64 decoded strings, often used to hide malware payloads"
+ 
+-- id: "npm-typosquatting"
+-  name: "Suspicious Mirror Registry URL"
+-  category: "supply-chain"
++- id: "generic-shell-execution"
++  name: "Generic Shell Execution"
++  category: "execution"
+   severity: 10
+-  pattern: 'registry\.yarnpkg\.com.*[^a-z]e?xactly-what-they-typed'
+-  description: "Detects typosquatting or malformed registry URLs in lockfiles"
++  pattern: "(curl|wget|fetch|axios|https?\\.get|echo).*(bash|sh|cmd|powershell|\\|)|child_process\\.spawn\\(['\"]bash['\"]"
++  description: "Detects download-and-execute patterns via shell pipes or direct process spawning"
+ 
+-- id: "invisible-characters"
+-  name: "Unicode Invisible Homoglyph/Control Char"
+-  category: "malware"
+-  severity: 9
+-  pattern: "[\\u200B-\\u200D\\uFEFF\\u202A-\\u202E]"
+-  description: "Detects Zero-width spaces, joins, and directional overrides used to spoof code visually"
++- id: "node-inline-network-exec"
++  name: "Inline Node.js Network Execution"
++  category: "execution"
++  severity: 10
++  pattern: "node\\s+.*-e\\s+['\"].*(fetch|axios|https?\\.get|http\\.request|net\\.connect|require\\(['\"]https?['\"]\\)|Reflect)"
++  description: "Detects dangerous inline Node.js execution combined with network requests or reflection, a signature of one-liner malware payloads."
+ 
+-- id: "shell-data-exfiltration"
+-  name: "Potential Data Exfiltration"
+-  category: "malware"
++- id: "env-exfiltration-network"
++  name: "Environment Variable Exfiltration"
++  category: "exfiltration"
+   severity: 10
+-  pattern: "(curl|wget).+(id_rsa|id_dsa|authorized_keys|\\.env|\\.passwd)"
+-  description: "Detects attempts to leak sensitive system files or environment variables via web requests"
++  pattern: "(fetch|axios|https?\\.get|http\\.request|dns\\.lookup|WebSocket|require\\(['\"]https?['\"]\\)).*process\\.env"
++  description: "Detects attempts to send environment variables (likely secrets) to external domains"
+ 
+-- id: "packed-js-obfuscation"
+-  name: "Packed JavaScript Obfuscation (Dean Edwards/etc)"
++- id: "obfuscated-eval-reconstruction"
++  name: "Obfuscated Eval Reconstruction"
+   category: "obfuscation"
+   severity: 9
+-  pattern: "eval\\(function\\(p,a,c,k,e,"
+-  description: "Detects packed JavaScript that eval()s an uncompressed payload. Typical in browser attacks but dangerous in Node."
++  pattern: "eval\\(String\\.fromCharCode|eval\\(.*\\.split\\(.*\\.reverse|eval\\(['\"]\\\\x"
++  description: "Detects attempts to rebuild and execute strings from character codes or reversed sequences to bypass simple filters"
+ 
+-- id: "nodejs-reverse-shell"
+-  name: "Node.js Reverse Shell Connection"
+-  category: "malware"
++- id: "dynamic-property-execution"
++  name: "Dynamic Property Execution (Reflection)"
++  category: "execution"
+   severity: 10
+-  pattern: "pipe\\([\\w.]*stdin\\)"
+-  description: "Detects net/socket connections piping into child process stdin (reverse shell behavior)"
++  pattern: "(globalThis|window|global|this|constructor)\\[.*(reverse|split|join|fromCharCode|atob|Buffer|from|toString|replace|concat)"
++  description: "Detects execution of strings built dynamically using reflection, string manipulation, or constructor chaining, a common technique for bypassing static analysis."
+ 
+-- id: "python-dynamic-exec"
+-  name: "Python Dynamic Execution"
+-  category: "injection"
++- id: "string-reconstruction-obfuscation"
++  name: "Suspicious String Reconstruction Chain"
++  category: "obfuscation"
+   severity: 9
+-  pattern: "\\b(eval|exec)\\s*\\(.*(request|input|sys\\.argv).*"
+-  description: "Detects dangerous dynamic execution of untrusted input in Python"
++  pattern: "\\.split\\(['\"]['\"]\\)\\.reverse\\(\\)\\.join\\(['\"]['\"]\\)"
++  description: "Detects explicit string reversal patterns, almost exclusively used to hide malicious identifiers like 'eval' or 'exec'."
+ 
+-- id: "command-injection-concat"
+-  name: "OS Command Injection via Concatenation"
+-  category: "injection"
++- id: "living-off-the-land-tamper"
++  name: "System Configuration Tampering"
++  category: "malware"
+   severity: 10
+-  pattern: "(child_process\\.exec|os\\.system|subprocess\\.Popen)\\s*\\([smf]?['\"][^'\"]+['\"]\\s*\\+|\\+\\s*[a-zA-Z0-9_]+\\s*\\+"
+-  description: "Detects shell commands built using string concatenation, which is a textbook OS command injection vector"
++  pattern: "(git\\s+config|npm_config_registry|authorized_keys|ssh/config|etc/passwd|etc/shadow|\\bsudoers\\b)"
++  description: "Detects attempts to modify critical system or tool configurations (git, npm, ssh), a sign of persistence or environment poisoning."
+ 
+-- id: "insecure-deserialization"
+-  name: "Insecure Deserialization (Python/JS)"
+-  category: "injection"
++- id: "ci-cd-credential-theft"
++  name: "CI/CD Credential Exfiltration"
++  category: "exfiltration"
+   severity: 10
+-  pattern: "\\b(pickle\\.loads|yaml\\.load\\s*\\([^,]+(?![\\s\\S]*SafeLoader)|JSON\\.parse\\s*\\(.*eval\\s*\\()"
+-  description: "Detects deserialization of untrusted objects which allows arbitrary code execution"
++  pattern: "(GITHUB_TOKEN|AWS_ACCESS_KEY|NPM_TOKEN|gh\\s+auth\\s+token|aws\\s+configure|secrets\\.)"
++  description: "Detects access to CI/CD secrets or authentication tokens, aiming to steal deployment credentials."
+ 
+-- id: "prototype-pollution-assignment"
+-  name: "Prototype Pollution Assignment"
+-  category: "injection"
++- id: "conditional-activation-gate"
++  name: "Conditional/Gated Payload"
++  category: "evasion"
+   severity: 8
+-  pattern: "\\[(?:'|\")__proto__(?:'|\")\\]\\s*="
+-  description: "Detects dynamic property assignment to __proto__, leading to global prototype pollution"
++  pattern: "if\\s*\\(.*(Date\\.now\\(\\)|process\\.env\\.CI|process\\.env\\.NODE_ENV|os\\.platform\\(\\)|repoStars|\\bsetTimeout\\b).*(>|===|!==)"
++  description: "Detects logic that gates execution based on environment (CI/CD), time, or platform, often used to hide malware from local analysis."
+ 
+-- id: "xss-dom-injection"
+-  name: "DOM / XSS Injection"
+-  category: "injection"
+-  severity: 8
+-  pattern: "\\.(innerHTML|outerHTML)\\s*=\\s*[^'\"]"
+-  description: "Detects unsafe assignment to DOM elements using non-literal values, allowing XSS execution"
+-  impact: "Cross-Site Scripting (XSS). Permite a un atacante inyectar scripts maliciosos en el navegador del usuario, robando sesiones o desfigurando la UI."
+-  remediation: "Usar textContent, innerText o librer├¡as de sanitizaci├│n (DOMPurify) en lugar de asignar directamente a innerHTML con datos no confiables."
++- id: "building-block-env-access"
++  name: "Environment Variable Access (Component)"
++  category: "malware"
++  severity: 1
++  pattern: "\\bprocess\\.env\\.[A-Z_]+"
++  description: "Detects access to environment variables, a building block for potential secret exfiltration."
+ 
+-- id: "sql-injection-concat"
+-  name: "SQL Injection via Concatenation"
+-  category: "injection"
+-  severity: 9
+-  pattern: "(SELECT|INSERT|UPDATE|DELETE)\\s+.*(?=.*\\+|\\$[{a-zA-Z])"
+-  description: "Detects raw SQL queries built with dynamic concatenations instead of parameterized bindings"
+-  impact: "SQL Injection. Un atacante puede manipular la consulta para extraer, modificar o destruir la base de datos completa."
+-  remediation: "Reemplazar la concatenaci├│n por consultas parametrizadas (Prepared Statements) u ORMs seguros. Jam├ís concatenar input de usuario."
++- id: "building-block-network-import"
++  name: "Network Module Import (Component)"
++  category: "malware"
++  severity: 1
++  pattern: "require\\(['\"] (https?|net|dns|tls)['\"]\\)"
++  description: "Detects importing network-related modules, a building block for potential exfiltration."
+ 
+-- id: "path-traversal-climb"
+-  name: "Path Traversal (Directory Climbing)"
+-  category: "injection"
+-  severity: 9
+-  pattern: "(?:\\.\\./){2,}(?:etc/passwd|etc/shadow|windows/system32|config)"
+-  description: "Detects raw directory traversal payloads aiming at sensitive OS files"
++- id: "building-block-obfuscation-helper"
++  name: "Obfuscation Helper (Component)"
++  category: "malware"
++  severity: 1
++  pattern: "\\.(split|reverse|join|fromCharCode|atob|btoa)\\("
++  description: "Detects common string manipulation methods used in obfuscation chains."
+diff --git a/packages/sentinel-worker/core/scanner/scoring_engine.js b/packages/sentinel-worker/core/scanner/scoring_engine.js
+index c45dcb4..a56b5f8 100644
+--- a/packages/sentinel-worker/core/scanner/scoring_engine.js
++++ b/packages/sentinel-worker/core/scanner/scoring_engine.js
+@@ -1,120 +1,191 @@
+ const CONFIG = require('./config');
++const RiskConcentrator = require('../risk/concentration');
++const BayesianEngine = require('../evidence/bayesian_engine');
+ 
+ /**
+- * Sentinel Oracle Brain: Scoring Engine (v2.0)
+- * 
+- * Implements Contextual Weighting and Damped Probabilistic Aggregation.
+- * Formula: R = 1 - exp(-Damping * rawRisk)
++ * Sentinel: Scoring Engine (v6.0 - Oracle Brain)
+  */
+ class ScoringEngine {
+     constructor() {
+-        this.weights = CONFIG.SCORING.CONTEXT_WEIGHTS;
+-        this.damping = CONFIG.SCORING.DAMPING_FACTOR;
+-        this.severityMap = CONFIG.SCORING.SEVERITY_MAP;
++        this.config = CONFIG.SCORING;
++        this.weights = this.config.CONTEXT_WEIGHTS;
+     }
+ 
+     /**
+-     * Calculates the Risk Score for a set of findings in a specific context.
+-     * Now includes Trust Modeling (Forensics) and Noise Reduction (Path context).
++     * Calculates the Risk Rank for a single finding.
+      */
+-    calculateFileRisk(alerts, fullPath) {
+-        if (!alerts || alerts.length === 0) return 0;
+-
+-        const deduplicated = this._deduplicate(alerts, fullPath);
+-        const weight = this.getContextWeight(fullPath);
++    computeRankScore(f) {
++        // 1. Normalize inputs using Intent Matrix (v4.0)
++        let intentCfg = { ...(CONFIG.SCORING.INTENT_MATRIX[f.intent] || { baseSeverity: 0.5, weight: 1.0 }) };
+         
+-        // NOISE REDUCTION: Discount risk for non-critical manifests and test files
+-        let pathDiscount = 1.0;
+-        if (fullPath.endsWith('package-lock.json') || fullPath.endsWith('yarn.lock')) pathDiscount = 0.3; // High noise in lockfiles
+-        if (fullPath.includes('/tests/') || fullPath.includes('/__tests__/')) pathDiscount = 0.5; // Tests are lower risk
+-
+-        let survivalProbability = 1.0;
+-
+-        deduplicated.forEach(alert => {
+-            let p = this.severityMap[alert.severity] || 0.1;
+-            
+-            // TRUST MODELING: Adjust risk based on forensic author
+-            let trustFactor = 1.0;
+-            if (alert.forensics && alert.forensics.author) {
+-                const author = alert.forensics.author;
+-                // Core maintainers (trusted authors)
+-                if (['javier20dev25', 'Javier Astaroth'].includes(author)) {
+-                    trustFactor = 0.5; // High trust but never 0
+-                }
+-            }
++        // 2. HARD NEGATIVE MINING: Contextual Intent Attenuation
++        const isHardNegative = this._isHardNegative(f._fullPath || f._file || f.file || '');
++        if (isHardNegative) {
++            intentCfg.weight *= 0.5;
++        }
+ 
+-            const isOverridden = CONFIG.SCORING.OVERRIDES.some(o => alert.category === o || (alert.type && alert.type.includes(o)));
+-            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor);
+-            
+-            survivalProbability *= (1 - (p * effectiveWeight));
++        // 3. Bayesian Posterior Confidence (v6.1 - Hero Mode)
++        const confidence = BayesianEngine.calculatePosterior([f], {
++            isHardNegative,
++            isNewFile: f.isNewInDiff,
++            isRootUtility: this._isRootUtility(f._fullPath || f.file || '')
+         });
+ 
+-        const rawRisk = 1 - survivalProbability;
+-        return 1 - Math.exp(-this.damping * rawRisk);
++        const severity = (f.riskLevel || f.severity || (intentCfg.baseSeverity * 10)) / 10;
++        const exploitability = Math.max(0, Math.min(1, f.exploitability || 0.5));
++        
++        // 4. Resolve Context
++        const contextWeight = this.getContextWeight(f._fullPath || f._file || f.file || '');
++        const provenanceWeight = this.provenanceScore(f.provenance || 'HISTORICAL');
++        
++        // 5. Chain & Novelty Bonuses
++        const chainBonus = this.chainBonusScore(f.chainTags || [], f.signals || []);
++        
++        // 6. Noise & Benignity Discounts
++        const benignityDiscount = this.benignityDiscountScore(f.provenance || 'HISTORICAL', f._fullPath || f._file || f.file || '');
++
++        // 7. Final Ranking Formula (v6.1 ÔÇö Bayesian Aware)
++        const base =
++            0.20 * severity +
++            0.35 * confidence + // Bayesian Confidence dominates decision
++            0.15 * exploitability +
++            0.10 * provenanceWeight +
++            0.15 * chainBonus +
++            0.05 * (f.isNewInDiff ? 1.0 : 0.0);
++
++        let adjusted =
++            base * contextWeight * intentCfg.weight * (1 - benignityDiscount);
++
++        // SUPPLY CHAIN ESCALATION: Lifecycle scripts are high-risk contexts
++        const isLifecycleScript = (f._fullPath || f.file || '').toLowerCase().includes('postinstall') || 
++                                 (f._fullPath || f.file || '').toLowerCase().includes('preinstall') ||
++                                 (f._fullPath || f.file || '').toLowerCase().includes('install.js');
++        if (isLifecycleScript) {
++            adjusted *= 2.7; // Aggressive escalation for supply chain vectors
++        }
++
++        return Math.max(0, Math.min(1, adjusted)) * 100;
+     }
+ 
+-    /**
+-     * Semantic Deduplication: Groups multiple technical hits into one logical threat.
+-     */
+-    _deduplicate(alerts, fullPath) {
+-        const seen = new Set();
+-        const unique = [];
+-
+-        alerts.forEach(a => {
+-            const category = this._mapCategory(a.type);
+-            const key = `${fullPath}:${a.line || a.line_number || 0}:${category}`;
+-            
+-            if (!seen.has(key)) {
+-                seen.add(key);
+-                unique.push({ ...a, category });
+-            }
+-        });
++    _isRootUtility(file) {
++        const parts = file.replace(/\\/g, '/').split('/');
++        const filename = parts[parts.length - 1];
++        return ['utils.js', 'helpers.js', 'index.js'].includes(filename) && parts.length < 5;
++    }
+ 
+-        return unique;
++    provenanceScore(prov) {
++        const weights = {
++            'SANDBOX_CONFIRMATION': 1.0,
++            'RUNTIME_TELEMETRY':    0.9,
++            'DIFF_NEW':             0.8,
++            'PRODUCTION_FILE':      0.7,
++            'BENIGN_NOISE':         0.3,
++            'HISTORICAL':           0.5
++        };
++        return weights[prov] || 0.5;
+     }
+ 
+-    _mapCategory(type = '') {
+-        if (type.includes('SECRET') || type.includes('KEY')) return 'SECRET';
+-        if (type.includes('EVAL') || type.includes('EXEC') || type.includes('INJECTION')) return 'EXECUTION';
+-        if (type.includes('ENTROPY') || type.includes('BASE64') || type.includes('OBFUSCATION') || type.includes('PAYLOAD')) return 'OBFUSCATION';
+-        if (type.includes('LIFECYCLE') || type.includes('CI_EVASION')) return 'INTEGRITY';
+-        return 'GENERAL';
++    _isHardNegative(file) {
++        const normalized = file.toLowerCase().replace(/\\/g, '/');
++        const patterns = [
++            'webpack', 'babel', 'vite', 'compiler', 'minify', 
++            'rollup', 'esbuild', 'parcel', 'eslint', 'prettier',
++            'postcss', 'autoprefixer', 'terser', 'uglify'
++        ];
++        return patterns.some(p => normalized.includes(p));
++    }
++
++    calculateFileRisk(findings, fullPath) {
++        if (!findings || findings.length === 0) return 0;
++        const uniqueFindings = new Map();
++        findings.forEach(f => {
++            const key = `${f.type}:${f.line}`;
++            if (!uniqueFindings.has(key) || f.severity > uniqueFindings.get(key).severity) {
++                uniqueFindings.set(key, f);
++            }
++        });
++        const ranks = Array.from(uniqueFindings.values()).map(f => this.computeRankScore({
++            ...f,
++            file: fullPath,
++            _fullPath: fullPath
++        }));
++        return Math.max(...ranks) / 100;
+     }
+ 
+-    /**
+-     * Resolves the weighting factor based on directory depth and importance.
+-     */
+     getContextWeight(fullPath) {
+         const parts = fullPath.split(/[\\/]/);
+-        
+-        // Prioritize specific files (e.g. package.json)
+         const filename = parts[parts.length - 1];
+         if (this.weights[filename]) return this.weights[filename];
+-
+-        // Check for directory matches in the path
+         for (const dir in this.weights) {
+             if (parts.includes(dir)) return this.weights[dir];
+         }
+-
+-        return this.weights['default'];
++        return this.weights['default'] || 0.7;
+     }
+ 
+-    /**
+-     * Aggregates multiple file risks into a Repo Global Score.
+-     * Phase 5 Calibration: Volume-Dampened Aggregation.
+-     */
+-    calculateGlobalScore(fileRisks) {
+-        if (!fileRisks || fileRisks.length === 0) return 0;
+-        
+-        // Volume-Dampened Aggregation: Prevents high-volume repos from 
+-        // exponentially inflating the score just by having many low-risk files.
+-        const maxRisk = Math.max(...fileRisks);
+-        const avgRisk = fileRisks.reduce((sum, val) => sum + val, 0) / fileRisks.length;
++    benignityDiscountScore(provenance, file) {
++        const normalized = file.toLowerCase().replace(/\\/g, '/');
+         
+-        // Anchor on the worst file, plus a fraction of the repo's average noise
+-        const globalRaw = maxRisk + (avgRisk * 0.25); 
++        // SUPPLY CHAIN SAFETY: Never discount lifecycle scripts
++        const isLifecycleScript = normalized.includes('postinstall') || 
++                                normalized.includes('preinstall') || 
++                                normalized.includes('install.js');
++        if (isLifecycleScript) return 0;
++
++        let discount = 0;
++        if (provenance === "TEST_FIXTURE") discount += 0.60;
++        if (provenance === "DOC_EXAMPLE")  discount += 0.50;
++        if (provenance === "GENERATED")    discount += 0.65;
++        if (provenance === "BENIGN_NOISE") discount += 0.70;
++        if (normalized.includes("/node_modules/")) discount += 0.90;
++        if (normalized.includes("/dist/"))         discount += 0.85;
++        if (normalized.includes("/build/"))        discount += 0.80;
++        if (normalized.includes("/vendor/"))       discount += 0.85;
++        if (normalized.includes("/fixtures/"))     discount += 0.75;
++        if (normalized.includes("/__tests__/"))    discount += 0.75;
++        if (normalized.includes("/test/"))         discount += 0.60;
++        if (normalized.includes("/docs/"))         discount += 0.55;
++        if (normalized.includes("/examples/"))     discount += 0.50;
++        if (normalized.includes("/lib/"))           discount += 0.25;
++        if (normalized.includes("/adapters/"))      discount += 0.15;
++        if (normalized.includes("/core/"))          discount += 0.15;
++        if (normalized.includes("/helpers/"))       discount += 0.15;
++        if (normalized.includes("/utils/"))         discount += 0.15;
++        if (normalized.includes("/scripts/"))       discount += 0.20; // Reduced from 0.30
++        if (normalized.includes(".d.ts"))           discount += 0.45;
++        return Math.max(0, Math.min(1, discount));
++    }
++
++    chainBonusScore(tags = [], signals = []) {
++        let bonus = 0;
++        const hasExec = tags.includes("EXECUTION");
++        const hasExfil = tags.includes("EXFILTRATION");
++        if (hasExec && hasExfil) bonus += 0.15;
++        if (signals.length > 3) bonus += 0.05;
++        return Math.min(0.20, bonus);
++    }
+ 
+-        return 1 - Math.exp(-this.damping * globalRaw);
++    calculateGlobalScore(fileRisks, mode = 'REPO') {
++        const validRisks = (fileRisks || []).filter(r => !isNaN(r));
++        if (validRisks.length === 0) return 0;
++        const stats = RiskConcentrator.analyze(validRisks);
++        const anchorRisk = stats.top1;
++        const top3Risk = stats.top3;
++        const concentration = stats.concentration;
++        const avgRisk = validRisks.reduce((sum, val) => sum + val, 0) / validRisks.length;
++        const weights = {
++            anchor: 0.40,
++            top3: 0.25,
++            concentration: 0.20,
++            noiseDampening: 0.15
++        };
++        const gamma = 0.25;
++        const globalRaw = weights.anchor * anchorRisk + 
++                          weights.top3 * top3Risk + 
++                          weights.concentration * concentration + 
++                          weights.noiseDampening * (avgRisk * gamma);
++        const lambda = mode === "PR" ? 2.5 : mode === "REPO" ? 2.2 : 2.3;
++        const dampenedRisk = 1 - Math.exp(-lambda * globalRaw);
++        return Math.max(0, Math.min(1, dampenedRisk));
+     }
+ }
+ 
+diff --git a/packages/sentinel-worker/core/scanner/workflow/sentinel-sandbox.yml b/packages/sentinel-worker/core/scanner/workflow/sentinel-sandbox.yml
+index bfce9fc..38aa4d9 100644
+--- a/packages/sentinel-worker/core/scanner/workflow/sentinel-sandbox.yml
++++ b/packages/sentinel-worker/core/scanner/workflow/sentinel-sandbox.yml
+@@ -45,6 +45,10 @@ on:
+         required: false
+         default: false
+         type: boolean
++      sentinel_signature:
++        description: "Firma JWT temporal de validaci├│n"
++        required: true
++        type: string
+ 
+   repository_dispatch:
+     types: [sentinel-sandbox-run]
+@@ -63,6 +67,14 @@ jobs:
+     timeout-minutes: 15
+ 
+     steps:
++      - name: "­ƒöÉ Validar Firma y Entorno"
++        run: |
++          if [ -z "${{ inputs.sentinel_signature }}" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
++            echo "::error::Firma SENTINEL_SIGNATURE requerida para ejecuci├│n."
++            exit 1
++          fi
++          echo "SENTINEL_SIGNATURE=${{ inputs.sentinel_signature }}" >> $GITHUB_ENV
++
+       - name: "­ƒöÆ Habilitar monitoreo de red (Harden-Runner)"
+         uses: step-security/harden-runner@v2
+         with:
+@@ -85,10 +97,17 @@ jobs:
+         with:
+           node-version: "20"
+ 
+-      - name: "­ƒº¼ Setup Sentinel X-Ray Toolkit & Profile Spoofing"
++      - name: "­ƒº¼ Setup Sentinel X-Ray Toolkit & Camuflaje Avanzado"
+         run: |
+-          # 1. Profile Locale Spoofing based on SENTINEL_SANDBOX_PROFILE
+-          PROFILE="${SENTINEL_SANDBOX_PROFILE:-safe}"
++          # 1. Camuflaje Anti-Huella (Virtualizaci├│n de entorno)
++          echo "GITHUB_ACTIONS=false" >> $GITHUB_ENV
++          echo "CI=false" >> $GITHUB_ENV
++          echo "USER=developer" >> $GITHUB_ENV
++          # HoneyToken Se├▒uelo
++          echo "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" >> $GITHUB_ENV
++
++          # 2. Profile Locale Spoofing based on SENTINEL_SANDBOX_PROFILE
++          PROFILE="${SENTINEL_SANDBOX_PROFILE:-evasion-detect}"
+           if [ "$PROFILE" = "aggressive" ] || [ "$PROFILE" = "evasion-detect" ]; then
+             echo "TZ=Europe/Moscow" >> $GITHUB_ENV
+             echo "LANG=ru_RU.UTF-8" >> $GITHUB_ENV
+@@ -99,23 +118,67 @@ jobs:
+             echo "[SENTINEL] Active Profile: Safe (No spoofing)"
+           fi
+ 
+-          # 2. Inject X-Ray Hooking Engine
++          # 3. Inject X-Ray Hooking Engine (Deep Userland Inspection)
+           cat << 'EOF' > /tmp/sentinel-xray.js
++          const fs = require('fs');
++          function logAlert(msg) {
++              fs.appendFileSync('/tmp/xray-alerts.txt', `[SENTINEL-XRAY] ­ƒÜ¿ ${msg}\n`);
++          }
++
++          // Hook: eval & new Function
+           const originalEval = global.eval;
+-          global.eval = function (code) {
+-              console.log("\n[SENTINEL-XRAY] ­ƒÜ¿ INTERCEPTED EVAL PAYLOAD ­ƒÜ¿");
+-              console.log(code, "\n");
+-              return originalEval(code);
+-          };
++          global.eval = function (code) { logAlert('INTERCEPTED EVAL PAYLOAD'); return originalEval(code); };
+           const originalFunction = global.Function;
+           global.Function = new Proxy(originalFunction, {
+-              construct(target, args) {
+-                  console.log("\n[SENTINEL-XRAY] ­ƒÜ¿ INTERCEPTED 'new Function' PAYLOAD ­ƒÜ¿");
+-                  console.log(args[args.length - 1], "\n");
+-                  return new target(...args);
+-              }
++              construct(target, args) { logAlert('INTERCEPTED new Function'); return new target(...args); }
+           });
++
++          // Hook: child_process
++          try {
++              const cp = require('child_process');
++              const origSpawn = cp.spawn;
++              const origExec = cp.exec;
++              const origExecSync = cp.execSync;
++              cp.spawn = function() { logAlert(`NATIVE PROCESS SPAWN: ${arguments[0]}`); return origSpawn.apply(this, arguments); };
++              cp.exec = function() { logAlert(`NATIVE PROCESS EXEC: ${arguments[0]}`); return origExec.apply(this, arguments); };
++              cp.execSync = function() { logAlert(`NATIVE PROCESS EXECSYNC: ${arguments[0]}`); return origExecSync.apply(this, arguments); };
++          } catch(e) {}
++
++          // Hook: process.binding (Advanced Evasion)
++          try {
++              const origBinding = process.binding;
++              process.binding = function(name) {
++                  logAlert(`SENSITIVE PROCESS BINDING: ${name}`);
++                  return origBinding.apply(this, arguments);
++              };
++          } catch(e) {}
++
++          // Hook: Module Load (Dependency Hijacking)
++          try {
++              const Module = require('module');
++              const origLoad = Module._load;
++              Module._load = function(request) {
++                  if (request.includes('../') || request.startsWith('/')) {
++                      logAlert(`SUSPICIOUS MODULE LOAD: ${request}`);
++                  }
++                  return origLoad.apply(this, arguments);
++              };
++          } catch(e) {}
++
++          // Hook: WebAssembly
++          try {
++              const origInstantiate = WebAssembly.instantiate;
++              WebAssembly.instantiate = function() { logAlert('WASM BINARY INSTANTIATION ATTEMPT'); return origInstantiate.apply(this, arguments); };
++          } catch(e) {}
++
++          // Hook: vm module
++          try {
++              const vm = require('vm');
++              const origRunInNewContext = vm.runInNewContext;
++              vm.runInNewContext = function() { logAlert('VM NEW CONTEXT EXECUTION'); return origRunInNewContext.apply(this, arguments); };
++          } catch(e) {}
+           EOF
++          
+           # Export to node process
+           echo "NODE_OPTIONS=--require /tmp/sentinel-xray.js" >> $GITHUB_ENV
+ 
+@@ -125,9 +188,11 @@ jobs:
+           cp package-lock.json /tmp/before-lock.json 2>/dev/null || echo "{}" > /tmp/before-lock.json
+           ss -tunp 2>/dev/null > /tmp/netstat-before.txt || echo "netstat not available" > /tmp/netstat-before.txt
+ 
+-      - name: "­ƒôª npm ci --ignore-scripts (Baseline mode)"
++      - name: "­ƒôª Dynamic Installation (Detonation Mode con strace)"
+         run: |
+-          npm ci --ignore-scripts --no-audit | tee /tmp/npm-install-output.txt || true
++          sudo apt-get update && sudo apt-get install -y strace
++          echo "Ejecutando detonaci├│n en Sandbox..."
++          strace -f -e trace=execve,connect,openat -o /tmp/syscalls.txt npm install --no-audit | tee /tmp/npm-install-output.txt || true
+         env:
+           NO_COLOR: "1"
+ 
+@@ -148,6 +213,8 @@ jobs:
+             /tmp/netstat-after.txt
+             /tmp/npm-install-output.txt
+             /tmp/executables.txt
++            /tmp/syscalls.txt
++            /tmp/xray-alerts.txt
+           retention-days: 7
+ 
+       - name: "­ƒôè Resumen de an├ílisis"
+diff --git a/packages/sentinel-worker/index.js b/packages/sentinel-worker/index.js
+index aef4619..64c6563 100644
+--- a/packages/sentinel-worker/index.js
++++ b/packages/sentinel-worker/index.js
+@@ -59,9 +59,17 @@ async function processJob(job) {
+     try {
+       if (job.pr_number) {
+         // PR scan: clone then fetch the PR head ref to scan the actual PR code
+-        await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
++        await execAsync(`git clone --depth 50 https://github.com/${job.repo_full_name} ${cloneDir}`);
+         await execAsync(`git fetch origin pull/${job.pr_number}/head:pr-branch && git checkout pr-branch`, { cwd: cloneDir });
+         console.log(`[JOB ${job.id}] Checked out PR #${job.pr_number} branch`);
++        
++        // Collect Diff Stats
++        const { stdout: diffStat } = await execAsync(`git diff --shortstat origin/main...head`, { cwd: cloneDir }).catch(() => ({ stdout: '' }));
++        job.metadata.diff_stats = diffStat.trim();
++        
++        // Scan for "Massive Lines" (>35KB)
++        const { stdout: largeLines } = await execAsync(`git diff origin/main...head | grep "^+" | awk 'length > 35000' | wc -l`, { cwd: cloneDir }).catch(() => ({ stdout: '0' }));
++        job.metadata.large_lines_detected = parseInt(largeLines.trim()) || 0;
+       } else {
+         // Full repo scan: just clone default branch
+         await execAsync(`git clone --depth 1 https://github.com/${job.repo_full_name} ${cloneDir}`);
+@@ -71,10 +79,45 @@ async function processJob(job) {
+       throw new Error(`Failed to clone repository: ${cloneErr.message}`);
+     }
+ 
+-    // 3. Run the core engine via CJS bridge (scanner uses CommonJS require())
+-    console.log(`[JOB ${job.id}] Starting AST scan on ${cloneDir}...`);
++    // 2.5 Fetch Author Metadata from GitHub
++    let authorInfo = null;
++    const token = job.metadata?.provider_token;
++    if (job.pr_number && token) {
++      try {
++        const prRes = await fetch(`https://api.github.com/repos/${job.repo_full_name}/pulls/${job.pr_number}`, {
++          headers: { 'Authorization': `Bearer ${token}` }
++        });
++        if (prRes.ok) {
++          const prData = await prRes.json();
++          const userUrl = prData.user.url;
++          const userRes = await fetch(userUrl, { headers: { 'Authorization': `Bearer ${token}` } });
++          if (userRes.ok) {
++            const userData = await userRes.json();
++            authorInfo = {
++              login: userData.login,
++              avatar_url: userData.avatar_url,
++              html_url: userData.html_url,
++              created_at: userData.created_at,
++              public_repos: userData.public_repos,
++              followers: userData.followers
++            };
++          }
++        }
++      } catch (e) {
++        console.error(`[JOB ${job.id}] Failed to fetch author info:`, e);
++      }
++    }
++
++    // 3. Run the core engine via CJS bridge
++    const scanType = job.scan_type || (job.metadata?.action === 'BASELINE_RADIOGRAPHY' ? 'BASELINE' : 'PR');
++    console.log(`[JOB ${job.id}] Starting ${scanType} scan on ${cloneDir}...`);
++    
+     const bridge = require('./scan-bridge.cjs');
+-    const scanResults = await bridge.scanDirectory(cloneDir, job.repo_hash, 5, { mode: 'cloud', profile: 'DEFAULT' });
++    const scanResults = await bridge.scanDirectory(cloneDir, job.repo_hash, 5, { 
++      mode: 'cloud', 
++      profile: 'DEFAULT',
++      scanType: scanType
++    });
+ 
+     const vulnerabilitiesFound = scanResults.threats || 0;
+     const riskScore = scanResults.riskScore || 0;
+@@ -101,10 +144,16 @@ async function processJob(job) {
+         pattern: 'core_ast_scan',
+         risk_score: riskScore,
+         confidence: 0.98,
++        is_baseline: scanType === 'BASELINE',
++        origin: scanType,
+         metadata: {
+            filesScanned: scanResults.filesScanned,
+            verdict: scanResults.verdict,
+-           topAlerts: topAlerts
++           topAlerts: topAlerts,
++           author: authorInfo,
++           diff_stats: job.metadata.diff_stats,
++           large_lines: job.metadata.large_lines_detected,
++           github_repo_url: `https://github.com/${job.repo_full_name}`
+         }
+       });
+ 
+@@ -113,6 +162,23 @@ async function processJob(job) {
+       throw insertError; 
+     }
+ 
++    // 5.5 If it's a BASELINE scan, update the repositories table
++    if (scanType === 'BASELINE') {
++      console.log(`[JOB ${job.id}] Finalizing BASELINE. Updating repository risk level...`);
++      await supabase
++        .from('repositories')
++        .update({
++          baseline_risk: riskScore,
++          baseline_breakdown: {
++            verdict: scanResults.verdict,
++            files_scanned: scanResults.filesScanned,
++            findings: vulnerabilitiesFound,
++            scanned_at: new Date().toISOString()
++          }
++        })
++        .eq('id', job.repo_hash);
++    }
++
+     // 6. Marcar el job como COMPLETED
+     const executionTime = Date.now() - startTime;
+     await supabase

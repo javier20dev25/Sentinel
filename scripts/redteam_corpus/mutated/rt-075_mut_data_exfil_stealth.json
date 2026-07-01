@@ -1,0 +1,20 @@
+{
+  "id": "rt-075_mut_data_exfil_stealth",
+  "name": "obfuscation_eval",
+  "repo": "facebook/react",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "src/core.js",
+  "signals": [
+    "ENCODING",
+    "EXECUTION",
+    "ENCODING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DATA_EXFIL_STEALTH",
+  "base_case": "rt-075"
+}

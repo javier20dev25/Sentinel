@@ -1,0 +1,20 @@
+{
+  "id": "rt-054_mut_data_exfil_stealth",
+  "name": "credential_theft",
+  "repo": "vercel/next.js",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "pages/api/auth.js",
+  "signals": [
+    "SECRET_ACCESS",
+    "NETWORK",
+    "ENCODING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DATA_EXFIL_STEALTH",
+  "base_case": "rt-054"
+}

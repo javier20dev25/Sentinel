@@ -1,0 +1,123 @@
+{
+  "expressjs/express": {
+    "rollingRisk": 0.6589374125003814,
+    "trustTrend": 0,
+    "seenIntents": [],
+    "convergenceScore": 0.6000000000000001,
+    "rollingConfidence": 0.99,
+    "scanCount": 12,
+    "trajectory": [
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 43,
+        "timestamp": 1778448910824
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 43,
+        "timestamp": 1778448911019
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 65,
+        "timestamp": 1778449498601
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 67,
+        "timestamp": 1778449498798
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 69,
+        "timestamp": 1778449499019
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 70,
+        "timestamp": 1778449499212
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 77,
+        "timestamp": 1778450112060
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 69,
+        "timestamp": 1778450112260
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 69,
+        "timestamp": 1778450112479
+      },
+      {
+        "vector": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 69,
+        "timestamp": 1778450112676
+      }
+    ],
+    "lastScan": 1778450112676
+  }
+}

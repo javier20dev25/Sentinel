@@ -1,0 +1,17 @@
+{
+  "id": "rt-073",
+  "name": "obfuscation_eval",
+  "repo": "facebook/react",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "src/core.js",
+  "signals": [
+    "ENCODING",
+    "EXECUTION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true
+}

@@ -1,0 +1,19 @@
+{
+  "id": "rt-038_mut_obfuscation_base64",
+  "name": "supply_chain_postinstall",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "malicious",
+  "file": "package.json",
+  "signals": [
+    "SUPPLY_CHAIN_TAMPERING",
+    "EXECUTION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "OBFUSCATION_BASE64",
+  "base_case": "rt-038"
+}

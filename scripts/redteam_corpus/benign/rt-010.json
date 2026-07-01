@@ -1,0 +1,16 @@
+{
+  "id": "rt-010",
+  "name": "infra_proxy",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "benign",
+  "file": "lib/proxy.js",
+  "signals": [
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

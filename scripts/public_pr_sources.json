@@ -1,0 +1,50 @@
+[
+  {
+    "id": "react-31005",
+    "repo": "facebook/react",
+    "pr": 31005,
+    "url": "https://github.com/facebook/react/pull/31005",
+    "profile": "frontend",
+    "description": "Core UI logic update"
+  },
+  {
+    "id": "next-42001",
+    "repo": "vercel/next.js",
+    "pr": 42001,
+    "url": "https://github.com/vercel/next.js/pull/42001",
+    "profile": "frontend",
+    "description": "Framework routing enhancement"
+  },
+  {
+    "id": "express-5012",
+    "repo": "expressjs/express",
+    "pr": 5012,
+    "url": "https://github.com/expressjs/express/pull/5012",
+    "profile": "infrastructure",
+    "description": "Middleware orchestration update"
+  },
+  {
+    "id": "lodash-1002",
+    "repo": "lodash/lodash",
+    "pr": 1002,
+    "url": "https://github.com/lodash/lodash/pull/1002",
+    "profile": "libraries",
+    "description": "Security patch for deep cloning"
+  },
+  {
+    "id": "node-49012",
+    "repo": "nodejs/node",
+    "pr": 49012,
+    "url": "https://github.com/nodejs/node/pull/49012",
+    "profile": "infrastructure",
+    "description": "Experimental WASI support"
+  },
+  {
+    "id": "auth-8021",
+    "repo": "nextauthjs/next-auth",
+    "pr": 8021,
+    "url": "https://github.com/nextauthjs/next-auth/pull/8021",
+    "profile": "infrastructure",
+    "description": "Session encryption hardening"
+  }
+]

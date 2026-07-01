@@ -1,0 +1,167 @@
+{
+  "expressjs/express": {
+    "rollingRisk": 0.40916015625,
+    "trustTrend": 0.4400000000000001,
+    "seenIntents": [],
+    "convergenceScore": 0.4,
+    "rollingConfidence": 0.99,
+    "scanCount": 5,
+    "trajectory": [
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 50,
+        "timestamp": 1778429090905
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 50,
+        "timestamp": 1778429091440
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 28,
+        "timestamp": 1778429105598
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 28,
+        "timestamp": 1778429107879
+      },
+      {
+        "vector": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "risk": 90,
+        "timestamp": 1778429109655
+      }
+    ],
+    "lastScan": 1778429109655
+  },
+  "attacker/chaos-repo": {
+    "rollingRisk": 0.8954376220703124,
+    "trustTrend": 0,
+    "seenIntents": [],
+    "convergenceScore": 0.6000000000000001,
+    "rollingConfidence": 0.99,
+    "scanCount": 8,
+    "trajectory": [
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778432407588
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 90,
+        "timestamp": 1778432408655
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435514436
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435515347
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435671820
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435672773
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435936155
+      },
+      {
+        "vector": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "risk": 100,
+        "timestamp": 1778435937064
+      }
+    ],
+    "lastScan": 1778435937064
+  }
+}

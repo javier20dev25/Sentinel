@@ -46,6 +46,9 @@ const CONFIG = {
         DAMPING_FACTOR: 1.5,
         CONTEXT_WEIGHTS: {
             'package.json': 1.2,
+            'package-lock.json': 1.1,
+            'pnpm-lock.yaml': 1.1,
+            'yarn.lock': 1.1,
             'src': 1.0,
             'lib': 1.0,
             'config': 0.9,
@@ -66,7 +69,44 @@ const CONFIG = {
             'WARNING': 0.4,
             'LOW': 0.1
         },
-        OVERRIDES: ['SECRET', 'API_KEY', 'PRIVATE_KEY'] // High severity regardless of context
+        MULTIPLIERS: {
+            ORIGIN: {
+                baseline: 0.6,
+                pr: 1.0,
+                runtime: 1.2,
+                sandbox: 1.4
+            },
+            CONFIDENCE: {
+                static: 0.4,
+                heuristic: 0.6,
+                dynamic: 0.9,
+                discrepancy: 1.5
+            }
+        },
+        
+        // Oracle Brain v4.0: Universal Intent Matrix
+        INTENT_MATRIX: {
+            EXECUTION: { baseSeverity: 0.8, weight: 1.2 },
+            EXFILTRATION: { baseSeverity: 0.9, weight: 1.3 },
+            EVASION: { baseSeverity: 0.7, weight: 1.1 },
+            PERSISTENCE: { baseSeverity: 0.85, weight: 1.2 },
+            PRIVILEGE_ABUSE: { baseSeverity: 0.9, weight: 1.4 },
+            SUPPLY_CHAIN_TAMPERING: { baseSeverity: 0.95, weight: 1.5 },
+            CI_CD_ABUSE: { baseSeverity: 0.9, weight: 1.3 },
+            POLICY_VIOLATION: { baseSeverity: 0.4, weight: 0.8 }
+        },
+
+        UNIVERSAL_NODES: {
+            PROCESS_EXEC: "execution",
+            NETWORK_CONNECT: "exfiltration",
+            FILE_WRITE: "persistence",
+            DYNAMIC_CODE_EXEC: "evasion",
+            ENV_ACCESS: "exfiltration",
+            SECRET_ACCESS: "exfiltration",
+            REGISTRY_CHANGE: "supply_chain",
+            PERMISSION_CHANGE: "privilege",
+            LIFECYCLE_SCRIPT: "supply_chain"
+        }
     }
 };
 

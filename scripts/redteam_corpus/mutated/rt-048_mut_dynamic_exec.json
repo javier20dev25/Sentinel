@@ -1,0 +1,19 @@
+{
+  "id": "rt-048_mut_dynamic_exec",
+  "name": "credential_theft",
+  "repo": "vercel/next.js",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "pages/api/auth.js",
+  "signals": [
+    "SECRET_ACCESS",
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "DYNAMIC_EXEC",
+  "base_case": "rt-048"
+}

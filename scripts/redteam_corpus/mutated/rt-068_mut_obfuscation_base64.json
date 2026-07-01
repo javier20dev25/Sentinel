@@ -1,0 +1,19 @@
+{
+  "id": "rt-068_mut_obfuscation_base64",
+  "name": "obfuscation_eval",
+  "repo": "facebook/react",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "src/core.js",
+  "signals": [
+    "ENCODING",
+    "EXECUTION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "OBFUSCATION_BASE64",
+  "base_case": "rt-068"
+}

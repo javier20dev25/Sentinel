@@ -3,6 +3,7 @@
 const readline = require('readline');
 const pc = require('picocolors');
 const { spawnSync } = require('child_process');
+const path = require('path');
 const { printMetrics } = require('./telemetry');
 const gh = require('../../sentinel-core/lib/gh_bridge');
 const scanner = require('../../sentinel-core/scanner/index');
@@ -21,8 +22,9 @@ const i18n = {
         menu_opt1: 'Select Workspaces & Run Audits',
         menu_opt2: 'Sentinel Guard & Configuration (NPM Intercept)',
         menu_opt3: 'View CLI Manual & Run Commands',
-        menu_opt4: 'Classified Documents',
-        menu_opt5: 'Exit',
+        menu_opt4: 'Permissions Audit',
+        menu_opt5: 'Classified Documents',
+        menu_opt6: 'Exit',
         select_opt: 'Select option',
         invalid_sel: 'Invalid selection.',
         workspace_title: 'Workspace Discovery',
@@ -86,8 +88,9 @@ const i18n = {
         menu_opt1: 'Seleccionar Repositorios y Ejecutar Auditorías',
         menu_opt2: 'Sentinel Guard y Configuración (Interceptar NPM)',
         menu_opt3: 'Ver Manual CLI y Ejecutar Comandos',
-        menu_opt4: 'Documentos Clasificados',
-        menu_opt5: 'Salir',
+        menu_opt4: 'Auditoría de Permisos',
+        menu_opt5: 'Documentos Clasificados',
+        menu_opt6: 'Salir',
         select_opt: 'Selecciona una opción',
         invalid_sel: 'Selección inválida.',
         workspace_title: 'Descubrimiento de Espacios de Trabajo',
@@ -146,10 +149,17 @@ const i18n = {
 let lang = 'en';
 const t = (key) => i18n[lang][key];
 
+let rlInstance = null;
+
+function getRl() {
+    if (!rlInstance) {
+        rlInstance = readline.createInterface({ input: process.stdin, output: process.stdout });
+    }
+    return rlInstance;
+}
+
 function askQuestion(query) {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise(resolve => rl.question(query, ans => {
-        rl.close();
+    return new Promise(resolve => getRl().question(query, ans => {
         resolve(ans.trim());
     }));
 }
@@ -208,10 +218,11 @@ async function startInteractiveHub() {
         console.log(pc.blue('  1.') + pc.white(` 📦 ${t('menu_opt1')}`));
         console.log(pc.blue('  2.') + pc.white(` ⚙️  ${t('menu_opt2')}`));
         console.log(pc.blue('  3.') + pc.white(` 📖 ${t('menu_opt3')}`));
-        console.log(pc.blue('  4.') + pc.white(` 🔐 ${t('menu_opt4')}`));
-        console.log(pc.blue('  5.') + pc.white(` 🚪 ${t('menu_opt5')}`));
+        console.log(pc.blue('  4.') + pc.white(` 📋 ${t('menu_opt4')}`));
+        console.log(pc.blue('  5.') + pc.white(` 🔐 ${t('menu_opt5')}`));
+        console.log(pc.blue('  6.') + pc.white(` 🚪 ${t('menu_opt6')}`));
         
-        const mainAction = await askQuestion(pc.blue('  ❯ ') + pc.bold(`${t('select_opt')} (1-5): `));
+        const mainAction = await askQuestion(pc.blue('  ❯ ') + pc.bold(`${t('select_opt')} (1-6): `));
 
         if (mainAction === '1') {
             await handleWorkspaceDiscovery();
@@ -220,11 +231,24 @@ async function startInteractiveHub() {
         } else if (mainAction === '3') {
             await handleInteractiveShell();
         } else if (mainAction === '4') {
-            const { handleClassifiedMenu } = require('./classify');
-            await handleClassifiedMenu(lang);
+            const pkg = await askQuestion(pc.blue('  ❯ ') + pc.bold(lang === 'es' ? 'Ingresa el nombre del paquete para auditar (vacío para workspace): ' : 'Enter package name to audit (leave empty for workspace): '));
+            getRl().pause();
+            const args = ['permissions'];
+            if (pkg.trim()) args.push(pkg.trim());
+            const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
+            spawnSync(cmd, [path.join(__dirname, 'index.js'), ...args], { stdio: 'inherit', env: { ...process.env, FORCE_COLOR: '1' } });
+            getRl().resume();
+            await askQuestion(pc.dim(`\n${t('press_enter')}`));
             printHeader();
         } else if (mainAction === '5') {
+            const { handleClassifiedMenu } = require('./classify');
+            await handleClassifiedMenu(lang, askQuestion);
+            printHeader();
+        } else if (mainAction === '6') {
             console.log(pc.cyan(`\n${t('session_end')}\n`));
+            if (rlInstance) {
+                rlInstance.close();
+            }
             process.exit(0);
         } else {
             console.log(pc.red(`    ${t('invalid_sel')}\n`));
@@ -304,7 +328,9 @@ async function handleInteractiveShell() {
         if (cmd.trim() !== '') {
             const args = cmd.split(' ').map(s => s.trim()).filter(s => s.length > 0);
             console.log(pc.dim('\n  Ejecutando: sentinel ' + cmd + '...\n'));
+            getRl().pause();
             spawnSync('node', [__dirname + '/index.js', ...args], { stdio: 'inherit' });
+            getRl().resume();
             console.log('');
         }
     }
@@ -325,13 +351,21 @@ async function handleConfigurationMenu() {
 
         console.log('');
         if (action === '1') {
+            getRl().pause();
             spawnSync('node', [__dirname + '/index.js', 'guard', 'status'], { stdio: 'inherit' });
+            getRl().resume();
         } else if (action === '2') {
+            getRl().pause();
             spawnSync('node', [__dirname + '/index.js', 'guard', 'enable'], { stdio: 'inherit' });
+            getRl().resume();
         } else if (action === '3') {
+            getRl().pause();
             spawnSync('node', [__dirname + '/index.js', 'guard', 'disable'], { stdio: 'inherit' });
+            getRl().resume();
         } else if (action === '4') {
+            getRl().pause();
             spawnSync('node', [__dirname + '/index.js', 'trust', 'list'], { stdio: 'inherit' });
+            getRl().resume();
         } else if (action === '5') {
             console.clear();
             printHeader();

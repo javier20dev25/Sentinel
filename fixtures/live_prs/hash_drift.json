@@ -1,0 +1,22 @@
+{
+  "fixture_type": "risk",
+  "ts": "2026-05-12T02:00:00.000Z",
+  "repo": "vercel/next.js",
+  "pr": 93770,
+  "sha": "57a8287d9b2d037bdd59ea98c31b23c92f60589f",
+  "verdict": "PASS",
+  "impact": 999,
+  "filesCount": 1,
+  "provenance": [
+    {
+      "intent": "NETWORK",
+      "severity": 5,
+      "file": "test/integration/basic/test/index.test.js",
+      "line": 42,
+      "hunk": "@@ -40,5 +42,8 @@",
+      "excerpt": "const res = await fetch('http://localhost:' + port + '/api/data');"
+    }
+  ],
+  "reasoningTrace": "Base(32) | Path(0.05) -> Final(1.6)",
+  "decision_hash": "e11d656a07982fcb"
+}

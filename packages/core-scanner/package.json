@@ -1,0 +1,20 @@
+{
+  "name": "@sentinel/core-scanner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/secret_scanner.ts",
+  "exports": {
+    ".": "./src/secret_scanner.ts",
+    "./secret_scanner": "./src/secret_scanner.ts",
+    "./threat_intel": "./src/threat_intel.ts",
+    "./typo_squatting": "./src/typo_squatting.ts",
+    "./vulnerability_db": "./src/vulnerability_db.ts",
+    "./sca_engine": "./src/sca_engine.ts",
+    "./sbom": "./src/sbom.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}

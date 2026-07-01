@@ -1,0 +1,20 @@
+{
+  "id": "rt-057_mut_supply_chain_postinstall",
+  "name": "exfiltration_beacon",
+  "repo": "lodash/lodash",
+  "repoProfile": "libraries",
+  "category": "malicious",
+  "file": "lib/index.js",
+  "signals": [
+    "EXFILTRATION",
+    "NETWORK",
+    "SUPPLY_CHAIN_TAMPERING"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "SUPPLY_CHAIN_POSTINSTALL",
+  "base_case": "rt-057"
+}

@@ -1,0 +1,1181 @@
+{
+  "version": "v3.0",
+  "createdAt": "2026-05-11T18:03:03.918Z",
+  "eventCount": 4535,
+  "repoCount": 14,
+  "state": {
+    "expressjs/express": {
+      "rollingRisk": 0.9920050279264773,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 952,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965214
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965215
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965216
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965217
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965218
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965261
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965263
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965264
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965265
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965266
+        }
+      ],
+      "benignPatternFrequency": 255,
+      "labels": {
+        "e03dc7db45053ac6": "FALSE_POSITIVE",
+        "d34abfe987fed8ec": "FALSE_POSITIVE",
+        "e63b105aeafb74c5": "FALSE_POSITIVE"
+      },
+      "lastSeen": 1778487965266
+    },
+    "colinhacks/zod": {
+      "rollingRisk": 0.4699999999999999,
+      "trustTrend": 0,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.17220789848573628,
+      "scanCount": 198,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201208
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201239
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201312
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201486
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201495
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201504
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201509
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201518
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201633
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 47,
+          "timestamp": 1778453201671
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778453201671
+    },
+    "facebook/react": {
+      "rollingRisk": 0.9612061177089761,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 565,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965247
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965248
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965249
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965251
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965253
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965255
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965256
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965257
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965258
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965260
+        }
+      ],
+      "benignPatternFrequency": 46,
+      "labels": {},
+      "lastSeen": 1778487965260
+    },
+    "vercel/next.js": {
+      "rollingRisk": 0.3111088436982077,
+      "trustTrend": 0.19999999999999998,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 484,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965267
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965268
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965270
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965271
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965272
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965273
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965273
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965274
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965275
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 27,
+          "timestamp": 1778487965276
+        }
+      ],
+      "benignPatternFrequency": 40,
+      "labels": {},
+      "lastSeen": 1778487965276
+    },
+    "lodash/lodash": {
+      "rollingRisk": 1.0000000000000004,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 446,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965278
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965279
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965280
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965281
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965282
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965283
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965284
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965285
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965287
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778487965290
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778487965290
+    },
+    "nestjs/nest": {
+      "rollingRisk": 0.5399999999870402,
+      "trustTrend": 1,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.24601128355105184,
+      "scanCount": 85,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778485235115
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778485235117
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778485235119
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778485235120
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778485235121
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778487965196
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778487965197
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778487965198
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778487965199
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778487965200
+        }
+      ],
+      "benignPatternFrequency": 80,
+      "labels": {},
+      "lastSeen": 1778487965200
+    },
+    "unknown": {
+      "rollingRisk": 1.1692286714595008,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 726,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 162,
+          "timestamp": 1778522366502
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366503
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366504
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366506
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 162,
+          "timestamp": 1778522366510
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366511
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366512
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366513
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 162,
+          "timestamp": 1778522366515
+        },
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522366517
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778522366517
+    },
+    "adv-001": {
+      "rollingRisk": 0.25,
+      "trustTrend": 0.8,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.99,
+      "scanCount": 1,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            1,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778484867381
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778484867381
+    },
+    "adv-002": {
+      "rollingRisk": 0.135,
+      "trustTrend": 0.8,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.99,
+      "scanCount": 1,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778484867388
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778484867388
+    },
+    "infra-repo": {
+      "rollingRisk": 0.1225,
+      "trustTrend": 0.8,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.6222608233020146,
+      "scanCount": 1,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 49,
+          "timestamp": 1778484867392
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778484867392
+    },
+    "adv-004": {
+      "rollingRisk": 0.25,
+      "trustTrend": 0.8,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.99,
+      "scanCount": 1,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778484867394
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778484867394
+    },
+    "adv-005": {
+      "rollingRisk": 0.135,
+      "trustTrend": 0.8,
+      "convergenceScore": 0,
+      "rollingConfidence": 0.6861117859861458,
+      "scanCount": 1,
+      "trajectory": [
+        {
+          "vector": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 54,
+          "timestamp": 1778484867397
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778484867397
+    },
+    "unknown-repo": {
+      "rollingRisk": 0.822021484375,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 6,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778484956012
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778484983351
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778485021133
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778485054562
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778485184127
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778485215472
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778485215472
+    },
+    "org-alpha/production-core": {
+      "rollingRisk": 1.4381652841894321,
+      "trustTrend": 0,
+      "convergenceScore": 0.2,
+      "rollingConfidence": 0.99,
+      "scanCount": 1060,
+      "trajectory": [
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 289,
+          "timestamp": 1778522583901
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522583903
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522583905
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 61,
+          "timestamp": 1778522583906
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 289,
+          "timestamp": 1778522583908
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522583910
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522583912
+        },
+        {
+          "vector": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "risk": 61,
+          "timestamp": 1778522583913
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 289,
+          "timestamp": 1778522583915
+        },
+        {
+          "vector": [
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "risk": 100,
+          "timestamp": 1778522583916
+        }
+      ],
+      "benignPatternFrequency": 0,
+      "labels": {},
+      "lastSeen": 1778522583916
+    }
+  }
+}

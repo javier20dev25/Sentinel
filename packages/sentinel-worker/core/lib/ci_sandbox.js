@@ -39,6 +39,7 @@
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { isValidOwnerRepo } = require('./sanitizer');
 
@@ -208,11 +209,17 @@ async function triggerSandboxRun(ownerRepo, branch = 'main', token = null) {
         // así que guardamos el timestamp y lo buscamos después.
         const beforeDispatch = Date.now();
 
+        // Generate a context-bound JWT signature (simulated with HMAC for now)
+        const runSignature = crypto.createHmac('sha256', process.env.SENTINEL_SECRET || 'dev_secret')
+                                   .update(`${ownerRepo}:${branch}:${beforeDispatch}`)
+                                   .digest('hex');
+
         execFileSync('gh', [
             'workflow', 'run', WORKFLOW_FILENAME,
             '--repo', ownerRepo,
             '--ref', branch,
-            '--field', `target_branch=${branch}`
+            '--field', `target_branch=${branch}`,
+            '--field', `sentinel_signature=${runSignature}`
         ], {
             encoding: 'utf-8',
             timeout: 30000,
@@ -243,36 +250,6 @@ async function triggerSandboxRun(ownerRepo, branch = 'main', token = null) {
             };
         }
         return { success: false, error: e.message };
-    }
-}
-
-/**
- * Fetch the latest Sentinel Sandbox workflow run for a specific branch.
- *
- * @param {string} ownerRepo - "owner/repo"
- * @param {string} branch - Branch name
- * @param {string} [token] - GitHub Token
- * @returns {object|null} - Run object or null
- */
-function getSandboxRunForBranch(ownerRepo, branch, token = null) {
-    if (!isValidOwnerRepo(ownerRepo) || !branch) return null;
-    const { execFileSync } = require('child_process');
-    try {
-        const output = execFileSync('gh', [
-            'api', `/repos/${ownerRepo}/actions/workflows/${WORKFLOW_FILENAME}/runs`,
-            '--field', `branch=${branch}`,
-            '--jq', '.workflow_runs[0]'
-        ], { 
-            encoding: 'utf-8', 
-            timeout: 10000,
-            stdio: ['pipe', 'pipe', 'ignore'],
-            env: token ? { ...process.env, GH_TOKEN: token } : process.env
-        });
-        
-        const runs = JSON.parse(output);
-        return runs && runs.id ? runs : null;
-    } catch {
-        return null;
     }
 }
 
@@ -532,6 +509,43 @@ function analyzeTelemetry(tempDir, ownerRepo) {
         }
     }
 
+    // ── 6. Alertas de Hooking V8 (X-Ray Deep Userland) ───────────────────────
+    const xrayAlerts = readFile('xray-alerts.txt');
+    if (xrayAlerts && xrayAlerts.trim().length > 0) {
+        const lines = xrayAlerts.split('\n').filter(Boolean);
+        threats.push({
+            type: 'RUNTIME_EVASION_ATTEMPT',
+            severity: 'CRITICAL',
+            riskLevel: 10,
+            message: `[SANDBOX] Módulo X-Ray interceptó ${lines.length} llamadas a APIs nativas (child_process, vm, eval, wasm). Posible intento de evasión de AST.`,
+            evidence: lines.slice(0, 10).join('\n'),
+            recommendation: 'ALERTA: Código ofuscado ejecutando binarios o subprocesos ocultos. Bloquear inmediatamente.'
+        });
+        riskScore += 60; // Peso altísimo (Correlación Probabilística)
+    }
+
+    // ── 7. Kernel-Level Boundaries (strace) ──────────────────────────────────
+    const syscalls = readFile('syscalls.txt');
+    if (syscalls && syscalls.trim().length > 0) {
+        // Filtramos syscalls de npm/node normales para buscar cosas raras
+        const suspiciousSyscalls = syscalls.split('\n').filter(l => 
+            (l.includes('execve') && !l.includes('npm') && !l.includes('node') && !l.includes('sh')) ||
+            (l.includes('connect') && !l.includes('registry.npmjs.org') && !l.includes('127.0.0.1'))
+        );
+
+        if (suspiciousSyscalls.length > 0) {
+            threats.push({
+                type: 'KERNEL_SYSCALL_ANOMALY',
+                severity: 'CRITICAL',
+                riskLevel: 10,
+                message: `[SANDBOX] Monitor eBPF/strace detectó ejecución de subprocesos o conexiones no documentadas a nivel kernel.`,
+                evidence: suspiciousSyscalls.slice(0, 5).join('\n'),
+                recommendation: 'ALERTA MAXIMA: El código sobrepasó el engine JS y ejecutó binarios/red nativamente.'
+            });
+            riskScore += 80; // Evasión total
+        }
+    }
+
     // ── Score final ───────────────────────────────────────────────────────────
 
     // Normalizar a 0-10
@@ -576,7 +590,6 @@ module.exports = {
     checkWorkflowInstalled,
     triggerSandboxRun,
     getSandboxRunStatus,
-    getSandboxRunForBranch,
     waitForSandboxRun,
     downloadSandboxArtifacts,
     analyzeTelemetry,

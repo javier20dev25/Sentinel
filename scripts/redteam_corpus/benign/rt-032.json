@@ -1,0 +1,17 @@
+{
+  "id": "rt-032",
+  "name": "tests",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "benign",
+  "file": "test/app.test.js",
+  "signals": [
+    "NETWORK",
+    "EXECUTION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

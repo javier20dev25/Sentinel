@@ -1,0 +1,16 @@
+{
+  "id": "rt-011",
+  "name": "infra_auth",
+  "repo": "expressjs/express",
+  "repoProfile": "infrastructure",
+  "category": "benign",
+  "file": "lib/auth.js",
+  "signals": [
+    "SYSTEM_ACCESS"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

@@ -131,7 +131,8 @@ async function scanFile(filename, content, authorMeta = null, options = { mode: 
             type: a.type,
             description: a.message,
             riskLevel: a.severity === 'CRITICAL' ? 10 : 7,
-            classification: 'OBFUSCATION'
+            classification: 'OBFUSCATION',
+            needs_dynamic_confirmation: true // Alta entropía requiere validación dinámica
         }));
         const isCode = filename.match(/\.(js|ts)$/i);
         if (isCode) {
@@ -193,7 +194,44 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
             if (index >= fileQueue.length) {
                 if (running === 0) {
                     results.performance.durationMs = Date.now() - startTime;
-                    results.performance.filesPerSec = Math.round((results.filesScanned / (results.performance.durationMs / 1000)) || 0);
+                    // SMART DEDUPLICATION: Only collapse POLICY noise (same file+rule=1 alert with count).
+                    // SECURITY alerts are kept individually for full audit granularity.
+                    const securityAlerts = [];
+                    const policyMap = new Map();
+                    for (const alert of results.rawAlerts) {
+                        if (alert.classification === 'POLICY') {
+                            const key = `${alert._file || ''}::${alert.type}`;
+                            if (policyMap.has(key)) {
+                                policyMap.get(key).occurrences++;
+                            } else {
+                                policyMap.set(key, { ...alert, occurrences: 1 });
+                            }
+                        } else {
+                            securityAlerts.push(alert);
+                        }
+                    }
+                    const collapsedPolicy = Array.from(policyMap.values()).map(a => {
+                        if (a.occurrences > 1) {
+                            a.description = `${a.description} [${a.occurrences} occurrences]`;
+                        }
+                        return a;
+                    });
+                    
+                    // Add dynamic confirmation flag to alerts that match evasion criteria
+                    const finalRawAlerts = [
+                        ...securityAlerts,
+                        ...collapsedPolicy
+                    ].map(a => {
+                        if (a.classification === 'OBFUSCATION' || (a.type && a.type.includes('EVAL')) || (a.entropy && a.entropy > 5.5)) {
+                            a.needs_dynamic_confirmation = true;
+                        }
+                        return a;
+                    });
+
+                    // Sort: SECURITY first (by riskLevel desc)
+                    results.rawAlerts = finalRawAlerts.sort((a, b) => (b.riskLevel || 0) - (a.riskLevel || 0));
+                    results.threats = results.rawAlerts.length;
+
                     results.riskScore = ScoringEngine.calculateGlobalScore(fileRisks);
                     results.verdict = results.riskScore > 0.8 ? 'CRITICAL' : (results.riskScore > 0.4 ? 'SUSPICIOUS' : 'SAFE');
                     
@@ -224,11 +262,17 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
             running++;
             try {
                 const category = FileClassifier.classify(item, fullPath);
-                if (profile.allowedCategories.includes(category) && stats.size <= profile.maxFileSize) {
+                
+                // Anti-DoS Filters: Strict checks for Baseline
+                const maxFileSize = options.scanType === 'BASELINE' ? 1048576 : profile.maxFileSize; // 1MB max for baseline
+                const isAllowedFile = profile.allowedCategories.includes(category) && stats.size <= maxFileSize;
+                const isSupportedExtension = options.scanType === 'BASELINE' ? !!item.match(/\.(js|ts|json)$/i) : true;
+
+                if (isAllowedFile && isSupportedExtension) {
                     const cached = CacheEngine.isValid(fullPath, stats);
                     if (cached) {
                         results.skipped.cached++; results.filesScanned++; 
-                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath }));
+                        const enrichedCached = cached.map(a => ({ ...a, _file: item, _fullPath: fullPath, origin: options.scanType === 'BASELINE' ? 'baseline' : 'pr' }));
                         results.rawAlerts.push(...enrichedCached);
                         fileRisks.push(ScoringEngine.calculateFileRisk(enrichedCached, fullPath));
                     } else {
@@ -242,7 +286,7 @@ async function scanDirectory(dirPath, repoId = null, depth = 10, options = { mod
                             currentAlerts = scan.alerts;
                             CacheEngine.update(fullPath, stats, currentAlerts);
                         }
-                        currentAlerts.forEach(a => results.rawAlerts.push({ ...a, _file: item, _fullPath: fullPath }));
+                        currentAlerts.forEach(a => results.rawAlerts.push({ ...a, _file: item, _fullPath: fullPath, origin: options.scanType === 'BASELINE' ? 'baseline' : 'pr' }));
                         results.threats += currentAlerts.length;
                         results.filesScanned++;
                         fileRisks.push(ScoringEngine.calculateFileRisk(currentAlerts, fullPath));

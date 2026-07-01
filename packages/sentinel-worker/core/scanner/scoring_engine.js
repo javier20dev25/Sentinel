@@ -1,120 +1,191 @@
 const CONFIG = require('./config');
+const RiskConcentrator = require('../risk/concentration');
+const BayesianEngine = require('../evidence/bayesian_engine');
 
 /**
- * Sentinel Oracle Brain: Scoring Engine (v2.0)
- * 
- * Implements Contextual Weighting and Damped Probabilistic Aggregation.
- * Formula: R = 1 - exp(-Damping * rawRisk)
+ * Sentinel: Scoring Engine (v6.0 - Oracle Brain)
  */
 class ScoringEngine {
     constructor() {
-        this.weights = CONFIG.SCORING.CONTEXT_WEIGHTS;
-        this.damping = CONFIG.SCORING.DAMPING_FACTOR;
-        this.severityMap = CONFIG.SCORING.SEVERITY_MAP;
+        this.config = CONFIG.SCORING;
+        this.weights = this.config.CONTEXT_WEIGHTS;
     }
 
     /**
-     * Calculates the Risk Score for a set of findings in a specific context.
-     * Now includes Trust Modeling (Forensics) and Noise Reduction (Path context).
+     * Calculates the Risk Rank for a single finding.
      */
-    calculateFileRisk(alerts, fullPath) {
-        if (!alerts || alerts.length === 0) return 0;
-
-        const deduplicated = this._deduplicate(alerts, fullPath);
-        const weight = this.getContextWeight(fullPath);
+    computeRankScore(f) {
+        // 1. Normalize inputs using Intent Matrix (v4.0)
+        let intentCfg = { ...(CONFIG.SCORING.INTENT_MATRIX[f.intent] || { baseSeverity: 0.5, weight: 1.0 }) };
         
-        // NOISE REDUCTION: Discount risk for non-critical manifests and test files
-        let pathDiscount = 1.0;
-        if (fullPath.endsWith('package-lock.json') || fullPath.endsWith('yarn.lock')) pathDiscount = 0.3; // High noise in lockfiles
-        if (fullPath.includes('/tests/') || fullPath.includes('/__tests__/')) pathDiscount = 0.5; // Tests are lower risk
+        // 2. HARD NEGATIVE MINING: Contextual Intent Attenuation
+        const isHardNegative = this._isHardNegative(f._fullPath || f._file || f.file || '');
+        if (isHardNegative) {
+            intentCfg.weight *= 0.5;
+        }
 
-        let survivalProbability = 1.0;
-
-        deduplicated.forEach(alert => {
-            let p = this.severityMap[alert.severity] || 0.1;
-            
-            // TRUST MODELING: Adjust risk based on forensic author
-            let trustFactor = 1.0;
-            if (alert.forensics && alert.forensics.author) {
-                const author = alert.forensics.author;
-                // Core maintainers (trusted authors)
-                if (['javier20dev25', 'Javier Astaroth'].includes(author)) {
-                    trustFactor = 0.5; // High trust but never 0
-                }
-            }
-
-            const isOverridden = CONFIG.SCORING.OVERRIDES.some(o => alert.category === o || (alert.type && alert.type.includes(o)));
-            const effectiveWeight = isOverridden ? 1.0 : (weight * pathDiscount * trustFactor);
-            
-            survivalProbability *= (1 - (p * effectiveWeight));
+        // 3. Bayesian Posterior Confidence (v6.1 - Hero Mode)
+        const confidence = BayesianEngine.calculatePosterior([f], {
+            isHardNegative,
+            isNewFile: f.isNewInDiff,
+            isRootUtility: this._isRootUtility(f._fullPath || f.file || '')
         });
 
-        const rawRisk = 1 - survivalProbability;
-        return 1 - Math.exp(-this.damping * rawRisk);
+        const severity = (f.riskLevel || f.severity || (intentCfg.baseSeverity * 10)) / 10;
+        const exploitability = Math.max(0, Math.min(1, f.exploitability || 0.5));
+        
+        // 4. Resolve Context
+        const contextWeight = this.getContextWeight(f._fullPath || f._file || f.file || '');
+        const provenanceWeight = this.provenanceScore(f.provenance || 'HISTORICAL');
+        
+        // 5. Chain & Novelty Bonuses
+        const chainBonus = this.chainBonusScore(f.chainTags || [], f.signals || []);
+        
+        // 6. Noise & Benignity Discounts
+        const benignityDiscount = this.benignityDiscountScore(f.provenance || 'HISTORICAL', f._fullPath || f._file || f.file || '');
+
+        // 7. Final Ranking Formula (v6.1 — Bayesian Aware)
+        const base =
+            0.20 * severity +
+            0.35 * confidence + // Bayesian Confidence dominates decision
+            0.15 * exploitability +
+            0.10 * provenanceWeight +
+            0.15 * chainBonus +
+            0.05 * (f.isNewInDiff ? 1.0 : 0.0);
+
+        let adjusted =
+            base * contextWeight * intentCfg.weight * (1 - benignityDiscount);
+
+        // SUPPLY CHAIN ESCALATION: Lifecycle scripts are high-risk contexts
+        const isLifecycleScript = (f._fullPath || f.file || '').toLowerCase().includes('postinstall') || 
+                                 (f._fullPath || f.file || '').toLowerCase().includes('preinstall') ||
+                                 (f._fullPath || f.file || '').toLowerCase().includes('install.js');
+        if (isLifecycleScript) {
+            adjusted *= 2.7; // Aggressive escalation for supply chain vectors
+        }
+
+        return Math.max(0, Math.min(1, adjusted)) * 100;
     }
 
-    /**
-     * Semantic Deduplication: Groups multiple technical hits into one logical threat.
-     */
-    _deduplicate(alerts, fullPath) {
-        const seen = new Set();
-        const unique = [];
+    _isRootUtility(file) {
+        const parts = file.replace(/\\/g, '/').split('/');
+        const filename = parts[parts.length - 1];
+        return ['utils.js', 'helpers.js', 'index.js'].includes(filename) && parts.length < 5;
+    }
 
-        alerts.forEach(a => {
-            const category = this._mapCategory(a.type);
-            const key = `${fullPath}:${a.line || a.line_number || 0}:${category}`;
-            
-            if (!seen.has(key)) {
-                seen.add(key);
-                unique.push({ ...a, category });
+    provenanceScore(prov) {
+        const weights = {
+            'SANDBOX_CONFIRMATION': 1.0,
+            'RUNTIME_TELEMETRY':    0.9,
+            'DIFF_NEW':             0.8,
+            'PRODUCTION_FILE':      0.7,
+            'BENIGN_NOISE':         0.3,
+            'HISTORICAL':           0.5
+        };
+        return weights[prov] || 0.5;
+    }
+
+    _isHardNegative(file) {
+        const normalized = file.toLowerCase().replace(/\\/g, '/');
+        const patterns = [
+            'webpack', 'babel', 'vite', 'compiler', 'minify', 
+            'rollup', 'esbuild', 'parcel', 'eslint', 'prettier',
+            'postcss', 'autoprefixer', 'terser', 'uglify'
+        ];
+        return patterns.some(p => normalized.includes(p));
+    }
+
+    calculateFileRisk(findings, fullPath) {
+        if (!findings || findings.length === 0) return 0;
+        const uniqueFindings = new Map();
+        findings.forEach(f => {
+            const key = `${f.type}:${f.line}`;
+            if (!uniqueFindings.has(key) || f.severity > uniqueFindings.get(key).severity) {
+                uniqueFindings.set(key, f);
             }
         });
-
-        return unique;
+        const ranks = Array.from(uniqueFindings.values()).map(f => this.computeRankScore({
+            ...f,
+            file: fullPath,
+            _fullPath: fullPath
+        }));
+        return Math.max(...ranks) / 100;
     }
 
-    _mapCategory(type = '') {
-        if (type.includes('SECRET') || type.includes('KEY')) return 'SECRET';
-        if (type.includes('EVAL') || type.includes('EXEC') || type.includes('INJECTION')) return 'EXECUTION';
-        if (type.includes('ENTROPY') || type.includes('BASE64') || type.includes('OBFUSCATION') || type.includes('PAYLOAD')) return 'OBFUSCATION';
-        if (type.includes('LIFECYCLE') || type.includes('CI_EVASION')) return 'INTEGRITY';
-        return 'GENERAL';
-    }
-
-    /**
-     * Resolves the weighting factor based on directory depth and importance.
-     */
     getContextWeight(fullPath) {
         const parts = fullPath.split(/[\\/]/);
-        
-        // Prioritize specific files (e.g. package.json)
         const filename = parts[parts.length - 1];
         if (this.weights[filename]) return this.weights[filename];
-
-        // Check for directory matches in the path
         for (const dir in this.weights) {
             if (parts.includes(dir)) return this.weights[dir];
         }
-
-        return this.weights['default'];
+        return this.weights['default'] || 0.7;
     }
 
-    /**
-     * Aggregates multiple file risks into a Repo Global Score.
-     * Phase 5 Calibration: Volume-Dampened Aggregation.
-     */
-    calculateGlobalScore(fileRisks) {
-        if (!fileRisks || fileRisks.length === 0) return 0;
+    benignityDiscountScore(provenance, file) {
+        const normalized = file.toLowerCase().replace(/\\/g, '/');
         
-        // Volume-Dampened Aggregation: Prevents high-volume repos from 
-        // exponentially inflating the score just by having many low-risk files.
-        const maxRisk = Math.max(...fileRisks);
-        const avgRisk = fileRisks.reduce((sum, val) => sum + val, 0) / fileRisks.length;
-        
-        // Anchor on the worst file, plus a fraction of the repo's average noise
-        const globalRaw = maxRisk + (avgRisk * 0.25); 
+        // SUPPLY CHAIN SAFETY: Never discount lifecycle scripts
+        const isLifecycleScript = normalized.includes('postinstall') || 
+                                normalized.includes('preinstall') || 
+                                normalized.includes('install.js');
+        if (isLifecycleScript) return 0;
 
-        return 1 - Math.exp(-this.damping * globalRaw);
+        let discount = 0;
+        if (provenance === "TEST_FIXTURE") discount += 0.60;
+        if (provenance === "DOC_EXAMPLE")  discount += 0.50;
+        if (provenance === "GENERATED")    discount += 0.65;
+        if (provenance === "BENIGN_NOISE") discount += 0.70;
+        if (normalized.includes("/node_modules/")) discount += 0.90;
+        if (normalized.includes("/dist/"))         discount += 0.85;
+        if (normalized.includes("/build/"))        discount += 0.80;
+        if (normalized.includes("/vendor/"))       discount += 0.85;
+        if (normalized.includes("/fixtures/"))     discount += 0.75;
+        if (normalized.includes("/__tests__/"))    discount += 0.75;
+        if (normalized.includes("/test/"))         discount += 0.60;
+        if (normalized.includes("/docs/"))         discount += 0.55;
+        if (normalized.includes("/examples/"))     discount += 0.50;
+        if (normalized.includes("/lib/"))           discount += 0.25;
+        if (normalized.includes("/adapters/"))      discount += 0.15;
+        if (normalized.includes("/core/"))          discount += 0.15;
+        if (normalized.includes("/helpers/"))       discount += 0.15;
+        if (normalized.includes("/utils/"))         discount += 0.15;
+        if (normalized.includes("/scripts/"))       discount += 0.20; // Reduced from 0.30
+        if (normalized.includes(".d.ts"))           discount += 0.45;
+        return Math.max(0, Math.min(1, discount));
+    }
+
+    chainBonusScore(tags = [], signals = []) {
+        let bonus = 0;
+        const hasExec = tags.includes("EXECUTION");
+        const hasExfil = tags.includes("EXFILTRATION");
+        if (hasExec && hasExfil) bonus += 0.15;
+        if (signals.length > 3) bonus += 0.05;
+        return Math.min(0.20, bonus);
+    }
+
+    calculateGlobalScore(fileRisks, mode = 'REPO') {
+        const validRisks = (fileRisks || []).filter(r => !isNaN(r));
+        if (validRisks.length === 0) return 0;
+        const stats = RiskConcentrator.analyze(validRisks);
+        const anchorRisk = stats.top1;
+        const top3Risk = stats.top3;
+        const concentration = stats.concentration;
+        const avgRisk = validRisks.reduce((sum, val) => sum + val, 0) / validRisks.length;
+        const weights = {
+            anchor: 0.40,
+            top3: 0.25,
+            concentration: 0.20,
+            noiseDampening: 0.15
+        };
+        const gamma = 0.25;
+        const globalRaw = weights.anchor * anchorRisk + 
+                          weights.top3 * top3Risk + 
+                          weights.concentration * concentration + 
+                          weights.noiseDampening * (avgRisk * gamma);
+        const lambda = mode === "PR" ? 2.5 : mode === "REPO" ? 2.2 : 2.3;
+        const dampenedRisk = 1 - Math.exp(-lambda * globalRaw);
+        return Math.max(0, Math.min(1, dampenedRisk));
     }
 }
 

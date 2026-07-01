@@ -1,0 +1,16 @@
+{
+  "id": "rt-024",
+  "name": "frontend_fetch",
+  "repo": "facebook/react",
+  "repoProfile": "frontend",
+  "category": "benign",
+  "file": "src/api.js",
+  "signals": [
+    "NETWORK"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "PASS",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": false
+}

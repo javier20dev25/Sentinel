@@ -1,0 +1,19 @@
+{
+  "id": "rt-055_mut_obfuscation_base64",
+  "name": "credential_theft",
+  "repo": "vercel/next.js",
+  "repoProfile": "frontend",
+  "category": "malicious",
+  "file": "pages/api/auth.js",
+  "signals": [
+    "SECRET_ACCESS",
+    "OBFUSCATION"
+  ],
+  "code": "// mock",
+  "expectedVerdict": "BLOCK",
+  "expectedMinConfidence": 0,
+  "expectedMaxConfidence": 1,
+  "critical": true,
+  "mutation_type": "OBFUSCATION_BASE64",
+  "base_case": "rt-055"
+}

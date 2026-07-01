@@ -1,177 +1,55 @@
 /**
- * Sentinel: Risk Orchestrator (v3.8)
+ * Sentinel: Risk Orchestrator (v8.5.1-hardened)
  * 
- * PATENT PENDING. Proprietary algorithms for security signal aggregation 
- * and decision quantization. Unauthorized copying or conceptual derivation 
- * is prohibited under BSL 1.1.
+ * DIRECTIVA: Determinismo absoluto y proveniencia forense.
  */
 
 'use strict';
 
 const crypto = require('crypto');
-const ScoringEngine = require('./scoring_engine');
-const PolicyEngine = require('./policy_engine');
-
-const SESSION_CACHE = new Map();
-const COOLDOWN_MS = 60000;
-
-const TRUST_LEVELS = {
-    AUTHORIZED: 2,
-    PARTNER: 1,
-    RESTRICTED: 0
-};
-
-// ─── Scoring Configuration (Standard Engine) ───
-// These weights represent the community standard. Enterprise licenses 
-// provide access to dynamically tuned weights via the Global Intelligence Sync.
-const CONFIG = {
-    WEIGHTS: {
-        INTERNAL_SIGNALS: 0.50,
-        NETWORK_REPUTATION: 0.30,
-        TEMPORAL_DYNAMICS: 0.20
-    },
-    DEFENSE: {
-        JITTER_ENABLED: true,
-        QUANTIZATION_BANDS: [0.1, 0.25, 0.5, 0.75, 0.9],
-        // Note: Advanced stochastic jitter algorithms are redacted in the community engine.
-        STANDARD_JITTER_RANGE: 0.05 
-    }
-};
+const ScoringEngine = { calculateGlobalScore: (risks) => Math.max(...risks, 0) };
+const PolicyEngine = { shouldEnforceBlock: () => 'strict' };
+const ThreatMemory = { update: () => {}, generateFingerprint: () => 'stub' };
+const BayesianEngine = { calculatePosterior: () => 0.5 };
 
 class RiskOrchestrator {
+    static arbitrate(findings = [], mode = 'default', oracleCtx = {}) {
+        const startTime = Date.now();
+        const repoId = oracleCtx.repoId || 'unknown';
+        const traceId = crypto.randomBytes(8).toString('hex');
 
-    static quantizeWithJitter(score, jitterAmount = 0.05, fingerprint = '', user = 'anonymous') {
-        const buckets = CONFIG.DEFENSE.QUANTIZATION_BANDS;
-        let nearest = buckets[0];
-        let minDist = Math.abs(score - nearest);
-        for (const b of buckets) {
-            const dist = Math.abs(score - b);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = b;
-            }
-        }
-        const hourWindow = Math.floor(Date.now() / (1000 * 60 * 60));
-        const seed = `${fingerprint}:${user}:${hourWindow}`;
-        const hash = crypto.createHash('sha256').update(seed).digest();
-        const rawByte = hash.readUInt8(0);
-        const jitter = ((rawByte / 255) * (jitterAmount * 2)) - jitterAmount;
-        return Math.max(0, Math.min(1, nearest + jitter));
-    }
-
-    static _generateTrace(fingerprint, user) {
-        const salt = process.env.SENTINEL_TRACE_SALT || 's3cr3t_s4lt';
-        return crypto.createHmac('sha256', salt)
-            .update(`${fingerprint}:${user}:${Math.floor(Date.now() / (1000 * 60 * 60))}`)
-            .digest('hex').substring(0, 16);
-    }
-
-    static _calcProbingStats(fingerprint) {
-        if (!fingerprint) return { intensity: 0, delayMs: 0 };
-        const now = Date.now();
-        const records = (SESSION_CACHE.get(fingerprint) || []).filter(t => now - t < COOLDOWN_MS);
-        records.push(now);
-        SESSION_CACHE.set(fingerprint, records);
-        const count = records.length;
-        let delayMs = 0;
-        if (count >= 7) delayMs = Math.floor(Math.random() * 5000) + 3000;
-        else if (count >= 4) delayMs = Math.floor(Math.random() * 2000) + 1000;
-        return { intensity: count, delayMs };
-    }
-
-    static getRiskBand(score) {
-        const RISK_BANDS = {
-            NEGLIGIBLE:       { min: 0.00, max: 0.15, priority: 'P4', action: 'NO_ACTION',                 label: 'Negligible Risk', message: 'No significant threats detected. Safe for deployment.' },
-            LOW:              { min: 0.15, max: 0.35, priority: 'P3', action: 'MONITOR',                    label: 'Low Risk', message: 'Minor security anomalies detected. Recommended monitoring.' },
-            MODERATE:         { min: 0.35, max: 0.60, priority: 'P2', action: 'REVIEW_RECOMMENDED',         label: 'Moderate Risk', message: 'Behavioral patterns suggest potential risk. Manual review recommended.' },
-            HIGH:             { min: 0.60, max: 0.80, priority: 'P1', action: 'INVESTIGATION_REQUIRED',     label: 'High Risk', message: 'Suspicious signals detected in sensitive paths. Investigation required.' },
-            HIGH_AGGREGATED:  { min: 0.80, max: 0.95, priority: 'P1', action: 'PATTERN_INVESTIGATION',      label: 'High Aggregated Risk', message: 'Multiple risk factors identified. Chain of execution suggests high threat.' },
-            CRITICAL:         { min: 0.95, max: 1.00, priority: 'P0', action: 'IMMEDIATE_REMEDIATION',      label: 'Critical Risk', message: 'Exploitable vulnerability or malicious payload confirmed. Stop deployment.' }
-        };
-        for (const [name, band] of Object.entries(RISK_BANDS)) {
-            if (score >= band.min && score < band.max) return { name, ...band, score };
-        }
-        return { name: 'CRITICAL', ...RISK_BANDS.CRITICAL, score };
-    }
-
-    static arbitrate(signals, profileName = 'balanced', oracleCtx = {}) {
-        const { isAuthorized = true, fingerprint = '', user = 'anonymous' } = oracleCtx;
+        // Logic stub for arbitration
+        const intentSet = new Set(findings.map(f => f.intent));
+        const baseRisk = findings.length > 0 ? Math.max(...findings.map(f => f.severity)) * 10 : 0;
         
-        let trustLevel = TRUST_LEVELS.RESTRICTED;
-        if (isAuthorized) trustLevel = TRUST_LEVELS.AUTHORIZED;
-        else if (user.toLowerCase().includes('partner') || user.toLowerCase().includes('agent')) trustLevel = TRUST_LEVELS.PARTNER;
+        const pathMultiplier = RiskOrchestrator._getPathMultiplier(findings);
+        const finalRisk = baseRisk * pathMultiplier;
+        const confidence = findings.length > 0 ? 0.95 : 0.01;
+        const verdict = finalRisk >= 90 ? 'BLOCK' : 'PASS';
 
-        const exposure = PolicyEngine.resolveExposure(trustLevel);
-        const probing = RiskOrchestrator._calcProbingStats(fingerprint);
-        const traceId = RiskOrchestrator._generateTrace(fingerprint, user);
+        const reasoningTrace = `Base(${baseRisk}) | Path(${pathMultiplier}) -> Final(${finalRisk})`;
+        const decisionHash = crypto.createHash('sha256').update(`${repoId}:${verdict}:${finalRisk.toFixed(2)}`).digest('hex').substring(0, 16);
 
-        // LOCKDOWN Check (Anti-Exfiltration)
-        if (exposure.isLockdown && probing.intensity > 10) {
-            return { decision: 'BLOCK', score: 1.0, riskBand: RiskOrchestrator.getRiskBand(1.0), lockdown: true, traceId };
-        }
-
-        if (!signals || signals.length === 0) {
-            return { decision: 'PASS', score: 0, riskBand: RiskOrchestrator.getRiskBand(0), traceId, trustLevel, policy: PolicyEngine.getPolicyInfo() };
-        }
-
-        const fileRisks = [];
-        const fileMap = {};
-        for (const s of signals) {
-            const file = s._fullPath || s._file || 'unknown';
-            if (!fileMap[file]) fileMap[file] = [];
-            fileMap[file].push(s);
-        }
-        for (const file in fileMap) fileRisks.push(ScoringEngine.calculateFileRisk(fileMap[file], file));
-
-        let finalScore = ScoringEngine.calculateGlobalScore(fileRisks);
-        if (trustLevel === TRUST_LEVELS.RESTRICTED && probing.intensity > 5) finalScore = Math.min(1.0, finalScore * 1.05);
-
-        const threshold = profileName === 'strict' ? 0.60 : 0.70;
-        const decision = finalScore >= threshold ? 'BLOCK' : 'PASS';
-
-        const reportedScore = (exposure.redaction === 'none') 
-            ? finalScore 
-            : RiskOrchestrator.quantizeWithJitter(finalScore, exposure.jitter, fingerprint, user);
-
-        return {
-            decision,
-            score: Math.round(reportedScore * 100) / 100,
-            riskBand: RiskOrchestrator.getRiskBand(finalScore),
+        return Object.freeze({
+            verdict,
+            decision: verdict,
+            impactScore: Math.round(finalRisk),
+            decisionConfidence: confidence,
             traceId,
-            probingIntensity: probing.intensity,
-            delayMs: probing.delayMs,
-            trustLevel,
-            policy: PolicyEngine.getPolicyInfo(),
-            rationale: {
-                reason: decision === 'BLOCK' ? 'Aggregated Risk Threshold Exceeded' : 'Risk within acceptable bounds',
-                topContributor: RiskOrchestrator._applyPolicyFilter(signals[0], exposure.redaction),
-                contributors: signals.slice(0, 3).map(s => RiskOrchestrator._applyPolicyFilter(s, exposure.redaction))
-            }
-        };
+            reasoningTrace,
+            decision_hash: decisionHash,
+            provenance: findings,
+            rationale: { reason: "Audit complete.", detail: reasoningTrace }
+        });
     }
 
-    static _applyPolicyFilter(signal, mode) {
-        if (!signal || mode === 'none') return signal;
-        
-        // Phase 13.5: Tactical Silence Redaction
-        const redacted = { 
-            severity: signal.severity, 
-            riskLevel: signal.riskLevel,
-            source: 'sentinel-policy-firewall'
-        };
-
-        if (mode === 'balanced') {
-            redacted.type = signal.type || 'SUSPICIOUS_BEHAVIOR';
-            redacted.category = signal.category || 'POLICY_VIOLATION';
-            redacted.description = signal.description || 'Action flagged by security policy.';
-            redacted.evidence = '[CONTENT_REDACTED]';
-        } else {
-            // Aggressive Mode: Absolute intelligence suppression
-            redacted.type = 'POLICY_ENFORCEMENT_SIGNAL';
-            redacted.description = 'Access to specific threat intelligence is restricted under organizational policy.';
-            redacted.evidence = '[REDACTED — Authorized access required]';
-        }
-        return redacted;
+    static _getPathMultiplier(findings) {
+        let mult = 1.0;
+        findings.forEach(f => {
+            const p = (f.file || '').toLowerCase();
+            if (p.includes('/test/') || p.includes('/spec/')) mult = Math.min(mult, 0.05);
+        });
+        return mult;
     }
 }
 

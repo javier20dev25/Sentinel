@@ -1,0 +1,16 @@
+{
+    "version": "1.0",
+    "last_updated": "2026-05-11",
+    "canary_whitelist": [
+        { "id": "sentinel-canary-test", "profile": "default", "description": "Internal smoke test repo" },
+        { "id": "facebook/react", "profile": "frontend", "description": "High-value UI Framework" },
+        { "id": "expressjs/express", "profile": "infrastructure", "description": "Core Backend Infra" },
+        { "id": "lodash/lodash", "profile": "libraries", "description": "Low-noise Utility Library" }
+    ],
+    "shadow_repos": [
+        "vercel/next.js",
+        "fastify/fastify",
+        "axios/axios",
+        "supabase/supabase"
+    ]
+}

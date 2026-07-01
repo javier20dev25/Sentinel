@@ -20,7 +20,13 @@ const DEFAULT_POLICY = {
     name: 'Standard Organizational Policy',
     exposure_level: 'restricted',
     redaction_mode: 'aggressive',
-    enforcement_mode: 'strict',    // 'strict' | 'advisory'
+    enforcement_mode: 'canary',    // 'strict' | 'advisory' | 'canary'
+    canary_whitelist: [
+        'sentinel-canary-test', 
+        'facebook/react',        // High-Value Frontend
+        'expressjs/express',     // Infrastructure Core
+        'lodash/lodash'          // Low-Noise Library
+    ],
     audit: {
         enabled: true,
         traceability: 'high',
@@ -44,6 +50,20 @@ class PolicyEngine {
     constructor() {
         this.activePolicy = { ...DEFAULT_POLICY };
         this._loadLocalPolicy();
+        this._loadCanaryTargets();
+    }
+
+    _loadCanaryTargets() {
+        const configPath = path.join(__dirname, '..', '..', '..', 'config', 'canary_targets.json');
+        if (fs.existsSync(configPath)) {
+            try {
+                const targets = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                this.activePolicy.canary_whitelist = targets.canary_whitelist.map(t => t.id);
+                this.activePolicy.canary_metadata = targets.canary_whitelist;
+            } catch (e) {
+                console.warn('[PolicyEngine] Failed to load canary_targets.json, falling back to default.');
+            }
+        }
     }
 
     _loadLocalPolicy() {
@@ -58,8 +78,9 @@ class PolicyEngine {
             }
         }
 
-        // CI/CD auto-detection: strict mode in non-interactive environments
-        if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || !process.stdout.isTTY) {
+        // CI/CD auto-detection: force strict mode ONLY if currently advisory and in CI
+        const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || !process.stdout.isTTY;
+        if (isCI && this.activePolicy.enforcement_mode === 'advisory') {
             this.activePolicy.enforcement_mode = 'strict';
         }
     }
@@ -82,8 +103,31 @@ class PolicyEngine {
     }
 
     /** Should we actually exit(1) on a BLOCK verdict? */
-    shouldEnforceBlock() {
-        return this.isStrictMode();
+    shouldEnforceBlock(repoId = '') {
+        const mode = this.activePolicy.enforcement_mode;
+        const whitelist = this.activePolicy.canary_whitelist || [];
+        const isMatched = whitelist.includes(repoId);
+        
+        let decision = false;
+        let reason = 'NONE';
+
+        if (mode === 'strict') {
+            decision = true;
+            reason = 'POLICY_STRICT_GLOBAL';
+        } else if (mode === 'advisory') {
+            decision = false;
+            reason = 'POLICY_ADVISORY_GLOBAL';
+        } else if (mode === 'canary') {
+            decision = isMatched;
+            reason = isMatched ? 'CANARY_WHITELIST_MATCH' : 'SHADOW_MODE_NO_MATCH';
+        }
+
+        return {
+            enforce: decision,
+            policy_mode: mode,
+            canary_match_reason: reason,
+            policy_version: 'v8.4.0-gold'
+        };
     }
 
     /** Resolves the required exposure context based on current trust level. */
