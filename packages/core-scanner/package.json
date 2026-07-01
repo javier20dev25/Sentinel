@@ -13,9 +13,14 @@
     "./go_inspector": "./src/go_inspector.ts",
     "./sca_engine": "./src/sca_engine.ts",
     "./sbom": "./src/sbom.ts",
+    "./python_inspector": "./src/python_inspector.ts",
+    "./rust_inspector": "./src/rust_inspector.ts",
     "./types": "./src/types.ts"
   },
   "dependencies": {
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^4.1.1",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-rust": "^0.24.0",
+    "web-tree-sitter": "^0.26.9"
   }
 }
