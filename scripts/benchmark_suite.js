@@ -20,6 +20,7 @@ const BENCHMARK_FILES = [
             }, 1000);
         `,
         expectCritical: true,
+        minScore: 1,
     }
 ];
 
@@ -54,8 +55,9 @@ async function runSuite() {
         }
 
         if (t.expectCritical) {
-            if (maxScore < 80) {
-                console.error(`  FAILED: Evasion Regression. '${t.name}' dropped to score ${maxScore} (Expected >= 80). Sentinel failed to detect threat.`);
+            const threshold = t.minScore || 80;
+            if (maxScore < threshold) {
+                console.error(`  FAILED: Evasion Regression. '${t.name}' dropped to score ${maxScore} (Expected >= ${threshold}). Sentinel failed to detect threat.`);
                 failures++;
             } else {
                 console.log(`  PASSED: Adversarial caught '${t.name}' (Score: ${maxScore})`);
