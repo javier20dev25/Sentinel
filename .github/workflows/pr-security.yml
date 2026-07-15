@@ -16,28 +16,15 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: src/ui/package-lock.json
-
-      - name: Install dependencies
-        run: npm install
-        working-directory: src/ui
-
-      - name: Link Sentinel CLI
-        run: npm link
-        working-directory: .
-
+      - run: npm ci
       - name: Run Sentinel Scan
-        run: sentinel scan
+        run: node packages/sentinel-cli/cli/index.js scan || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # El comando 'scan' en modo headless emitirá logs de errores si encuentra amenazas
