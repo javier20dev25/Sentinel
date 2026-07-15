@@ -1,0 +1,4 @@
+
+const step1 = atob('bGk=');
+const step2 = Buffer.from(step1, 'binary').toString();
+eval(step2);

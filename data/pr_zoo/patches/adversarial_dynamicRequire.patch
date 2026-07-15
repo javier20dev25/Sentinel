@@ -1,0 +1,3 @@
+
+const modName = 'child_process';
+require(modName).exec('id');

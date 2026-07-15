@@ -1,0 +1,209 @@
+{
+  "nextId": 9,
+  "definitions": {
+    "FP-001": {
+      "technique": "benign_high_entropy",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-033"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 3
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 3
+        }
+      ],
+      "suggestedFix": "Lower EVASION-033 severity/risk when no execution or decode context is present. Consider adding property graph check: is the encoded string consumed by decode+exec?"
+    },
+    "FP-002": {
+      "technique": "benign_base64",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-006",
+        "EVASION-033"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 2
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 2
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 2
+        }
+      ],
+      "suggestedFix": "Lower EVASION-033 severity/risk when no execution or decode context is present. Consider adding property graph check: is the encoded string consumed by decode+exec?"
+    },
+    "FP-003": {
+      "technique": "adversarial_longEncodedBlob",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-006",
+        "EVASION-033"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "Lower EVASION-033 severity/risk when no execution or decode context is present. Consider adding property graph check: is the encoded string consumed by decode+exec?"
+    },
+    "FP-004": {
+      "technique": "adversarial_highEntropy",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-033"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "Lower EVASION-033 severity/risk when no execution or decode context is present. Consider adding property graph check: is the encoded string consumed by decode+exec?"
+    },
+    "FP-005": {
+      "technique": "benign_env_ref",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-024"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:39:36.552Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "EVASION-024 (env read) should require evidence of exfiltration (network send, file write) to escalate. Add graph edge check: env read → network/write."
+    },
+    "FP-006": {
+      "technique": "benign_test_eval",
+      "failureReason": "RULE_MISSING",
+      "rules": [
+        "EVASION-013"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:39:36.552Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:51:04.401Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "Add exemption rule for eval in test files (.test.js, .spec.js, __tests__/)."
+    },
+    "FP-007": {
+      "technique": "benign_base64",
+      "failureReason": "RULE_MISSING",
+      "rules": [
+        "EVASION-006",
+        "EVASION-023",
+        "EVASION-033"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:39:36.552Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:51:04.401Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T23:58:33.461Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "EVASION-023 (hardcoded secret) should consider if the string contains typical non-secret patterns (base64 image data, example data)."
+    },
+    "FP-008": {
+      "technique": "benign_system_marker",
+      "failureReason": "LOW_CONFIDENCE",
+      "rules": [
+        "EVASION-006"
+      ],
+      "firstSeen": "2026-07-14T03:06:21.022Z",
+      "history": [
+        {
+          "ts": "2026-07-14T03:06:21.023Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:16:46.745Z",
+          "count": 1
+        },
+        {
+          "ts": "2026-07-14T03:28:22.224Z",
+          "count": 1
+        }
+      ],
+      "suggestedFix": "EVASION-006 (encoded string) should suppress when string is constant, never decoded, and not passed to require/exec. Add data flow check."
+    }
+  }
+}

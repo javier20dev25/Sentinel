@@ -1,0 +1,238 @@
+[
+  {
+    "technique": "benign_high_entropy",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-033"
+    ],
+    "sampleCount": 3,
+    "samples": [
+      {
+        "id": "mutationlab_highEntropyConstant_0",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      },
+      {
+        "id": "mutationlab_highEntropyConstant_1",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      },
+      {
+        "id": "mutationlab_highEntropyConstant_2",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      }
+    ],
+    "clusterId": "FP-001",
+    "clusterName": "benign high entropy",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "technique": "benign_base64",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-006",
+      "EVASION-033"
+    ],
+    "sampleCount": 2,
+    "samples": [
+      {
+        "id": "mutationlab_staticBase64Constant_0",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 2
+      },
+      {
+        "id": "mutationlab_staticBase64Constant_2",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 2
+      }
+    ],
+    "clusterId": "FP-002",
+    "clusterName": "benign base64",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "technique": "adversarial_longEncodedBlob",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-006",
+      "EVASION-033"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "adversarial_longEncodedBlob",
+        "repo": "sentinel/adversarial",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 2
+      }
+    ],
+    "clusterId": "FP-003",
+    "clusterName": "adversarial longEncodedBlob",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "technique": "adversarial_highEntropy",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-033"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "adversarial_highEntropy",
+        "repo": "sentinel/adversarial",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      }
+    ],
+    "clusterId": "FP-004",
+    "clusterName": "adversarial highEntropy",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "technique": "benign_env_ref",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-024"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "mutationlab_envSecretReadOnly_1",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      }
+    ],
+    "clusterId": "FP-005",
+    "clusterName": "benign env ref",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "technique": "benign_test_eval",
+    "failureReason": "RULE_MISSING",
+    "rules": [
+      "EVASION-013"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "mutationlab_evalInTest_0",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.6,
+        "verdict": "BLOCK",
+        "findingsCount": 2
+      }
+    ],
+    "clusterId": "FP-006",
+    "clusterName": "benign test eval",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "technique": "benign_base64",
+    "failureReason": "RULE_MISSING",
+    "rules": [
+      "EVASION-023",
+      "EVASION-006",
+      "EVASION-033"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "mutationlab_staticBase64Constant_1",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.6,
+        "verdict": "BLOCK",
+        "findingsCount": 3
+      }
+    ],
+    "clusterId": "FP-007",
+    "clusterName": "benign base64",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "technique": "benign_system_marker",
+    "failureReason": "LOW_CONFIDENCE",
+    "rules": [
+      "EVASION-006"
+    ],
+    "sampleCount": 1,
+    "samples": [
+      {
+        "id": "mutationlab_systemMarkerInConfig_0",
+        "repo": "sentinel/mutationlab",
+        "pr": 0,
+        "confidence": 0.2,
+        "verdict": "REVIEW",
+        "findingsCount": 1
+      }
+    ],
+    "clusterId": "FP-008",
+    "clusterName": "benign system marker",
+    "history": [
+      {
+        "ts": "2026-07-14T03:06:21.023Z",
+        "count": 1
+      }
+    ]
+  }
+]

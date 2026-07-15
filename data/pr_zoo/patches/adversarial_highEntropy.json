@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "adversarial_highEntropy",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "highEntropy",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 55,
+    "patchHash": "709fab6a7bf64eec14b2bd95ea31d8e5591de2a1a33c84858364b0da4af52830"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.892Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.953Z"
+}

@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_agentAutonomyEvasion",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "agentAutonomyEvasion",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 121,
+    "patchHash": "207d61a026d1ead74fb0352552badc7adb60e25572c193e91f957a1945aec1e0"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "SEM-010",
+        "techniqueId": "SEM-010",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "PromptInjection"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.865Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.921Z"
+}

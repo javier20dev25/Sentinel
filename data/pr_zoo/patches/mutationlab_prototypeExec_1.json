@@ -1,0 +1,53 @@
+{
+  "taxonomy": {
+    "family": "prototype",
+    "technique": "prototype_pollution_exec"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_prototypeExec_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "prototypeExec",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 97,
+    "patchHash": "de10f9bb9c08d563cc8f0a2accbbda75ad5150a711b48a9655c59475cf4c0330"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "PROTOTYPE_POLLUTION",
+        "techniqueId": "PROTOTYPE_POLLUTION",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EXECUTION",
+        "techniqueId": "EXECUTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "execution"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "prototype",
+      "technique": "prototype_pollution_exec"
+    },
+    "labelDate": "2026-07-12T04:33:01.499Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.499Z"
+}

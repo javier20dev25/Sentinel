@@ -1,0 +1,16 @@
+id,repo,pr,baselineVerdict,baselineRisk,baselineFindings,experimentalVerdict,experimentalRisk,experimentalFindings,verdictChange,riskDelta,findingsAdded,findingsRemoved,capsAdded,capsRemoved,timeMs,memoryMb,qualityScore
+expressjs_express_7349,expressjs/express,7349,PASS,0.68,1,REVIEW,0.75,2,ESCALATED,0.07,1,1,0,1,37.3,0.9,6.5
+expressjs_express_7351,expressjs/express,7351,PASS,0.68,1,PASS,0,0,UNCHANGED,-0.68,0,1,0,1,8.0,0.3,6
+expressjs_express_7363,expressjs/express,7363,PASS,0.68,1,REVIEW,0.75,7,ESCALATED,0.07,1,1,0,1,10.8,0.6,6.5
+expressjs_express_7366,expressjs/express,7366,PASS,0.68,1,REVIEW,0.75,2,ESCALATED,0.07,1,1,0,1,9.1,0.3,6.5
+expressjs_express_7369,expressjs/express,7369,PASS,0.68,1,PASS,0,0,UNCHANGED,-0.68,0,1,0,1,6.6,-1.5,6
+microsoft_TypeScript_63593,microsoft/TypeScript,63593,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,7.1,0.2,6
+microsoft_TypeScript_63594,microsoft/TypeScript,63594,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,5.7,0.2,6
+microsoft_TypeScript_63608,microsoft/TypeScript,63608,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,6.7,0.2,6
+microsoft_TypeScript_63615,microsoft/TypeScript,63615,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,9.5,0.6,6
+microsoft_TypeScript_63633,microsoft/TypeScript,63633,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,8.8,0.3,6
+vercel_next_js_95692,vercel/next.js,95692,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,10.7,-1.0,6
+vercel_next_js_95693,vercel/next.js,95693,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,7.9,0.9,6
+vercel_next_js_95694,vercel/next.js,95694,PASS,0.58,1,BLOCK,0.95,1,ESCALATED,0.37,1,1,0,1,20.7,-0.7,6.5
+vercel_next_js_95695,vercel/next.js,95695,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,12.3,0.2,6
+vercel_next_js_95696,vercel/next.js,95696,PASS,0.58,1,REVIEW,0.75,7,ESCALATED,0.17,6,1,0,1,14.6,0.2,7.5

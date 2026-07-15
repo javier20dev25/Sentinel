@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "clean_base64ImageData",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "base64ImageData",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 139,
+    "patchHash": "370d1c2ffa737daaeb45fbba836b387eb398c95fcbd10bb029e9abaeeac64577"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-10T23:22:32.757Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.759Z"
+}

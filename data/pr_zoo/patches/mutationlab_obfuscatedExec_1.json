@@ -1,0 +1,54 @@
+{
+  "taxonomy": {
+    "family": "obfuscation",
+    "technique": "obfuscated_exec"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_obfuscatedExec_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "obfuscatedExec",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 139,
+    "patchHash": "2480c3f8c57ea77990e80e191ba94232b2d20beb14d71bb861cc1b979b0d0a0b"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "OBFUSCATION",
+        "techniqueId": "OBFUSCATION",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EXECUTION",
+        "techniqueId": "EXECUTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "obfuscation",
+      "execution"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "obfuscation",
+      "technique": "obfuscated_exec"
+    },
+    "labelDate": "2026-07-12T04:33:01.466Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.466Z"
+}

@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-07-10T23:13:22.087Z",
+  "config": {
+    "samples": 15,
+    "warm": false,
+    "budgets": false,
+    "phaseBreakdown": true,
+    "nodeVersion": "v24.13.1",
+    "platform": "win32"
+  },
+  "stats": {
+    "samples": 15,
+    "time": {
+      "avg": 11.727806666666671,
+      "p50": 9.13730000000001,
+      "p90": 20.713600000000014,
+      "p95": 37.25250000000001,
+      "p99": 37.25250000000001,
+      "min": 5.678799999999995,
+      "max": 37.25250000000001
+    },
+    "memory": {
+      "avg": 0.11466666666666668,
+      "p95": 0.95,
+      "max": 0.95
+    },
+    "quality": {
+      "avg": 6.233333333333333,
+      "min": 6,
+      "max": 7.5
+    },
+    "divergences": {
+      "total": 15,
+      "escalated": 5,
+      "deescaped": 0,
+      "pct": "100.0"
+    },
+    "byRepo": {
+      "expressjs/express": {
+        "count": 5,
+        "totalTime": 71.85360000000001,
+        "divergedCount": 5
+      },
+      "microsoft/TypeScript": {
+        "count": 5,
+        "totalTime": 37.72330000000002,
+        "divergedCount": 5
+      },
+      "vercel/next.js": {
+        "count": 5,
+        "totalTime": 66.34020000000004,
+        "divergedCount": 5
+      }
+    }
+  },
+  "budgets": {
+    "passed": true,
+    "failures": []
+  },
+  "divergences": 15
+}

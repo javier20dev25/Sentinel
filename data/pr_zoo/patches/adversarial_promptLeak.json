@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_promptLeak",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "promptLeak",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 66,
+    "patchHash": "55f9203bfc66b57781ef272570d4cab42aa6c4297e063ad71b9d27359a2a0486"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "SEM-008",
+        "techniqueId": "SEM-008",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "InformationDisclosure"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.872Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.931Z"
+}

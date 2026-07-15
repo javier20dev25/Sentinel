@@ -1,0 +1,456 @@
+--- a/apps/dev/nextjs/.env.local.example
++++ b/apps/dev/nextjs/.env.local.example
+@@ -46,6 +46,10 @@ AUTH_KEYCLOAK_ISSUER=
+ AUTH_LINE_ID=
+ AUTH_LINE_SECRET=
+ 
++AUTH_THUNDERID_ID=
++AUTH_THUNDERID_SECRET=
++AUTH_THUNDERID_ISSUER=
++
+ AUTH_TRAKT_ID=
+ AUTH_TRAKT_SECRET=
+ 
+
+--- a/docs/pages/data/manifest.json
++++ b/docs/pages/data/manifest.json
+@@ -109,6 +109,7 @@
+     "slack": "Slack",
+     "spotify": "Spotify",
+     "strava": "Strava",
++    "thunderid": "ThunderID",
+     "tiktok": "TikTok",
+     "todoist": "Todoist",
+     "trakt": "Trakt",
+@@ -154,6 +155,7 @@
+     "ory-hydra",
+     "osso",
+     "passage",
+-    "ping-id"
++    "ping-id",
++    "thunderid"
+   ]
+ }
+
+--- a/docs/pages/getting-started/providers/thunderid.mdx
++++ b/docs/pages/getting-started/providers/thunderid.mdx
+@@ -0,0 +1,113 @@
++---
++title: ThunderID
++---
++
++import { Callout } from "nextra/components"
++import { Code } from "@/components/Code"
++
++<img align="right" src="/img/providers/thunderid.svg" width="64" height="64" />
++
++# ThunderID Provider
++
++## Resources
++
++- [ThunderID Documentation](https://thunderid.dev/docs/next/)
++
++## Setup
++
++### Callback URL
++
++<Code>
++  <Code.Next>
++
++```bash
++https://example.com/api/auth/callback/thunderid
++```
++
++  </Code.Next>
++  <Code.Qwik>
++
++```bash
++https://example.com/auth/callback/thunderid
++```
++
++  </Code.Qwik>
++  <Code.Svelte>
++
++```bash
++https://example.com/auth/callback/thunderid
++```
++
++  </Code.Svelte>
++</Code>
++
++### Environment Variables
++
++```
++AUTH_THUNDERID_ID
++AUTH_THUNDERID_SECRET
++AUTH_THUNDERID_ISSUER
++```
++
++### Configuration
++
++1. Get ThunderID installed on your environment. (via `npx thunderid` or any [other option](https://thunderid.dev/docs/next/guides/getting-started/get-thunderid/))
++2. Go to the **ThunderID Console** at `https://{THUNDERID_HOST}:{THUNDERID_PORT}/console`
++3. Create an application with the **Next.js** template
++   > ⚠️ IMPORTANT: Make sure to copy the **Client Secret** at the end of the wizard since it will not be prompted again
++4. In the **General** tab, **Access** section → **Authorized redirect URIs**, add:
++   - Development: `http://localhost:3000/api/auth/callback/thunderid`
++   - Production: `https://{YOUR_DOMAIN}/api/auth/callback/thunderid`
++
++Then, add the values to your environment variables.
++
++<Code>
++  <Code.Next>
++
++```ts filename="/auth.ts"
++import NextAuth from "next-auth"
++import ThunderID from "next-auth/providers/thunderid"
++
++export const { handlers, auth, signIn, signOut } = NextAuth({
++  providers: [ThunderID],
++})
++```
++
++  </Code.Next>
++  <Code.Qwik>
++
++```ts filename="/src/routes/plugin@auth.ts"
++import { QwikAuth$ } from "@auth/qwik"
++import ThunderID from "@auth/qwik/providers/thunderid"
++
++export const { onRequest, useSession, useSignIn, useSignOut } = QwikAuth$(
++  () => ({
++    providers: [ThunderID],
++  })
++)
++```
++
++  </Code.Qwik>
++  <Code.Svelte>
++
++```ts filename="/src/auth.ts"
++import { SvelteKitAuth } from "@auth/sveltekit"
++import ThunderID from "@auth/sveltekit/providers/thunderid"
++
++export const { handle, signIn, signOut } = SvelteKitAuth({
++  providers: [ThunderID],
++})
++```
++
++  </Code.Svelte>
++  <Code.Express>
++
++```ts filename="/src/app.ts"
++import { ExpressAuth } from "@auth/express"
++import ThunderID from "@auth/express/providers/thunderid"
++
++app.use("/auth/*", ExpressAuth({ providers: [ThunderID] }))
++```
++
++  </Code.Express>
++</Code>
+
+--- a/docs/public/img/providers/thunderid.svg
++++ b/docs/public/img/providers/thunderid.svg
+@@ -0,0 +1,8 @@
++<svg width="207" height="257" viewBox="0 0 207 257" fill="none" xmlns="http://www.w3.org/2000/svg">
++  <path d="M55.4763 26.4391L58.8866 0H0V26.4391H55.4763Z" fill="#05213F" />
++  <path d="M39.8438 147.407L49.5455 72.2839H4.9909e-05V256.743H60.5602L80.048 147.407H39.8438Z"
++    fill="#3688FF" />
++  <path
++    d="M192.42 59.361C182.782 40.2307 168.929 25.5705 150.903 15.3381C145.501 12.2662 139.761 9.6605 133.703 7.5208L115.401 103.702H159.757L76.2987 256.743H83.3735C109.449 256.743 131.69 251.574 150.14 241.236C168.569 230.897 182.634 216.131 192.356 196.959C202.058 177.765 206.909 154.8 206.909 128.043C206.909 101.286 202.079 78.5123 192.441 59.3821L192.42 59.361Z"
++    fill="#3688FF" />
++</svg>
+
+--- a/packages/core/src/providers/thunderid.ts
++++ b/packages/core/src/providers/thunderid.ts
+@@ -0,0 +1,178 @@
++/**
++ * <div class="provider" style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
++ * <span style={{fontSize: "1.35rem" }}>
++ *  Built-in sign in with <b>ThunderID</b> integration.
++ * </span>
++ * <a href="https://thunderid.dev/" style={{backgroundColor: "#ECEFF1", padding: "12px", borderRadius: "100%" }}>
++ *   <img style={{display: "block"}} src="https://authjs.dev/img/providers/thunderid.svg" width="24"/>
++ * </a>
++ * </div>
++ *
++ * @module providers/thunderid
++ */
++
++import type { OIDCConfig, OIDCUserConfig } from "./index.js"
++
++/** The returned user profile from ThunderID when using the profile callback. */
++export interface ThunderIDProfile extends Record<string, any> {
++  /** The user ThunderID account ID (subject identifier) */
++  sub: string
++
++  // Standard OIDC `profile` scope claims
++  /** The user's full name */
++  name?: string
++  /** The user's given (first) name */
++  given_name?: string
++  /** The user's family (last) name */
++  family_name?: string
++  /** The user's middle name */
++  middle_name?: string
++  /** The user's nickname */
++  nickname?: string
++  /** The user's preferred username */
++  preferred_username?: string
++  /** URL of the user's profile page */
++  profile?: string
++  /** URL of the user's profile picture */
++  picture?: string
++  /** URL of the user's website */
++  website?: string
++  /** The user's gender */
++  gender?: string
++  /** The user's birthdate (YYYY-MM-DD) */
++  birthdate?: string
++  /** The user's time zone (IANA timezone string) */
++  zoneinfo?: string
++  /** The user's locale (BCP 47 language tag) */
++  locale?: string
++  /** Unix timestamp of the last profile update */
++  updated_at?: number
++
++  // Standard OIDC `email` scope claims
++  /** The user's email address */
++  email?: string
++  /** Whether the email address has been verified */
++  email_verified?: boolean
++
++  // Standard OIDC `phone` scope claims
++  /** The user's phone number */
++  phone_number?: string
++  /** Whether the phone number has been verified */
++  phone_number_verified?: boolean
++
++  // Standard OIDC `address` scope claims
++  /** The user's postal address */
++  address?: string | Record<string, string>
++
++  // ThunderID custom claims
++  /** The user type as configured in the ThunderID system */
++  userType?: string
++  /** Organization unit ID the user belongs to */
++  ouId?: string
++  /** Organization unit name */
++  ouName?: string
++  /** Organization unit handle */
++  ouHandle?: string
++  /** Roles assigned to the user (returned with the `roles` scope) */
++  roles?: string[]
++  /** Groups the user belongs to (requires explicit configuration) */
++  groups?: string[]
++}
++
++/**
++ *
++ * ### Setup
++ *
++ * #### Callback URL
++ * ```
++ * https://example.com/api/auth/callback/thunderid
++ * ```
++ *
++ * #### Configuration
++ *```ts
++ * import { Auth } from "@auth/core"
++ * import ThunderID from "@auth/core/providers/thunderid"
++ *
++ * const request = new Request(origin)
++ * const response = await Auth(request, {
++ *   providers: [
++ *     ThunderID({
++ *       clientId: AUTH_THUNDERID_ID,
++ *       clientSecret: AUTH_THUNDERID_SECRET,
++ *       issuer: AUTH_THUNDERID_ISSUER,
++ *     }),
++ *   ],
++ * })
++ * ```
++ *
++ * ### Configuring ThunderID
++ *
++ * 1. Get ThunderID installed on your environment (via `npx thunderid` or any [other option](https://thunderid.dev/docs/next/guides/getting-started/get-thunderid/))
++ * 2. Go to the **ThunderID Console** at `https://{THUNDERID_HOST}:{THUNDERID_PORT}/console`
++ * 3. Create an application with the **Next.js** template
++ *    > **Important:** Copy the **Client Secret** at the end of the wizard — it will not be shown again
++ * 4. In the **General** tab, **Access** section → **Authorized redirect URIs**, add:
++ *    - Development: `http://localhost:3000/api/auth/callback/thunderid`
++ *    - Production: `https://{YOUR_DOMAIN}/api/auth/callback/thunderid`
++ *
++ * Then, create a `.env.local` file in the project root and add the following entries:
++ *
++ * ```
++ * AUTH_THUNDERID_ID="Your Client ID here"
++ * AUTH_THUNDERID_SECRET="Your Client Secret here"
++ * AUTH_THUNDERID_ISSUER="Your ThunderID issuer URL here"
++ * ```
++ *
++ * ### Resources
++ *
++ * - [ThunderID Documentation](https://thunderid.dev/docs/next/)
++ * - [OAuth 2.0 / OpenID Connect Documentation](https://tools.ietf.org/html/rfc6749)
++ * - [Learn more about OAuth](https://authjs.dev/concepts/oauth)
++ *
++ * ### Notes
++ *
++ * The ThunderID provider comes with a [default configuration](#configuration). To override the defaults for your use case, check out [customizing a built-in OAuth provider](https://authjs.dev/guides/configuring-oauth-providers).
++ *
++ * :::info
++ * By default, Auth.js assumes that the ThunderID provider is based on the [OAuth 2](https://www.rfc-editor.org/rfc/rfc6749.html) and [OpenID Connect](https://openid.net/connect/) specs
++ * :::
++ *
++ * ## Help
++ *
++ * If you think you found a bug in the default configuration, you can [open an issue](https://github.com/nextauthjs/next-auth/issues/new?title=ThunderID%20Provider).
++ *
++ * Auth.js strictly adheres to the specification and it cannot take responsibility for any deviation from
++ * the spec by the provider. You can open an issue, but if the problem is non-compliance with the spec,
++ * we might not pursue a resolution. You can ask for more help in [GitHub Discussions](https://github.com/nextauthjs/next-auth/discussions).
++ */
++export default function ThunderID(
++  config: OIDCUserConfig<ThunderIDProfile>
++): OIDCConfig<ThunderIDProfile> {
++  const issuer = config?.issuer?.replace(/\/$/, "")
++
++  return {
++    id: "thunderid",
++    name: "ThunderID",
++    type: "oidc",
++    wellKnown: `${issuer}/.well-known/openid-configuration`,
++    style: {
++      bg: "#3688FF",
++      text: "#ffffff",
++    },
++    options: config,
++    client: { token_endpoint_auth_method: "client_secret_basic" },
++    profile(profile) {
++      return {
++        id: profile.sub,
++        name:
++          profile.name ??
++          ([profile.given_name, profile.family_name]
++            .filter(Boolean)
++            .join(" ") ||
++            null),
++        email: profile.email ?? null,
++        image: profile.picture ?? null,
++      }
++    },
++  }
++}
+
+--- a/packages/core/test/providers/thunderid.test.ts
++++ b/packages/core/test/providers/thunderid.test.ts
+@@ -0,0 +1,108 @@
++import { describe, expect, it } from "vitest"
++import ThunderID from "../../src/providers/thunderid"
++
++const baseConfig = {
++  clientId: "test-client-id",
++  clientSecret: "test-client-secret",
++  issuer: "https://thunderid.example.com",
++}
++
++describe("ThunderID provider", () => {
++  it("returns correct static fields", () => {
++    const config = ThunderID(baseConfig)
++    expect(config.id).toBe("thunderid")
++    expect(config.name).toBe("ThunderID")
++    expect(config.type).toBe("oidc")
++    expect(config.client).toEqual({
++      token_endpoint_auth_method: "client_secret_basic",
++    })
++    expect(config.style).toEqual({ bg: "#3688FF", text: "#ffffff" })
++  })
++
++  it("builds wellKnown URL from issuer", () => {
++    const config = ThunderID(baseConfig)
++    expect(config.wellKnown).toBe(
++      "https://thunderid.example.com/.well-known/openid-configuration"
++    )
++  })
++
++  it("strips trailing slash from issuer when building wellKnown", () => {
++    const config = ThunderID({
++      ...baseConfig,
++      issuer: "https://thunderid.example.com/",
++    })
++    expect(config.wellKnown).toBe(
++      "https://thunderid.example.com/.well-known/openid-configuration"
++    )
++  })
++
++  it("passes options through", () => {
++    const config = ThunderID(baseConfig)
++    expect(config.options).toBe(baseConfig)
++  })
++
++  describe("profile()", () => {
++    it("maps sub to id", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "user-123" }, {})
++      expect(result.id).toBe("user-123")
++    })
++
++    it("uses name when present", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "u1", name: "Alice Example" }, {})
++      expect(result.name).toBe("Alice Example")
++    })
++
++    it("falls back to given_name + family_name when name is absent", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!(
++        { sub: "u1", given_name: "Alice", family_name: "Example" },
++        {}
++      )
++      expect(result.name).toBe("Alice Example")
++    })
++
++    it("uses only given_name when family_name is absent", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "u1", given_name: "Alice" }, {})
++      expect(result.name).toBe("Alice")
++    })
++
++    it("returns null name when no name fields are present", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "u1" }, {})
++      expect(result.name).toBeNull()
++    })
++
++    it("maps email when present", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!(
++        { sub: "u1", email: "alice@example.com" },
++        {}
++      )
++      expect(result.email).toBe("alice@example.com")
++    })
++
++    it("returns null email when absent", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "u1" }, {})
++      expect(result.email).toBeNull()
++    })
++
++    it("maps picture to image when present", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!(
++        { sub: "u1", picture: "https://example.com/avatar.png" },
++        {}
++      )
++      expect(result.image).toBe("https://example.com/avatar.png")
++    })
++
++    it("returns null image when picture is absent", () => {
++      const config = ThunderID(baseConfig)
++      const result = config.profile!({ sub: "u1" }, {})
++      expect(result.image).toBeNull()
++    })
++  })
++})

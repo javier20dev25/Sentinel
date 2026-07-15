@@ -1,0 +1,54 @@
+{
+  "taxonomy": {
+    "family": "obfuscation",
+    "technique": "decode_exec"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_decodeExec_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "decodeExec",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 155,
+    "patchHash": "9b937fe15772ac541761801593ec3a6bd243484a60d1d2ca51c9007fea289012"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "DECODE",
+        "techniqueId": "DECODE",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EXECUTION",
+        "techniqueId": "EXECUTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "decode",
+      "execution"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "obfuscation",
+      "technique": "decode_exec"
+    },
+    "labelDate": "2026-07-12T04:33:01.471Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.471Z"
+}

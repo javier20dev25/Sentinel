@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vercel_next_js_95694",
+    "repo": "vercel/next.js",
+    "pr": 95694,
+    "url": "https://github.com/vercel/next.js/pull/95694",
+    "profile": "frontend",
+    "description": "[turbopack] Optimize the implementation of AutoMap/AutoSet\n",
+    "state": "open",
+    "created_at": "2026-07-10T22:30:35Z",
+    "updated_at": "2026-07-10T23:02:08Z",
+    "sha": "d3877138dd05cbcca0d6aab028abe06bb5453bc9",
+    "user": "lukesandberg",
+    "labels": [],
+    "files_changed": 6,
+    "additions": 803,
+    "deletions": 45,
+    "patchSize": 36859,
+    "patchHash": "932725b0b84f90056395b1511e52f6174f0e6b4b71123817a3892c131f5b51d7",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-10T23:12:17.324Z"
+}

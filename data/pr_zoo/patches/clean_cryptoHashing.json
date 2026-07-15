@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "clean_cryptoHashing",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "cryptoHashing",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 159,
+    "patchHash": "5762aabbf2b98aa804486126ef9a4315cd2302cb8b7ff618c8226ef14e035e70"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-10T23:22:32.767Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.769Z"
+}

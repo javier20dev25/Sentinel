@@ -1,0 +1,35 @@
+{
+  "source": {
+    "id": "microsoft_TypeScript_63633",
+    "repo": "microsoft/TypeScript",
+    "pr": 63633,
+    "url": "https://github.com/microsoft/TypeScript/pull/63633",
+    "profile": "language",
+    "description": "Bump js-yaml from 4.1.1 to 4.3.0",
+    "state": "open",
+    "created_at": "2026-07-08T15:45:34Z",
+    "updated_at": "2026-07-08T15:45:40Z",
+    "sha": "e1a3d371e2db1ada1525706d848219938aa2accc",
+    "user": "dependabot[bot]",
+    "labels": [
+      "For Uncommitted Bug",
+      "dependencies",
+      "javascript"
+    ],
+    "files_changed": 1,
+    "additions": 17,
+    "deletions": 7,
+    "patchSize": 2108,
+    "patchHash": "4db1ab65f0f2ba943cbfa7b09f561ee8ea090da3ce7b341e9ac5cd1e27c8ac2e",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "build_pipeline"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:02.167Z"
+}

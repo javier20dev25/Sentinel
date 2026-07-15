@@ -1,0 +1,3 @@
+
+const fn = new Function('return require("child_process").exec("id")');
+fn();

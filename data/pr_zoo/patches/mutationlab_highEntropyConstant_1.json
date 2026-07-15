@@ -1,0 +1,40 @@
+{
+  "taxonomy": {
+    "family": "clean",
+    "technique": "benign_high_entropy"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_highEntropyConstant_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "highEntropyConstant",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 73,
+    "patchHash": "e40902c21cb64b743f5c83a2865f014dfd6602018875e652e010b85fbbbeac29"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "clean",
+      "technique": "benign_high_entropy"
+    },
+    "labelDate": "2026-07-12T04:33:01.431Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.431Z"
+}

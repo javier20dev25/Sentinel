@@ -1,0 +1,2017 @@
+--- a/deps/libffi/ChangeLog
++++ b/deps/libffi/ChangeLog
+@@ -1,3 +1,953 @@
++commit 5c1c43091ed611fdea774374355eb938c73a9157
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 09:50:53 2026 -0400
++
++    Prepare for 3.7.1
++    
++    Bump version to 3.7.1 and libtool -version-info to 12:1:4 (revision
++    bump; no ABI change).  See the README for the change list.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit aaeaafb04a8335bea93b2873ca9a2d01107737eb
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 09:24:36 2026 -0400
++
++    testsuite: Make closure_thiscall_fastcall_pop portable across compilers
++    
++    The i386 esp-balance shim faulted on Android i686 (clang, -O2): it read
++    the closure code pointer through an esp-relative memory operand after
++    manually moving esp, and it did not 16-byte align the stack for the
++    call, so the -O2-built closure body faulted on aligned SSE.
++    
++    Read every operand into a register while esp is still at its incoming
++    value, 16-byte align the stack at the call per the i386 psABI, avoid ebx
++    so it works under -fPIC, and return the delta via memory.  Verified with
++    gcc and clang at -O0 and -O2: passes with the fix, still catches the
++    under-pop without it.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit ebe306becb167937ead4332290868e041d0c08a7
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 08:54:39 2026 -0400
++
++    x86: Fix i386 THISCALL/FASTCALL closure stack-pop accounting
++    
++    For THISCALL and FASTCALL, ffi_closure_inner force-bumps narg_reg to 2
++    when an argument is a 64-bit integer or a struct, so that following
++    integer arguments are placed on the stack (the Issue #434 rule).  The
++    closure return path then computed the callee stack pop as
++    cif->bytes - narg_reg * 4, which discounts register slots that were
++    never used once narg_reg has been forced, under-popping the stack.
++    
++    For example FASTCALL void(uint64_t) has cif->bytes == 8 with the uint64
++    placed on the stack, but the formula yields a pop of 0 instead of 8; a
++    callee-clean call site that does not re-sync ESP from a frame pointer is
++    then left with the argument bytes in place of its return address.
++    
++    Encode the pop as the number of bytes actually consumed from the
++    incoming stack (argp - stack, dir == 1 for these ABIs), which equals the
++    old formula in the non-forced cases and is correct in the forced ones.
++    
++    Adds closure_thiscall_fastcall_pop.c (i386/GNU), which invokes the
++    generated closure through a minimal callee-clean call site and checks
++    ESP is balanced; without this fix the imbalance is 8 (FASTCALL uint64)
++    or 4 (THISCALL this+uint64).
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit a2ef91c79f4f193dd1e828f615c818fb6bcaff0d
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 08:20:39 2026 -0400
++
++    aarch64: Fix argument slab under-budget for large by-value structs
++    
++    On AArch64, composites larger than 16 bytes (that are not HFAs) are
++    passed by invisible reference.  ffi_call copies each payload into the
++    argument slab from the top (next_struct_area, growing down) and, once
++    X0-X7 are exhausted, spills the by-ref pointer into the same slab from
++    the bottom (the NSAA, growing up).  The generic prep_cif accounting in
++    cif->bytes only charges the payload copy, not the extra 8-byte pointer
++    slot, so with enough large structs the two regions collide: a later
++    payload copy overwrites an already-spilled pointer, and the callee then
++    receives a corrupt pointer for a by-value argument.
++    
++    Reserve an additional 8 bytes in ffi_prep_cif_machdep for each large
++    by-reference struct argument so the copy and spill regions can never
++    overlap.
++    
++    Adds many_large_structs.c, which passes sixteen 32-byte structs by
++    value; it crashes without this fix and passes with it.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 25283b0d812b6729299a21a1c02433bc291174e9
++Merge: e87b59f5 665c5c00
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 08:22:39 2026 -0400
++
++    Merge pull request #997 from libffi/windows-arm64-ci
++    
++    Add Windows ARM64 (MSVC) CI; fix latent msvcc.sh and testsuite bugs it exposed
++
++commit 665c5c00f2f492e199a1c9e01bda57a82f4440ef
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 07:46:24 2026 -0400
++
++    testsuite: Pass MSVC warning suppressions in go.exp
++    
++    Same latent issue as closure.exp: the Go closure tests ran with no
++    MSVC warning options, so ffitest.h's benign C4005 PRI-macro
++    redefinition warnings count as excess errors.  Latent until the
++    msvcc.sh -E fix let the FFI_GO_CLOSURES feature probe succeed under
++    MSVC; the execution tests themselves pass on both x86 MSVC jobs.
++    Mirror the call.exp/closure.exp warning-suppression block.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 2e897db821a43068e3851a414bd47b2b5592d403
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 07:25:53 2026 -0400
++
++    testsuite: Skip closure_loc_fn0 memcmp check under trampoline tables
++    
++    Now that closure_loc_fn0.c actually executes, it fails on Apple
++    aarch64: with FFI_EXEC_TRAMPOLINE_TABLE, codeloc points at a
++    trampoline table entry rather than a copy of the closure, so the
++    memcmp sanity check is invalid there -- the same reason it is already
++    skipped for static trampolines.  fficonfig.h (included by ffitest.h)
++    provides the macro.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 15b9abc239a1a2f6964a4cfc92f8fb78b3475d37
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 07:19:28 2026 -0400
++
++    ci: Add Windows ARM64 Visual C++ to the MSVC build matrix
++    
++    Build and test on GitHub's windows-11-arm runners.  Cygwin and the
++    amd64_arm64 cross tools (cl, armasm64) are x64-hosted and run under
++    the runner's x64 emulation; the ARM64 binaries they produce execute
++    natively, so the full testsuite runs (784 passes, 0 failures).  This
++    is the first CI coverage for the win64_armasm.S closure trampolines.
++    
++    The matrix entries grow runner/mflag/pkg/rcedit_arch parameters; the
++    existing x86 job names and release artifact names are unchanged.
++    Release tags now also publish ARM64 MSVC binaries
++    (libffi-<ver>-arm64-msvc-binaries).
++    
++    Replaces the temporary winarm64.yml iteration workflow.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit e4435739c82106cf13336bf26da99a03281848a0
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 06:58:17 2026 -0400
++
++    testsuite: Actually run closure_loc_fn0; fix msvcc.sh -S
++    
++    closure_loc_fn0.c is the only test in the suite without a dg-do
++    directive, so DejaGnu has been defaulting to its compile-only action
++    on every platform -- the ffi_closure_alloc/ffi_prep_closure_loc path
++    it exists to exercise was never executed.  Add the missing
++    /* { dg-do run } */.
++    
++    The compile-only default also exposed msvcc.sh's broken -S handling:
++    it mapped -S to -FAs alone, which emits a listing but still runs the
++    link step, failing with unresolved externals since compile-only
++    invocations pass no libraries.  Map -S to a true compile-to-assembly:
++    -c -FAs with the listing written to the -o target.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit bf2fa49b6dbe68dac021c02ee3deddb343ec3541
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 06:36:26 2026 -0400
++
++    testsuite: Pass MSVC warning suppressions to closures C tests
++    
++    closure.exp defines additional_options with the same -wd warning
++    suppressions call.exp uses, but only passed them to the C++ tests;
++    the C tests ran with "".  Under MSVC the benign C4005/C4305/C4477
++    warnings then count as excess errors and fail every C test's compile
++    check.  This was latent until the previous commit made the
++    FFI_CLOSURES feature probe work under msvcc.sh, allowing the closures
++    suite to run on MSVC at all.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit c2ace700754b6e63f07efdec39fc8c09ed960d63
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 06:11:00 2026 -0400
++
++    msvcc.sh: Handle -E (preprocess) so DejaGnu feature tests work
++    
++    The testsuite's libffi_feature_test probes compile a snippet with
++    "-E -o <file>" and treat any compiler output as failure.  msvcc.sh
++    had no -E handling: cl's preprocessed text went to stdout, where the
++    awk diagnostics filter passed through every line containing the
++    string "warning" -- including ffi.h's own #pragma warning lines --
++    and cl printed the source file name to stderr.  The probes therefore
++    always failed under msvcc.sh, silently marking the entire closures
++    suite (99 tests) and the bhaible callback tests (80) UNSUPPORTED on
++    every MSVC CI job.
++    
++    Recognize -E, write the preprocessed output to the -o target, and
++    swallow cl's stderr banner so feature probes see clean output.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit e994c8a22d6bc480cd13c9daa2abaedf42627f88
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 05:49:48 2026 -0400
++
++    ci: Add Windows ARM64 Visual C++ job (iteration branch)
++    
++    Build and test libffi on GitHub's windows-11-arm runners using
++    msvcc.sh -marm64 (cl + armasm64 via the amd64_arm64 cross tools,
++    running under x64 emulation; the resulting ARM64 binaries execute
++    natively).  msvcc.sh already understands -marm64.
++    
++    This is a temporary standalone workflow scoped to the
++    windows-arm64-ci branch so the job can be iterated on without
++    triggering the full CI matrix; it will be folded into build.yml
++    once green.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit e87b59f53f3879cb254a4c331fd0d2c221d6ea73
++Author: Anthony Green <green@moxielogic.com>
++Date:   Fri Jul 10 05:40:57 2026 -0400
++
++    aarch64: Fix clang-cl link failure for HFA helper functions
++    
++    clang-cl defines both __clang__ and _MSC_VER.  Since the build system
++    detects clang before MSVC, it sets MSVC=0 and builds sysv.S rather
++    than win64_armasm.S.  But ffi.c gated its C implementations of
++    extend_hfa_type and compress_hfa_type on !defined(_MSC_VER), so under
++    clang-cl neither implementation was built and linking failed.
++    
++    Gate on defined(_MSC_VER) && !defined(__clang__) instead: clang-cl
++    supports GCC-style extended inline asm, so the C implementations work
++    there.  Also replace ssize_t (POSIX-only, absent on Windows) with
++    ptrdiff_t in extend_hfa_type now that it compiles for MSVC targets.
++    
++    Fixes #996
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit cacaf519159668bce9fcbab64082bc85c277e89d
++Author: Anthony Green <green@moxielogic.com>
++Date:   Thu Jul 9 21:34:47 2026 -0400
++
++    x86-64: build generic ffi_call_plan fallback on Windows x86-64
++    
++    The ffi_call_plan_* API has two providers: the accelerated x86-64 SysV
++    implementation in src/x86/ffi64.c, and the portable fallback in
++    src/prep_cif.c that just wraps ffi_call.  ffi64.c is not compiled for
++    X86_WIN64 (that target builds ffiw64.c/win64.S instead), but clang-cl
++    and MSYS/mingw both define __x86_64__, so prep_cif.c's guard suppressed
++    the fallback too -- leaving ffi_call_plan_alloc/invoke/free undefined at
++    link time on those toolchains.  MSVC cl escaped this only because it does
++    not define __x86_64__.
++    
++    Suppress the generic fallback only when ffi64.c actually provides the
++    functions, i.e. add && !defined(X86_WIN64) to the guard.  X86_WIN64 is a
++    command-line define visible to the generic sources (cf. src/closures.c).
++    
++    Fixes #995.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit c2c2e538c7c5403bd4edc3e77220bbe25a3ad47f
++Merge: 132fb82f 7c3144c8
++Author: Anthony Green <green@moxielogic.com>
++Date:   Thu Jul 9 09:10:49 2026 -0400
++
++    Merge pull request #994 from libffi/fix-993-aarch64-darwin-int128
++    
++    aarch64: Don't split an int128 between x7 and the stack on Darwin
++
++commit 7c3144c80d8077b745588ee64bffd8504c44f5c9
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 21:23:31 2026 -0400
++
++    aarch64: Don't split an int128 between x7 and the stack on Darwin
++    
++    The Apple arm64 ABI does not round NGRN up to an even number for
++    128-bit integer arguments, but like AAPCS64 it still requires the
++    value to fit entirely in registers: if only x7 remains, the whole
++    value goes on the stack.  allocate_int128_to_reg_or_stack only
++    checked ngrn < 8, so with ngrn == 7 it wrote the low half to x7
++    and the high half past the end of the register array, while the
++    callee reads the argument from the stack.
++    
++    This fixes the libffi.call/i128-1.c failure at iteration 7 (seven
++    int args followed by an __int128) on aarch64-darwin, for both the
++    call and closure paths.
++    
++    Fixes #993
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 132fb82ff4b43c9b8eaeeb533f38c95ae925131c
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 07:40:34 2026 -0400
++
++    Update libtool version to 12:0:4 for 3.7.0
++    
++    3.7.0 adds three new public interfaces (ffi_call_plan_alloc,
++    ffi_call_plan_invoke, ffi_call_plan_free) additively, with no
++    existing interface removed or changed.  Per the libtool rules:
++    increment current, reset revision, increment age (11:1:3 -> 12:0:4).
++    This keeps the change ABI backward-compatible; the soname stays
++    libffi.so.8 (current - age = 8).
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 0ad8fd46c0a32cbbf18260c72cc60679da66c89f
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:43:03 2026 -0400
++
++    Prepare for 3.7.0
++
++commit c9275302baf0d109ec474972d4679a6afe8fe64d
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:29:29 2026 -0400
++
++    Bump version to 3.7.0
++    
++    Set AC_INIT to 3.7.0 and update the manual's edition/version/date
++    stamps to match.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 4f7ef24565eb60e8a093bfeba0bb77d5c576c311
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:28:30 2026 -0400
++
++    Update copyright year
++    
++    Bump the LICENSE year range to 2026.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 5ab7b328c3adde14105b1f36ae30adc9cdefae0a
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:24:26 2026 -0400
++
++    Add Anthony Green copyright line for 2026 authorship
++    
++    Attribute this year's work in the wasm and PA backends and the darwin
++    PowerPC closure code:
++      - wasm/ffi.c: widen narrow/unboxed returns to ffi_arg; NULL rvalue.
++      - pa/ffi.c: bump year (5-8 byte struct slot-sizing fix + avalue copy).
++      - powerpc/ffi_darwin.c: PPC_LD_* jump-table indexes for the aix/darwin
++        closure build fix.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 5e334c6aa70b937b5c0d30ba10a373e34d7526b6
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:17:58 2026 -0400
++
++    x86-64: add copyright line for the 2026 unix64.S plan trampolines
++    
++    The fast-path plan trampoline (ffi_plan_fast_call) and the pure-GP64
++    direct thunks (ffi_plan_gp0..6) were added to unix64.S this year, so
++    add an Anthony Green copyright line alongside the original authors'.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 70106b98d0a333a13b509b4bdc554018785be50c
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 06:15:53 2026 -0400
++
++    Update copyright year to 2026
++    
++    Add 2026 to the copyright line on the source files, headers and the
++    manual touched during this year's development.  Following existing
++    practice, only the maintainer's own copyright line is bumped (the
++    Anthony Green line, plus the Red Hat line in types.c); the years on
++    third-party-held backends are left as their original authors set them.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 621874d6726007a6470b9c0c90b5a27c3c3ed932
++Author: Anthony Green <green@moxielogic.com>
++Date:   Wed Jul 8 05:43:18 2026 -0400
++
++    configure: derive FFI_VERSION_STRING/NUMBER from AC_INIT
++    
++    The 3.6.0 release bumped AC_INIT but left FFI_VERSION_STRING and
++    FFI_VERSION_NUMBER at 3.5.2/30502, so the released headers report the
++    wrong version.  Compute both from AC_PACKAGE_VERSION instead of
++    duplicating the version by hand: the string is the package version
++    verbatim, and the number encodes X.Y.Z as X*10000 + Y*100 + Z with any
++    non-numeric suffix (e.g. -rc0) ignored.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit b8c60b06597cc77cbe66bd208083acc20251fae0
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 12:57:06 2026 -0400
++
++    README: note the ffi_call fixes in the 3.7.0 history
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit ed5da041796cd6e38d2f30b948eadf63cf96139a
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 12:30:56 2026 -0400
++
++    wasm: don't widen unboxed small-struct returns
++    
++    The previous commit widened narrow integral returns to ffi_arg, but
++    unbox_small_structs had already collapsed single-member struct returns
++    into those same scalar type ids, and a struct return is stored at its
++    natural size -- the caller's buffer is exactly the struct.  This broke
++    cls_1_1byte and the bhaible small-struct return tests.
++    
++    Remember whether the original return type was a struct and widen only
++    genuine scalar returns.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 59a9e68e59205da9c4db854dd1f1bce4e8b58dad
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 12:02:20 2026 -0400
++
++    wasm: widen narrow integral returns to ffi_arg
++    
++    The return store wrote only the natural width for integer returns
++    narrower than a register (one byte for U8/S8, two for U16/S16, four on
++    wasm64 for 32-bit types), leaving the rest of the caller's ffi_arg
++    buffer as stack garbage.  The documented API widens such returns to a
++    full ffi_arg, and every native port stores the full register width.
++    This is what plan_mixed.c caught: two identical calls disagreed in the
++    garbage bytes of their ffi_arg results.
++    
++    Mask or sign-extend the JS result explicitly and store a full ffi_arg
++    (32 bits on wasm32, 64 on wasm64).
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 6954bd1715b8a5895adfad7c2196d4eb41094dc7
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 11:30:55 2026 -0400
++
++    testsuite: use ffi_arg for the integral return in plan.c
++    
++    The struct-argument block stored an ffi_type_slong return into a plain
++    long.  Integral returns narrower than a register are widened to
++    ffi_arg, so on LLP64 targets libffi writes 8 bytes into the 4-byte
++    variable and clobbers its neighbor; this is what broke plan.c on MSVC
++    Win64 while mingw survived by stack-layout luck.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 822d2e555fd97271c7c0ba8b6325cf4b541e3e9c
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 11:30:55 2026 -0400
++
++    Allow a NULL rvalue in ffi_call; handle it in the wasm port
++    
++    Most ports already quietly supported calling with rvalue == NULL by
++    substituting scratch space for in-memory returns, and the new plan
++    tests rely on it, but the manual never promised it and the wasm port
++    passed NULL straight to the callee as the return-by-argument pointer,
++    writing the result through address zero.
++    
++    Document NULL rvalue as supported for any return type, and in the wasm
++    port allocate stack scratch for return-by-argument callees and skip the
++    store-back for scalar returns when rvalue is NULL.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 110156e1cceab76b4440ced9d95b5abaa84f30f7
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 11:30:55 2026 -0400
++
++    ffi_call: never modify the caller's avalue array
++    
++    Eight ports made large struct arguments pass-by-value by alloca'ing a
++    copy inside ffi_call and writing the copy's address back into the
++    caller's avalue[].  Those pointers dangle as soon as ffi_call returns,
++    so any caller that legally reuses its avalue array for a second call
++    reads dead stack.  The new ffi_call_plan equivalence tests do exactly
++    that and exposed it as plan_struct.c failures on hppa, MSVC Win64 and
++    macOS x86_64 under Rosetta; other targets passed only because the dead
++    copy usually survives between back-to-back calls.
++    
++    Clone the pointer array once, on the first argument that needs a copy,
++    and redirect the clone instead.  Document that ffi_call leaves the
++    caller's vector untouched.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit e3dae4657710a9ddd4eb4bdbefbcc73722aad9fe
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 09:18:31 2026 -0400
++
++    testsuite: add ffi_call_plan equivalence tests; fix EXTRA_DIST gaps
++    
++    Add plan.c, plan_mixed.c, plan_spill.c, plan_struct.c and plan_var.c.
++    Each builds a reusable call plan (ffi_call_plan_alloc/invoke/free) and
++    checks it against ffi_call across the x86-64 argument-placement matrix:
++    the pure-GP64 direct thunks, the mixed GP+SSE fast path, stack-spilled
++    arguments, struct returns (in-memory including a NULL rvalue, and the
++    register pair), a struct-by-value argument that falls back to ffi_call,
++    and variadic calls.  On targets without the accelerated backend the
++    generic plan simply wraps ffi_call, so the tests still pass there.
++    
++    While adding these to EXTRA_DIST, register four existing tests that were
++    never listed (i128-1.c, large_struct_by_value.c, many_small_structs.c
++    and complex_i128.c).  They ran via the .exp globs but were missing from
++    distribution tarballs.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit a40ab3a7e85f8c9b193b8a442297bb20de2b4293
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 08:19:33 2026 -0400
++
++    README: update 3.7.0 history entry
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 50baa0458db6b2d617e0d661292bbf12354b22ce
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 08:10:29 2026 -0400
++
++    x86_64: size closure argument buffer to match copy loop
++    
++    ffi_closure_unix64_inner allocated a fixed 16 bytes when gathering a
++    register-passed argument's eightbytes, but the copy loop writes n * 8
++    bytes and examine_argument can classify up to MAX_CLASSES (4)
++    eightbytes for vector-classified types.  Allocate n * 8 bytes so the
++    buffer always matches the loop bound.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit ff30d37615f82ef7bf1130b34528e01e1479b63d
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 08:10:29 2026 -0400
++
++    tramp.c: bound sscanf path field when parsing /proc/self/maps
++    
++    The %s conversion into file[PATH_MAX] was unbounded while the input
++    line buffer is PATH_MAX+100 bytes, so a mapping with a very long
++    pathname could overflow the destination.  Give the conversion an
++    explicit PATH_MAX field width and size the buffer PATH_MAX+1 to
++    accommodate the terminating NUL.
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit ed1844e6b50d0498d2b88d1b3ef31cc39b6cf117
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 08:10:29 2026 -0400
++
++    .gitignore: ignore local build and scan artifact directories
++    
++    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
++
++commit 854df63dbbda802985facbfab7a0e7c4169aefd1
++Merge: 2a595a18 731ec08f
++Author: Anthony Green <green@moxielogic.com>
++Date:   Tue Jul 7 08:06:25 2026 -0400
++
++    Merge pull request #991 from rorth/freebsd-libffi-note-gnu-stack
++    
++    Include .note.GNU-stack on FreeBSD/x86
++
++commit 731ec08f3c3bbec883d823a71f1b0f86731cf312
++Author: Rainer Orth <ro@CeBiTec.Uni-Bielefeld.DE>
++Date:   Tue Jul 7 11:14:09 2026 +0200
++
++    Fix typo.
++
++commit 19cc1424e924767c7ca43f9e4d4c27fbae27d1d9
++Author: Rainer Orth <ro@CeBiTec.Uni-Bielefeld.DE>
++Date:   Tue Jul 7 10:27:55 2026 +0200
++
++    Include .note.GNU-stack on FreeBSD/x86
++    
++    When building libffi on FreeBSD/x86 with --disable-shared as is done inside
++    the GCC tree, all tests FAIL when using GNU ld:
++    
++    gld-2.46: warning: win64.o: missing .note.GNU-stack section implies executable stack
++    gld-2.46: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
++    
++    The emission of .note.GNU-stack in src/x86/*.S is currently guarded by
++    __ELF__ && __linux__, but FreeBSD/x86 uses that NOTE section, too.  This
++    doesn't happen with libffi.so which lacks that NOTE.
++    
++    Therefore this patch extends the emission accordingly.
++    
++    Tested on amd64-pc-freebsd15.1 with and without --disable-shared.
++
++commit 2a595a183be146974bdf55716969e7a3e860f112
++Merge: c93f9428 f7b36640
++Author: Anthony Green <green@moxielogic.com>
++Date:   Thu Jul 2 20:03:30 2026 -0400
++
++    Merge pull request #989 from rvandermeulen/dlmalloc-msvc-lock-cast
++    
++    dlmalloc: cast Win32 spin-lock word to LONG volatile* in CAS_LOCK/CLEAR_LOCK
++
++commit f7b36640544a59813ee372ed1a763affe7a67562
++Author: Ryan VanderMeulen <rvandermeulen@mozilla.com>
++Date:   Thu Jul 2 19:32:00 2026 -0400
++
++    dlmalloc: cast Win32 spin-lock word to LONG volatile* in CAS_LOCK/CLEAR_LOCK
++    
++    MLOCK_T is int, but on the Win32 MSC path CAS_LOCK/CLEAR_LOCK map to
++    _InterlockedExchange(LONG volatile *, LONG), so the int* lock word is
++    passed to a LONG volatile * parameter. clang 22 promotes
++    -Wincompatible-pointer-types to an error by default, which breaks the
++    clang-cl build (32- and 64-bit) with:
++    
++      error: incompatible pointer types passing 'int *' to parameter of type
++      'volatile long *' [-Wincompatible-pointer-types]
++    
++    Cast to (LONG volatile *), matching what the ffi_spin_peek macro just
++    below already does in its _MSC_VER branch. LONG and int are both 32-bit
++    on Windows, so this is a type-correctness fix with no behavioral change.
++
++commit c93f9428d17cde4eb35517b58feeae6fb43aba5b
++Author: Anthony Green <green@moxielogic.com>
++Date:   Mon Jun 22 17:33:33 2026 -0400
++
++    testsuite: link threads tests against libpthread on NetBSD
++    
++    The libffi.threads/tsan.c test calls pthread_create but the harness
++    only appended -lpthread for OpenBSD, FreeBSD, and some Linux targets.
++    On NetBSD this caused an undefined reference to pthread_create.
++    
++    Fixes #988
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 9ca53a19833dabaf80b73763638ab988bdbc42cc
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 18:42:37 2026 -0400
++
++    powerpc: fix aix/darwin closure build errors
++    
++    unbuildable: the PPC_LD_* jump-table indexes (defined in ffi_powerpc.h,
++    which this file cannot include) were missing, and the closure helper
++    functions still declared an ffi_type* return type inconsistent with the
++    PPC_LD_* constants they now return.
++    
++    Define the PPC_LD_* constants locally and change the closure helper
++    return types to int.
++    
++    Fixes #987
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 807a93115f927229f6e7cf5675384e8dc2bf76d5
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 18:31:12 2026 -0400
++
++    doc: mark the 3.7.0 release date as TBD
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit c876d4663183c40edbe5218603a26290900e7794
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 18:28:12 2026 -0400
++
++    doc: add 3.7.0 history entry
++    
++    Record the next release (3.7.0, a minor bump for the new reusable call-plan API
++    on master) and the two PA-RISC fixes merged in #986.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit c3e054afebb2d9121ff4d12a56a803eecc31cc41
++Merge: 3cc6beb7 1f04d458
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 18:13:59 2026 -0400
++
++    Merge pull request #986 from libffi/ci-enable-parisc-regression
++    
++    Add PA32/ARCompact struct-by-value regression tests; enable hppa CI
++
++commit 1f04d458126bd79c58196073477515c88de8163d
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 17:37:26 2026 -0400
++
++    pa: fix stack sizing for 5-8 byte structs passed by value (FFI_PA32)
++    
++    ffi_size_stack_pa32 reserved a single stack slot for every struct argument,
++    but ffi_prep_args_pa32 passes a 5-8 byte struct inline in two even-aligned
++    slots (like a 64-bit value).  With enough such arguments the marshaller's slot
++    count outgrew cif->bytes and it wrote past the allocated frame -- below sp and
++    over ffi_call_pa32's saved return pointer -- corrupting the call.
++    
++    Make the sizing mirror the marshalling exactly: 1-4 byte structs take one slot,
++    5-8 byte structs take "2 + (z & 1)" slots (z stays offset from the marshaller's
++    slot by the odd FIRST_ARG_SLOT, so the parity matches), and larger structs are
++    passed by pointer in one slot.  Split the PA_HPUX long double case out since it
++    is passed by pointer.
++    
++    Fixes the failure exercised by testsuite/libffi.call/many_small_structs.c.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit cf45dfc368ea7373fdd946603845782dbcc1549a
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 16:57:56 2026 -0400
++
++    testsuite: make many_small_structs actually trigger the PA32 overflow
++    
++    With only 16 structs the PA-RISC slot under-count overflows ~32 bytes below
++    sp, landing in the 64-byte register save area where it clobbers nothing live,
++    so the call still returned correctly and the test passed under qemu.
++    
++    Raise the count to 40 so the marshaller's writes sweep past the save area and
++    over ffi_call_pa32's saved return pointer (sp-20), corrupting the return path.
++    On a correct backend the arguments still marshal within the allocated frame and
++    the call returns the expected sums; the test now fails only on an unfixed
++    FFI_PA32.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit d55de2637abd9518d550d18a3e1d89a37bd32f47
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 16:39:30 2026 -0400
++
++    pa: fix build broken by the int128 generic types
++    
++    FFI_TYPE_UINT128/FFI_TYPE_SINT128 were added after FFI_TYPE_COMPLEX, moving
++    FFI_TYPE_LAST to FFI_TYPE_SINT128.  The PA-RISC tripwire still pinned
++    FFI_PA_TYPE_LAST to FFI_TYPE_COMPLEX, so "#error You likely have broken jump
++    tables" fired and PA-RISC stopped building once int128 support landed.
++    
++    ffi_prep_cif_machdep maps every return type it does not handle explicitly --
++    including FFI_TYPE_COMPLEX and the 128-bit integer types -- to FFI_TYPE_INT via
++    its default case, so cif->flags never exceeds FFI_TYPE_COMPLEX and the linux.S /
++    hpux32.S return-value jump tables remain sufficient.  Bump FFI_PA_TYPE_LAST to
++    FFI_TYPE_SINT128 to clear the tripwire, with a comment recording why no table
++    entries were needed.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit d7177f2db574c962b4366b1948b7f7e1aaf896c2
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 16:26:53 2026 -0400
++
++    ci: run the testsuite on PA-RISC 32-bit (hppa) under qemu-user
++    
++    Add an hppa-linux-gnu entry to the build-cross-qemu matrix so the testsuite is
++    cross-compiled with the Debian gcc-hppa-linux-gnu toolchain and run under
++    qemu-user (binfmt).  hppa-linux uses FFI_PA32, so this exercises the
++    ffi_prep_args_pa32 / ffi_size_stack_pa32 marshalling path and will surface the
++    many_small_structs.c regression until the backend is fixed.
++    
++    Also drop the stale g++-5-hppa-linux-gnu pin from install.sh; the toolchain and
++    qemu-user-static now come from the CROSS_QEMU block.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit a384cba94f3935ac54a38f7c6489b6fbe0488c8c
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sun Jun 21 16:26:21 2026 -0400
++
++    testsuite: add struct-by-value regression tests for PA32 and ARCompact
++    
++    Two ffi_call tests covering argument-marshalling defects found by a security
++    review of the backends:
++    
++    * many_small_structs.c -- passes sixteen 8-byte structs by value.  On
++      PA-RISC 32-bit (FFI_PA32), ffi_size_stack_pa32 reserves one stack slot per
++      struct while ffi_prep_args_pa32 consumes two slots for a 5-8 byte struct
++      passed inline, so enough such args write past the asm-allocated frame.
++    
++    * large_struct_by_value.c -- passes one 64-byte struct by value.  On
++      ARCompact (FFI_ARCOMPACT), ffi_call_int sizes the stack arg area at two
++      words per argument, but a by-value struct is marshalled one word at a time
++      and words beyond the eight argument registers are written to that
++      under-sized area without bound.
++    
++    Both are written as ordinary correctness tests (valid CIFs, asserts on the
++    expected sums); they pass on unaffected targets and fail on PA32/ARCompact
++    until the backends are fixed.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 3cc6beb7d404e12d3458461d76557b79795816ff
++Author: Anthony Green <anthony@atgreen.org>
++Date:   Sun Jun 21 09:47:10 2026 -0400
++
++    x86-64: replace the transparent plan cache with an explicit ffi_call_plan API
++    
++    The transparent plan cache sped up ffi_call and closures by caching a
++    precomputed argument-placement plan per signature, but it charged every
++    call a cache lookup and content fingerprint, and it slightly regressed
++    signatures with no fast path (struct-by-value) that paid the key
++    computation only to find there was nothing to do.
++    
++    Replace it with an opt-in API.  ffi_call_plan_alloc builds a plan from a
++    prepared cif, ffi_call_plan_invoke applies it with no per-call lookup,
++    and ffi_call_plan_free releases it.  The plan is opaque and caller-owned,
++    immutable once built (so it may be shared across threads), and falls back
++    to ffi_call for signatures with no fast path.  ffi_call and the closure
++    path return to their original behaviour, so callers that don't adopt the
++    API pay nothing.
++    
++    The x86-64 backend provides an accelerated plan; every other target gets
++    a portable fallback in prep_cif.c that wraps ffi_call, so the symbols are
++    defined on all platforms.  The per-thread cache, content fingerprint,
++    thread-exit cleanup and closure demarshal layout are removed.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 0c8f175eb650bb204b679996696b3e7706505d8f
++Author: Anthony Green <anthony@atgreen.org>
++Date:   Sun Jun 21 08:18:14 2026 -0400
++
++    x86-64: trim the plan-cache fingerprint to the arg_types contents
++    
++    abi, nargs and rtype are stored in the slot and compared exactly on every
++    hit, so folding them into the fingerprint is redundant work on the hot
++    path.  Hashing only the arg_types element pointers keeps the same collision
++    behaviour and the same protection against a reused arg_types address, while
++    shortening the per-call hash and speeding up the all-pointer thunk path.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 7b8c3283351298c55d09f580414ab937f358156c
++Merge: d4995b5b f1e21329
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 19:48:22 2026 -0400
++
++    Merge pull request #985 from libffi/plan-cache-fingerprint
++    
++    x86-64: content-based plan-cache key and thread-exit cleanup
++
++commit f1e2132940880128e26b885ee956e76fe3cad2d8
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 19:46:50 2026 -0400
++
++    x86-64: content-based plan-cache key and thread-exit cleanup
++    
++    Follow-up to the plan cache (PR #984), addressing two issues.
++    
++    Content key: the cache keyed slots on the abi/nargs/rtype plus the arg_types
++    *array pointer*.  If a cif's arg_types array was freed and the address later
++    reused for a different signature with the same abi/nargs/rtype, the keys
++    collided and a stale plan could be returned.  Key on a 64-bit fingerprint that
++    folds in the element ffi_type pointers, so distinct argument types always get
++    distinct keys.  Lookup is now O(nargs) cheap pointer reads -- still far less
++    than re-classifying the call.
++    
++    Thread-exit cleanup: the per-thread cache leaked its malloc'd plans when a
++    thread exited.  Register a pthread key whose destructor frees the thread's
++    plans.  pthread is referenced via weak symbols, so a program that never links
++    pthread simply skips the registration (the cache is already bounded per thread).
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit d4995b5bff6e5ecefb46eda218c40717f895baaf
++Merge: 918ca8ed de3826a8
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 18:43:14 2026 -0400
++
++    Merge pull request #984 from libffi/fast-libffi-plan
++    
++    x86-64: transparent plan cache for ffi_call and closures
++
++commit de3826a8063fde113ee8d1e455d459038d5814cc
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 18:14:08 2026 -0400
++
++    x86-64: limit the plan cache to the SysV ABI
++    
++    The Win64/EFI64 plan path failed an MSVC execution test (libffi.call/float3)
++    that can't be reproduced or validated without a Windows toolchain.  Revert
++    ffiw64.c to the proven upstream implementation and build plans only for
++    FFI_UNIX64, leaving Win64/EFI64/GNUW64 on the existing path.  The SysV fast
++    path -- the bulk of the speedup -- is unaffected.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit fdbf8deaf297b308731385f91868ea8b5e7dbd21
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 17:59:54 2026 -0400
++
++    x86-64: fix Windows build of the plan cache
++    
++    Native Windows targets build only ffiw64.c + win64.S for the x86 backend;
++    ffi64.c (which instantiates the plan-cache storage and ffi_build_plan_arch)
++    is not compiled, so ffiw64.c's ffi_plan_get left ffi_plan_miss / ffi_plan_cache
++    unresolved at link time.  Instantiate the cache in ffiw64.c when X86_WIN64 is
++    defined (i.e. when ffi64.c is absent); on Unix x86-64 ffi64.c still does it and
++    X86_WIN64 is undefined, so there is no duplicate definition.
++    
++    Also use a portable thread-local qualifier (FFI_TLS: __declspec(thread) on
++    MSVC, __thread elsewhere).
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 872365e143c521b4a84f712aa60f4e638a8b8053
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 17:25:17 2026 -0400
++
++    x86-64: reword plan-cache comments to be self-contained
++    
++    Drop the in-development "Mechanism A" label and the stale references to the
++    earlier opt-in arena/slab storage, so the comments describe the cache as it
++    now stands.  No functional change.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit c4c9750c37868f26d1ce914592ca826e4ffc0b35
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 13:10:18 2026 -0400
++
++    x86-64: transparent plan cache for ffi_call and closures
++    
++    Precompute each signature's argument placement once and cache it, keyed on
++    (abi, nargs, rtype, arg_types) in a per-thread direct-mapped cache, so ffi_call
++    and closures skip the per-call ABI classification.  No API or ABI change --
++    every caller benefits transparently on a relink.
++    
++      - Cache: src/plan-cache.h (inline O(1) probe) + src/plan-cache-impl.h
++        (per-thread storage, evict-and-free, FFI_PLAN_NONE for non-plan-able sigs).
++      - SysV (ffi64.c, unix64.S): pure-GP64 direct thunks (avalue -> arg regs), a
++        lean trampoline for register-only calls, and a plan executor reusing
++        ffi_call_unix64; closures use a precomputed demarshal layout.  CFI on the
++        thunks/trampoline so exceptions unwind through them.
++      - Win64/EFI64 (ffiw64.c): plan executor + demarshal.
++      - W^X preserved: no runtime codegen; thunks shipped in .text.
++    
++    Scalar/pointer/int128/float/double args are accelerated; struct/complex/x87
++    args fall back to the existing path.  Pointer-heavy calls ~5x faster.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
++commit 918ca8edddbf542d9034d8e58931edfea036ecca
++Author: Anthony Green <green@moxielogic.com>
++Date:   Sat Jun 20 12:34:46 2026 -0400
++
++    ci: actually zip the MSVC binaries before the release upload
++    
++    The MSVC 'Create binary distribution' step builds a *directory*
++    (libffi-<ver>-x86-<width>bit-msvc-binaries/), but 'Upload to GitHub Release'
++    pointed softprops/action-gh-release at a .zip file that was never created.  With
++    no matching file the action just warns and succeeds, so on the v3.6.0 tag the
++    step reported success while attaching nothing.
++    
++    Add a pwsh Compress-Archive step to produce the .zip (contents at top level, like
++    the upload-artifact layout), and set fail_on_unmatched_files: true so a missing
++    file fails the step loudly instead of silently passing.
++    
++    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
++
+ commit f6303b8b0dd6353c6a5bb4de2e855a13b86f22cf
+ Author: Anthony Green <green@moxielogic.com>
+ Date:   Sat Jun 20 09:54:12 2026 -0400
+
+--- a/deps/libffi/LICENSE
++++ b/deps/libffi/LICENSE
+@@ -1,4 +1,4 @@
+-libffi - Copyright (c) 1996-2025  Anthony Green, Red Hat, Inc and others.
++libffi - Copyright (c) 1996-2026  Anthony Green, Red Hat, Inc and others.
+ See source files for details.
+ 
+ Permission is hereby granted, free of charge, to any person obtaining
+
+--- a/deps/libffi/README.md
++++ b/deps/libffi/README.md
+@@ -1,5 +1,5 @@
+ 
+-libffi-3.6.0 was released on June 20, 2026.
++libffi-3.7.1 was released on July 10, 2026.
+ 
+ 
+ What is libffi?
+@@ -201,6 +201,30 @@ History
+ 
+ See the git log for details at http://github.com/libffi/libffi.
+ 
++    3.7.1 July-10-2026
++        Fix aarch64 ffi_call memory corruption when passing many large
++          structs by value.
++        Fix i386 thiscall/fastcall closure stack cleanup for 64-bit
++          integer and struct arguments.
++        Fix aarch64 int128 argument split between x7 and the stack on
++          Darwin (#993).
++        Fix aarch64 clang-cl link failure for HFA helper functions (#996).
++        Build a generic ffi_call_plan fallback on Windows x86-64.
++        Add Windows ARM64 (MSVC) build and continuous integration support.
++
++    3.7.0 July-7-2026
++        Add reusable call plans (ffi_call_plan_alloc/ffi_call_plan_invoke/ffi_call_plan_free).
++        Fix PA-RISC build broken by the conditional __int128 support added in 3.6.0.
++        Fix PA-RISC stack overflow passing many small structs by value.
++        Fix powerpc aix/darwin closure build errors (#987).
++        Include .note.GNU-stack on FreeBSD/x86 (#991).
++        Fix MSVC Win32 spin-lock atomics in bundled dlmalloc (#989).
++        Harden static trampoline and x86_64 closure internals.
++        Fix ffi_call clobbering the caller's argument pointer array
++          when passing large structs by value.
++        Allow a NULL rvalue in ffi_call to discard the return value.
++        Fix wasm widening of integral returns narrower than ffi_arg.
++
+     3.6.0 Jun-20-2026
+         Add LoongArch32 support.
+         Add RISC-V static trampoline support.
+
+--- a/deps/libffi/configure
++++ b/deps/libffi/configure
+@@ -1,6 +1,6 @@
+ #! /bin/sh
+ # Guess values for system-dependent variables and create Makefiles.
+-# Generated by GNU Autoconf 2.71 for libffi 3.6.0.
++# Generated by GNU Autoconf 2.71 for libffi 3.7.1.
+ #
+ # Report bugs to <http://github.com/libffi/libffi/issues>.
+ #
+@@ -621,8 +621,8 @@ MAKEFLAGS=
+ # Identity of this package.
+ PACKAGE_NAME='libffi'
+ PACKAGE_TARNAME='libffi'
+-PACKAGE_VERSION='3.6.0'
+-PACKAGE_STRING='libffi 3.6.0'
++PACKAGE_VERSION='3.7.1'
++PACKAGE_STRING='libffi 3.7.1'
+ PACKAGE_BUGREPORT='http://github.com/libffi/libffi/issues'
+ PACKAGE_URL=''
+ 
+@@ -1417,7 +1417,7 @@ if test "$ac_init_help" = "long"; then
+   # Omit some internal or obsolete options to make the list less imposing.
+   # This message is too long to be a string in the A/UX 3.1 sh.
+   cat <<_ACEOF
+-\`configure' configures libffi 3.6.0 to adapt to many kinds of systems.
++\`configure' configures libffi 3.7.1 to adapt to many kinds of systems.
+ 
+ Usage: $0 [OPTION]... [VAR=VALUE]...
+ 
+@@ -1489,7 +1489,7 @@ fi
+ 
+ if test -n "$ac_init_help"; then
+   case $ac_init_help in
+-     short | recursive ) echo "Configuration of libffi 3.6.0:";;
++     short | recursive ) echo "Configuration of libffi 3.7.1:";;
+    esac
+   cat <<\_ACEOF
+ 
+@@ -1628,7 +1628,7 @@ fi
+ test -n "$ac_init_help" && exit $ac_status
+ if $ac_init_version; then
+   cat <<\_ACEOF
+-libffi configure 3.6.0
++libffi configure 3.7.1
+ generated by GNU Autoconf 2.71
+ 
+ Copyright (C) 2021 Free Software Foundation, Inc.
+@@ -2259,7 +2259,7 @@ cat >config.log <<_ACEOF
+ This file contains any messages produced by compilers while
+ running configure, to aid debugging if configure makes a mistake.
+ 
+-It was created by libffi $as_me 3.6.0, which was
++It was created by libffi $as_me 3.7.1, which was
+ generated by GNU Autoconf 2.71.  Invocation command line was
+ 
+   $ $0$ac_configure_args_raw
+@@ -3233,8 +3233,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ ac_config_headers="$ac_config_headers fficonfig.h"
+ 
+ 
+-FFI_VERSION_STRING="3.5.2"
+-FFI_VERSION_NUMBER=30502
++FFI_VERSION_STRING="3.7.1"
++ffi_version_major=`echo "3.7.1" | cut -d. -f1`
++ffi_version_minor=`echo "3.7.1" | cut -d. -f2 | sed 's/[^0-9].*//'`
++ffi_version_micro=`echo "3.7.1" | cut -d. -f3 | sed 's/[^0-9].*//'`
++FFI_VERSION_NUMBER=`expr ${ffi_version_major:-0} \* 10000 + ${ffi_version_minor:-0} \* 100 + ${ffi_version_micro:-0}`
+ 
+ 
+ 
+@@ -3983,7 +3986,7 @@ fi
+ 
+ # Define the identity of the package.
+  PACKAGE='libffi'
+- VERSION='3.6.0'
++ VERSION='3.7.1'
+ 
+ 
+ printf "%s\n" "#define PACKAGE \"$PACKAGE\"" >>confdefs.h
+@@ -20658,7 +20661,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
+ # report actual input values of CONFIG_FILES etc. instead of their
+ # values after options handling.
+ ac_log="
+-This file was extended by libffi $as_me 3.6.0, which was
++This file was extended by libffi $as_me 3.7.1, which was
+ generated by GNU Autoconf 2.71.  Invocation command line was
+ 
+   CONFIG_FILES    = $CONFIG_FILES
+@@ -20726,7 +20729,7 @@ ac_cs_config_escaped=`printf "%s\n" "$ac_cs_config" | sed "s/^ //; s/'/'\\\\\\\\
+ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
+ ac_cs_config='$ac_cs_config_escaped'
+ ac_cs_version="\\
+-libffi config.status 3.6.0
++libffi config.status 3.7.1
+ configured by $0, generated by GNU Autoconf 2.71,
+   with options \\"\$ac_cs_config\\"
+ 
+
+--- a/deps/libffi/configure.ac
++++ b/deps/libffi/configure.ac
+@@ -2,11 +2,17 @@ dnl Process this with autoconf to create configure
+ 
+ AC_PREREQ([2.68])
+ 
+-AC_INIT([libffi],[3.6.0],[http://github.com/libffi/libffi/issues])
++AC_INIT([libffi],[3.7.1],[http://github.com/libffi/libffi/issues])
+ AC_CONFIG_HEADERS([fficonfig.h])
+ 
+-FFI_VERSION_STRING="3.5.2"
+-FFI_VERSION_NUMBER=30502
++dnl Derive the version macros from AC_INIT so they cannot drift when the
++dnl release version is bumped.  FFI_VERSION_NUMBER encodes X.Y.Z as
++dnl X*10000 + Y*100 + Z, ignoring any non-numeric suffix (e.g. -rc0).
++FFI_VERSION_STRING="AC_PACKAGE_VERSION"
++ffi_version_major=`echo "AC_PACKAGE_VERSION" | cut -d. -f1`
++ffi_version_minor=`echo "AC_PACKAGE_VERSION" | cut -d. -f2 | sed 's/[[^0-9]].*//'`
++ffi_version_micro=`echo "AC_PACKAGE_VERSION" | cut -d. -f3 | sed 's/[[^0-9]].*//'`
++FFI_VERSION_NUMBER=`expr ${ffi_version_major:-0} \* 10000 + ${ffi_version_minor:-0} \* 100 + ${ffi_version_micro:-0}`
+ AC_SUBST(FFI_VERSION_STRING)
+ AC_SUBST(FFI_VERSION_NUMBER)
+ 
+
+--- a/deps/libffi/doc/libffi.info
++++ b/deps/libffi/doc/libffi.info
+@@ -3,7 +3,7 @@ This is libffi.info, produced by makeinfo version 7.1 from libffi.texi.
+ This manual is for libffi, a portable foreign function interface
+ library.
+ 
+-   Copyright © 2008-2025 Anthony Green and Red Hat, Inc.
++   Copyright © 2008-2026 Anthony Green and Red Hat, Inc.
+ 
+    Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+@@ -38,7 +38,7 @@ libffi
+ This manual is for libffi, a portable foreign function interface
+ library.
+ 
+-   Copyright © 2008-2025 Anthony Green and Red Hat, Inc.
++   Copyright © 2008-2026 Anthony Green and Red Hat, Inc.
+ 
+    Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+@@ -112,6 +112,7 @@ File: libffi.info,  Node: Using libffi,  Next: Memory Usage,  Prev: Introduction
+ * Simple Example::              A simple example.
+ * Types::                       libffi type descriptions.
+ * Multiple ABIs::               Different passing styles on one platform.
++* Reusable Call Plans::         Building a call plan once and reusing it.
+ * The Closure API::             Writing a generic function.
+ * Closure Example::             A closure example.
+ * Thread Safety::               Thread safety.
+@@ -200,6 +201,11 @@ function:
+      responsibility to ensure this.  If CIF declares that the function
+      returns ‘void’ (using ‘ffi_type_void’), then RVALUE is ignored.
+ 
++     RVALUE may also be ‘NULL’, in which case the call is performed and
++     the return value is discarded.  This works for any return type,
++     including structures returned in memory; ‘libffi’ supplies internal
++     scratch space for the callee when needed.
++
+      In most situations, ‘libffi’ will handle promotion according to the
+      ABI. However, for historical reasons, there is a special case with
+      return values that must be handled by your code.  In particular,
+@@ -213,7 +219,9 @@ function:
+      AVALUES is a vector of ‘void *’ pointers that point to the memory
+      locations holding the argument values for a call.  If CIF declares
+      that the function has no arguments (i.e., NARGS was 0), then
+-     AVALUES is ignored.
++     AVALUES is ignored.  ‘ffi_call’ does not modify the vector or the
++     argument values it points to, so both may be reused for subsequent
++     calls.
+ 
+      Note that while the return value must be register-sized, arguments
+      should exactly match their declared type.  For example, if an
+@@ -739,7 +747,7 @@ compilers that support them:
+ type descriptors in the previous example.
+ 
+ 
+-File: libffi.info,  Node: Multiple ABIs,  Next: The Closure API,  Prev: Types,  Up: Using libffi
++File: libffi.info,  Node: Multiple ABIs,  Next: Reusable Call Plans,  Prev: Types,  Up: Using libffi
+ 
+ 2.4 Multiple ABIs
+ =================
+@@ -751,9 +759,46 @@ instance, the x86 platform has both ‘stdcall’ and ‘fastcall’ functions.
+ necessarily platform-specific.
+ 
+ 
+-File: libffi.info,  Node: The Closure API,  Next: Closure Example,  Prev: Multiple ABIs,  Up: Using libffi
++File: libffi.info,  Node: Reusable Call Plans,  Next: The Closure API,  Prev: Multiple ABIs,  Up: Using libffi
++
++2.5 Reusable Call Plans
++=======================
++
++When the same signature is called many times - as language bindings
++typically do - you can build a “call plan” once and reuse it, so that
++each call avoids the work ‘ffi_call’ would otherwise repeat on every
++invocation.  A plan is an opaque, caller-owned object built from a
++prepared ‘ffi_cif’.
++
++ -- Function: ffi_call_plan * ffi_call_plan_alloc (ffi_cif *CIF)
++     Builds and returns a reusable plan for the signature described by
++     CIF, which must already have been prepared with ‘ffi_prep_cif’.
++     The plan does not copy CIF; CIF must remain valid for as long as
++     the plan is used.
++
++     Returns ‘NULL’ only when memory cannot be allocated.  A signature
++     for which no accelerated path exists is still valid: the returned
++     plan simply falls back to ‘ffi_call’ when it is invoked.
++
++ -- Function: void ffi_call_plan_invoke (ffi_call_plan *PLAN, void *FN,
++          void *RVALUE, void **AVALUES)
++     Calls FN using PLAN.  The FN, RVALUE, and AVALUES arguments have
++     exactly the same meaning as for ‘ffi_call’ (*note The Basics::),
++     including the rule that integral return values narrower than a
++     register are widened to ‘ffi_arg’.
++
++     A plan is immutable once built, so a single plan may be invoked
++     concurrently from multiple threads without additional locking.
++
++ -- Function: void ffi_call_plan_free (ffi_call_plan *PLAN)
++     Releases a plan returned by ‘ffi_call_plan_alloc’.  Passing ‘NULL’
++     is harmless.  The ‘ffi_cif’ the plan was built from is not
++     affected.
++
++
++File: libffi.info,  Node: The Closure API,  Next: Closure Example,  Prev: Reusable Call Plans,  Up: Using libffi
+ 
+-2.5 The Closure API
++2.6 The Closure API
+ ===================
+ 
+ ‘libffi’ also provides a way to write a generic function - a function
+@@ -857,7 +902,7 @@ executable addresses.
+ 
+ File: libffi.info,  Node: Closure Example,  Next: Thread Safety,  Prev: The Closure API,  Up: Using libffi
+ 
+-2.6 Closure Example
++2.7 Closure Example
+ ===================
+ 
+ A trivial example that creates a new ‘puts’ by binding ‘fputs’ with
+@@ -916,7 +961,7 @@ A trivial example that creates a new ‘puts’ by binding ‘fputs’ with
+ 
+ File: libffi.info,  Node: Thread Safety,  Prev: Closure Example,  Up: Using libffi
+ 
+-2.7 Thread Safety
++2.8 Thread Safety
+ =================
+ 
+ ‘libffi’ is not completely thread-safe.  However, many parts are, and if
+@@ -1004,17 +1049,21 @@ Index
+ * cif:                                   The Basics.          (line  14)
+ * closure API:                           The Closure API.     (line  13)
+ * closures:                              The Closure API.     (line  13)
+-* const char *:                          The Basics.          (line 106)
++* const char *:                          The Basics.          (line 113)
+ * FFI:                                   Introduction.        (line  31)
+ * ffi_call:                              The Basics.          (line  72)
++* ffi_call_plan *:                       Reusable Call Plans. (line  12)
++* ffi_call_plan_alloc:                   Reusable Call Plans. (line  12)
++* ffi_call_plan_free:                    Reusable Call Plans. (line  32)
++* ffi_call_plan_invoke:                  Reusable Call Plans. (line  22)
+ * ffi_closure_alloc:                     The Closure API.     (line  19)
+ * ffi_closure_free:                      The Closure API.     (line  26)
+ * FFI_CLOSURES:                          The Closure API.     (line  13)
+-* ffi_get_closure_size:                  The Basics.          (line 118)
+-* ffi_get_default_abi:                   The Basics.          (line 115)
++* ffi_get_closure_size:                  The Basics.          (line 125)
++* ffi_get_default_abi:                   The Basics.          (line 122)
+ * ffi_get_struct_offsets:                Size and Alignment.  (line  39)
+-* ffi_get_version:                       The Basics.          (line 106)
+-* ffi_get_version_number:                The Basics.          (line 110)
++* ffi_get_version:                       The Basics.          (line 113)
++* ffi_get_version_number:                The Basics.          (line 117)
+ * ffi_prep_cif:                          The Basics.          (line  16)
+ * ffi_prep_cif_var:                      The Basics.          (line  39)
+ * ffi_prep_closure_loc:                  The Closure API.     (line  41)
+@@ -1051,36 +1100,39 @@ Index
+ * ffi_type_ushort:                       Primitive Types.     (line  53)
+ * ffi_type_void:                         Primitive Types.     (line  10)
+ * Foreign Function Interface:            Introduction.        (line  31)
+-* size_t:                                The Basics.          (line 118)
+-* unsigned int:                          The Basics.          (line 115)
+-* unsigned long:                         The Basics.          (line 110)
++* size_t:                                The Basics.          (line 125)
++* unsigned int:                          The Basics.          (line 122)
++* unsigned long:                         The Basics.          (line 117)
+ * void:                                  The Basics.          (line  72)
+-* void <1>:                              The Closure API.     (line  19)
+-* void <2>:                              The Closure API.     (line  26)
++* void <1>:                              Reusable Call Plans. (line  22)
++* void <2>:                              Reusable Call Plans. (line  32)
++* void <3>:                              The Closure API.     (line  19)
++* void <4>:                              The Closure API.     (line  26)
+ 
+ 
+ 
+ Tag Table:
+ Node: Top1387
+ Node: Introduction2909
+ Node: Using libffi4569
+-Node: The Basics5098
+-Node: Simple Example10868
+-Node: Types11925
+-Node: Primitive Types12436
+-Node: Structures14753
+-Node: Size and Alignment15864
+-Node: Arrays Unions Enums18135
+-Node: Type Example21112
+-Node: Complex22418
+-Node: Complex Type Example23932
+-Node: Multiple ABIs26984
+-Node: The Closure API27367
+-Node: Closure Example31703
+-Node: Thread Safety33347
+-Node: Memory Usage34180
+-Node: Missing Features35455
+-Node: Index35832
++Node: The Basics5172
++Node: Simple Example11346
++Node: Types12403
++Node: Primitive Types12914
++Node: Structures15231
++Node: Size and Alignment16342
++Node: Arrays Unions Enums18613
++Node: Type Example21590
++Node: Complex22896
++Node: Complex Type Example24410
++Node: Multiple ABIs27462
++Node: Reusable Call Plans27849
++Node: The Closure API29566
++Node: Closure Example33908
++Node: Thread Safety35552
++Node: Memory Usage36385
++Node: Missing Features37660
++Node: Index38037
+ 
+ End Tag Table
+ 
+
+--- a/deps/libffi/doc/libffi.texi
++++ b/deps/libffi/doc/libffi.texi
+@@ -18,7 +18,7 @@
+ This manual is for libffi, a portable foreign function interface
+ library.
+ 
+-Copyright @copyright{} 2008--2025 Anthony Green and Red Hat, Inc.
++Copyright @copyright{} 2008--2026 Anthony Green and Red Hat, Inc.
+ 
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+@@ -118,6 +118,7 @@ values passed between the two languages.
+ * Simple Example::              A simple example.
+ * Types::                       libffi type descriptions.
+ * Multiple ABIs::               Different passing styles on one platform.
++* Reusable Call Plans::         Building a call plan once and reusing it.
+ * The Closure API::             Writing a generic function.
+ * Closure Example::             A closure example.
+ * Thread Safety::               Thread safety.
+@@ -213,6 +214,11 @@ to ensure this.  If @var{cif} declares that the function returns
+ @code{void} (using @code{ffi_type_void}), then @var{rvalue} is
+ ignored.
+ 
++@var{rvalue} may also be @code{NULL}, in which case the call is
++performed and the return value is discarded.  This works for any
++return type, including structures returned in memory; @code{libffi}
++supplies internal scratch space for the callee when needed.
++
+ In most situations, @code{libffi} will handle promotion according to
+ the ABI.  However, for historical reasons, there is a special case
+ with return values that must be handled by your code.  In particular,
+@@ -226,7 +232,9 @@ full @code{ffi_arg} into the return value.
+ @var{avalues} is a vector of @code{void *} pointers that point to the
+ memory locations holding the argument values for a call.  If @var{cif}
+ declares that the function has no arguments (i.e., @var{nargs} was 0),
+-then @var{avalues} is ignored.
++then @var{avalues} is ignored.  @code{ffi_call} does not modify the
++vector or the argument values it points to, so both may be reused for
++subsequent calls.
+ 
+ Note that while the return value must be register-sized, arguments
+ should exactly match their declared type.  For example, if an argument
+@@ -806,6 +814,45 @@ necessarily platform-specific.
+ 
+ @c FIXME: document the platforms
+ 
++@node Reusable Call Plans
++@section Reusable Call Plans
++
++When the same signature is called many times -- as language bindings
++typically do -- you can build a @dfn{call plan} once and reuse it, so
++that each call avoids the work @code{ffi_call} would otherwise repeat
++on every invocation.  A plan is an opaque, caller-owned object built
++from a prepared @code{ffi_cif}.
++
++@findex ffi_call_plan_alloc
++@defun {ffi_call_plan *} ffi_call_plan_alloc (ffi_cif *@var{cif})
++Builds and returns a reusable plan for the signature described by
++@var{cif}, which must already have been prepared with
++@code{ffi_prep_cif}.  The plan does not copy @var{cif}; @var{cif} must
++remain valid for as long as the plan is used.
++
++Returns @code{NULL} only when memory cannot be allocated.  A signature
++for which no accelerated path exists is still valid: the returned plan
++simply falls back to @code{ffi_call} when it is invoked.
++@end defun
++
++@findex ffi_call_plan_invoke
++@defun void ffi_call_plan_invoke (ffi_call_plan *@var{plan}, void *@var{fn}, void *@var{rvalue}, void **@var{avalues})
++Calls @var{fn} using @var{plan}.  The @var{fn}, @var{rvalue}, and
++@var{avalues} arguments have exactly the same meaning as for
++@code{ffi_call} (@pxref{The Basics}), including the rule that integral
++return values narrower than a register are widened to @code{ffi_arg}.
++
++A plan is immutable once built, so a single plan may be invoked
++concurrently from multiple threads without additional locking.
++@end defun
++
++@findex ffi_call_plan_free
++@defun void ffi_call_plan_free (ffi_call_plan *@var{plan})
++Releases a plan returned by @code{ffi_call_plan_alloc}.  Passing
++@code{NULL} is harmless.  The @code{ffi_cif} the plan was built from is
++not affected.
++@end defun
++
+ @node The Closure API
+ @section The Closure API
+ 
+
+--- a/deps/libffi/doc/stamp-vti
++++ b/deps/libffi/doc/stamp-vti
+@@ -1,4 +1,4 @@
+-@set UPDATED 20 June 2026
+-@set UPDATED-MONTH June 2026
+-@set EDITION 3.6.0
+-@set VERSION 3.6.0
++@set UPDATED 10 July 2026
++@set UPDATED-MONTH July 2026
++@set EDITION 3.7.1
++@set VERSION 3.7.1
+
+--- a/deps/libffi/doc/version.texi
++++ b/deps/libffi/doc/version.texi
+@@ -1,4 +1,4 @@
+-@set UPDATED 20 June 2026
+-@set UPDATED-MONTH June 2026
+-@set EDITION 3.6.0
+-@set VERSION 3.6.0
++@set UPDATED 10 July 2026
++@set UPDATED-MONTH July 2026
++@set EDITION 3.7.1
++@set VERSION 3.7.1
+
+--- a/deps/libffi/generate-headers.py
++++ b/deps/libffi/generate-headers.py
+@@ -7,8 +7,8 @@
+ from pathlib import Path
+ 
+ 
+-LIBFFI_VERSION = '3.6.0'
+-LIBFFI_VERSION_NUMBER = '30600'
++LIBFFI_VERSION = '3.7.1'
++LIBFFI_VERSION_NUMBER = '30701'
+ 
+ def normalize_arch(target_arch):
+     aliases = {
+
+--- a/deps/libffi/include/ffi.h.in
++++ b/deps/libffi/include/ffi.h.in
+@@ -1,6 +1,6 @@
+ /* -----------------------------------------------------------------*-C-*-
+    libffi @VERSION@
+-     - Copyright (c) 2011, 2014, 2019, 2021, 2022, 2024, 2025 Anthony Green
++     - Copyright (c) 2011, 2014, 2019, 2021, 2022, 2024, 2025, 2026 Anthony Green
+      - Copyright (c) 1996-2003, 2007, 2008 Red Hat, Inc.
+ 
+    Permission is hereby granted, free of charge, to any person
+@@ -524,6 +524,32 @@ void ffi_call(ffi_cif *cif,
+ 	      void *rvalue,
+ 	      void **avalue);
+ 
++/* Reusable call plans.
++
++   A plan captures a signature's argument placement once so that repeated
++   calls skip the per-call work that ffi_call would otherwise redo.  Build one
++   with ffi_call_plan_alloc, invoke it as many times as you like, and release
++   it with ffi_call_plan_free.
++
++   The plan is opaque and caller-owned.  The cif must outlive the plan.
++   ffi_call_plan_alloc returns NULL only on allocation failure; a signature
++   with no fast path is still valid and ffi_call_plan_invoke falls back to
++   ffi_call for it.  A plan is immutable once built, so it may be shared and
++   invoked concurrently from multiple threads.  */
++typedef struct ffi_call_plan ffi_call_plan;
++
++FFI_API
++ffi_call_plan *ffi_call_plan_alloc (ffi_cif *cif);
++
++FFI_API
++void ffi_call_plan_invoke (ffi_call_plan *plan,
++			   void (*fn)(void),
++			   void *rvalue,
++			   void **avalue);
++
++FFI_API
++void ffi_call_plan_free (ffi_call_plan *plan);
++
+ FFI_API
+ ffi_status ffi_get_struct_offsets (ffi_abi abi, ffi_type *struct_type,
+ 				   size_t *offsets);
+
+--- a/deps/libffi/libffi.map.in
++++ b/deps/libffi/libffi.map.in
+@@ -58,6 +58,17 @@ LIBFFI_BASE_8.1 {
+     ffi_get_closure_size;
+ } LIBFFI_BASE_8.0;
+ 
++/* ----------------------------------------------------------------------
++   Reusable call plans (ffi_call_plan_*).  Additive: new symbols only, the
++   existing struct layout and entry points are untouched.
++   -------------------------------------------------------------------- */
++LIBFFI_CALL_PLAN_8.4 {
++  global:
++    ffi_call_plan_alloc;
++    ffi_call_plan_invoke;
++    ffi_call_plan_free;
++} LIBFFI_BASE_8.1;
++
+ #ifdef FFI_TARGET_HAS_COMPLEX_TYPE
+ LIBFFI_COMPLEX_8.0 {
+   global:
+
+--- a/deps/libffi/libtool-version
++++ b/deps/libffi/libtool-version
+@@ -26,4 +26,4 @@
+ #    release, then set age to 0.
+ #
+ # CURRENT:REVISION:AGE
+-11:1:3
++12:1:4
+
+--- a/deps/libffi/msvcc.sh
++++ b/deps/libffi/msvcc.sh
+@@ -94,6 +94,13 @@ do
+       cl="clang-cl"
+       shift 1
+     ;;
++    -E)
++      # DejaGnu-style preprocessing (-E -o <file>): handled specially
++      # below, since cl writes preprocessed output to stdout and prints
++      # the source file name to stderr.
++      preprocess="true"
++      shift 1
++    ;;
+     -O0)
+       args="$args -Od"
+       shift 1
+@@ -236,19 +243,25 @@ do
+       shift 1
+     ;;
+     -S)
+-      args="$args -FAs"
++      # Compile to assembly without linking, like gcc -S: emit the
++      # listing and stop after the compile step.
++      args="$args -c -FAs"
++      compile_to_asm="true"
+       shift 1
+     ;;
+     -o)
+       outdir="$(dirname $2)"
+       base="$(basename $2|sed 's/\.[^.]*//g')"
+-      if [ -n "$single" ]; then 
++      ppout="$2"
++      if [ -n "$compile_to_asm" ]; then
++        output="-Fo$outdir/$base.obj -Fa$2"
++      elif [ -n "$single" ]; then
+         output="-Fo$2"
+       else
+         output="-Fe$2"
+       fi
+       armasm_output="-o $2"
+-      if [ -n "$assembly" ]; then
++      if [ -n "$assembly" ] || [ -n "$compile_to_asm" ]; then
+         args="$args $output"
+       else
+         args="$args $output -Fd$outdir/$base -Fp$outdir/$base -Fa$outdir/$base"
+@@ -294,7 +307,19 @@ if [ -n "$debug_crt" ]; then
+     md="${md}d"
+ fi
+ 
+-if [ -n "$assembly" ]; then
++if [ -n "$preprocess" ]; then
++    # Write the preprocessed output to the -o target (or stdout), and
++    # swallow stderr: cl prints the source file name there, which the
++    # testsuite's feature probes would mistake for a diagnostic.
++    args="$(echo $args | sed 's%[-/]F[edpoa][^ ]*%%g')"
++
++    if test -n "$verbose"; then
++      echo "$cl -EP $args > ${ppout:-/dev/stdout}"
++    fi
++
++    eval "\"$cl\" -EP $args" > "${ppout:-/dev/stdout}" 2>/dev/null
++    result=$?
++elif [ -n "$assembly" ]; then
+     if [ -z "$outdir" ]; then
+       outdir="."
+     fi
+
+--- a/deps/libffi/src/aarch64/ffi.c
++++ b/deps/libffi/src/aarch64/ffi.c
+@@ -378,13 +378,13 @@ extend_integer_type (void *source, int type)
+     }
+ }
+ 
+-#if defined(_MSC_VER)
++#if defined(_MSC_VER) && !defined(__clang__)
+ void extend_hfa_type (void *dest, void *src, int h);
+ #else
+ static void
+ extend_hfa_type (void *dest, void *src, int h)
+ {
+-  ssize_t f = h - AARCH64_RET_S4;
++  ptrdiff_t f = h - AARCH64_RET_S4;
+   void *x0;
+ 
+ #define BTI_J "hint #36"
+@@ -449,7 +449,7 @@ extend_hfa_type (void *dest, void *src, int h)
+ }
+ #endif
+ 
+-#if defined(_MSC_VER)
++#if defined(_MSC_VER) && !defined(__clang__)
+ void* compress_hfa_type (void *dest, void *src, int h);
+ #else
+ static void *
+@@ -550,7 +550,9 @@ allocate_int128_to_reg_or_stack (struct call_context *context,
+   ngrn += ngrn & 1;
+ #endif
+ 
+-  if (ngrn < N_X_ARG_REG)
++  /* The value must fit entirely in registers, i.e. the low half may
++     not be allocated to x7 with the high half spilled to the stack.  */
++  if (ngrn + 2 <= N_X_ARG_REG)
+     {
+       ret = &context->x[ngrn];
+       ngrn += 2;
+@@ -642,6 +644,23 @@ ffi_prep_cif_machdep (ffi_cif *cif)
+ 	break;
+       }
+ 
++  /* Composites larger than 16 bytes (that are not HFAs) are passed by
++     invisible reference: ffi_call copies the payload into the argument
++     slab (next_struct_area, growing down) and, once the X registers are
++     exhausted, also spills the by-ref pointer into the same slab (the
++     NSAA, growing up).  The generic prep_cif accounting in cif->bytes
++     only charges the payload copy, not that 8-byte pointer slot, so the
++     two regions can collide and a later struct copy can overwrite an
++     already-spilled pointer with the copied payload bytes.  Reserve an
++     extra 8 bytes per such argument so the slab is always large enough
++     for both.  */
++  for (i = 0, n = cif->nargs; i < n; i++)
++    {
++      ffi_type *ty = cif->arg_types[i];
++      if (ty->size > 16 && !is_vfp_type (ty))
++	bytes += 8;
++    }
++
+   /* Round the stack up to a multiple of the stack alignment requirement. */
+   cif->bytes = (unsigned) FFI_ALIGN(bytes, 16);
+   cif->flags = flags;
+
+--- a/deps/libffi/src/alpha/ffi.c
++++ b/deps/libffi/src/alpha/ffi.c
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------------
+-   ffi.c - Copyright (c) 2012  Anthony Green
++   ffi.c - Copyright (c) 2012, 2026  Anthony Green
+ 	   Copyright (c) 1998, 2001, 2007, 2008  Red Hat, Inc.
+ 
+    Alpha Foreign Function Interface
+
+--- a/deps/libffi/src/alpha/ffitarget.h
++++ b/deps/libffi/src/alpha/ffitarget.h
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------*-C-*-
+-   ffitarget.h - Copyright (c) 2012  Anthony Green
++   ffitarget.h - Copyright (c) 2012, 2026  Anthony Green
+                  Copyright (c) 1996-2003  Red Hat, Inc.
+    Target configuration macros for Alpha.
+ 
+
+--- a/deps/libffi/src/closures.c
++++ b/deps/libffi/src/closures.c
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------------
+-   closures.c - Copyright (c) 2019, 2022 Anthony Green
++   closures.c - Copyright (c) 2019, 2022, 2026 Anthony Green
+                 Copyright (c) 2007, 2009, 2010 Red Hat, Inc.
+                 Copyright (C) 2007, 2009, 2010 Free Software Foundation, Inc
+                 Copyright (c) 2011 Plausible Labs Cooperative, Inc.
+
+--- a/deps/libffi/src/dlmalloc.c
++++ b/deps/libffi/src/dlmalloc.c
+@@ -1916,8 +1916,8 @@ static FORCEINLINE void x86_clear_lock(int* sl) {
+ #define CLEAR_LOCK(sl)   x86_clear_lock(sl)
+ 
+ #else /* Win32 MSC */
+-#define CAS_LOCK(sl)     interlockedexchange(sl, (LONG)1)
+-#define CLEAR_LOCK(sl)   interlockedexchange (sl, (LONG)0)
++#define CAS_LOCK(sl)     interlockedexchange((LONG volatile *)(sl), (LONG)1)
++#define CLEAR_LOCK(sl)   interlockedexchange ((LONG volatile *)(sl), (LONG)0)
+ 
+ #endif /* ... gcc spins locks ... */
+ 
+
+--- a/deps/libffi/src/frv/ffi.c
++++ b/deps/libffi/src/frv/ffi.c
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------------
+-   ffi.c - Copyright (C) 2004  Anthony Green
++   ffi.c - Copyright (C) 2004, 2026  Anthony Green
+    Copyright (C) 2007  Free Software Foundation, Inc.
+ 	   Copyright (C) 2008  Red Hat, Inc.
+    
+
+--- a/deps/libffi/src/ia64/ffi.c
++++ b/deps/libffi/src/ia64/ffi.c
+@@ -1,7 +1,7 @@
+ /* -----------------------------------------------------------------------
+    ffi.c - Copyright (c) 1998, 2007, 2008, 2012 Red Hat, Inc.
+ 	   Copyright (c) 2000 Hewlett Packard Company
+-	   Copyright (c) 2011 Anthony Green
++	   Copyright (c) 2011, 2026 Anthony Green
+    
+    IA64 Foreign Function Interface 
+ 
+
+--- a/deps/libffi/src/m32r/ffi.c
++++ b/deps/libffi/src/m32r/ffi.c
+@@ -1,7 +1,7 @@
+ /* -----------------------------------------------------------------------
+    ffi.c - Copyright (c) 2004  Renesas Technology
+            Copyright (c) 2008  Red Hat, Inc.
+-           Copyright (c) 2022  Anthony Green
++           Copyright (c) 2022, 2026  Anthony Green
+ 
+    M32R Foreign Function Interface
+ 
+@@ -180,10 +180,10 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+ {
+   extended_cif ecif;
+   ffi_type **arg_types = cif->arg_types;
++  void **avalue_copy = NULL;
+   int i, nargs = cif->nargs;
+ 
+   ecif.cif = cif;
+-  ecif.avalue = avalue;
+ 
+   /* If the return value is a struct and we don't have
+      a return value address then we need to make one.  */
+@@ -196,18 +196,26 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+     ecif.rvalue = rvalue;
+ 
+   /* If we have any large structure arguments, make a copy so we are passing
+-     by value.  */
++     by value.  The pointer array is cloned first: the caller owns avalue[]
++     and may reuse it for another call, so it must not be modified.  */
+   for (i = 0; i < nargs; i++)
+     {
+       ffi_type *at = arg_types[i];
+       int size = at->size;
+       if (at->type == FFI_TYPE_STRUCT && size > 4)
+         {
+           char *argcopy = alloca (size);
++          if (avalue_copy == NULL)
++            {
++              avalue_copy = alloca (nargs * sizeof (void *));
++              memcpy (avalue_copy, avalue, nargs * sizeof (void *));
++              avalue = avalue_copy;
++            }
+           memcpy (argcopy, avalue[i], size);
+           avalue[i] = argcopy;
+         }
+     }
++  ecif.avalue = avalue;
+ 
+   switch (cif->abi)
+     {
+
+--- a/deps/libffi/src/moxie/ffi.c
++++ b/deps/libffi/src/moxie/ffi.c
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------------
+-   ffi.c - Copyright (C) 2012, 2013, 2018, 2021, 2022  Anthony Green
++   ffi.c - Copyright (C) 2012, 2013, 2018, 2021, 2022, 2026  Anthony Green
+ 
+    Moxie Foreign Function Interface
+ 
+@@ -129,10 +129,10 @@ void ffi_call(ffi_cif *cif,
+ {
+   extended_cif ecif;
+   ffi_type **arg_types = cif->arg_types;
++  void **avalue_copy = NULL;
+   int i, nargs = cif->nargs;
+ 
+   ecif.cif = cif;
+-  ecif.avalue = avalue;
+ 
+   /* If the return value is a struct and we don't have a return	*/
+   /* value address then we need to make one		        */
+@@ -146,18 +146,26 @@ void ffi_call(ffi_cif *cif,
+     ecif.rvalue = rvalue;
+ 
+   /* If we have any large structure arguments, make a copy so we are passing
+-     by value.  */
++     by value.  The pointer array is cloned first: the caller owns avalue[]
++     and may reuse it for another call, so it must not be modified.  */
+   for (i = 0; i < nargs; i++)
+     {
+       ffi_type *at = arg_types[i];
+       int size = at->size;
+       if (at->type == FFI_TYPE_STRUCT) /*  && size > 4) All struct args?? */
+         {
+           char *argcopy = alloca (size);
++          if (avalue_copy == NULL)
++            {
++              avalue_copy = alloca (nargs * sizeof (void *));
++              memcpy (avalue_copy, avalue, nargs * sizeof (void *));
++              avalue = avalue_copy;
++            }
+           memcpy (argcopy, avalue[i], size);
+           avalue[i] = argcopy;
+         }
+     }
++  ecif.avalue = avalue;
+ 
+   switch (cif->abi)
+     {
+
+--- a/deps/libffi/src/or1k/ffi.c
++++ b/deps/libffi/src/or1k/ffi.c
+@@ -121,6 +121,7 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+   int i;
+   int size;
+   ffi_type **arg;
++  void **avalue_copy = NULL;
+ 
+   /* Calculate size to allocate on stack */
+ 
+@@ -135,13 +136,21 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+         size += 8;
+ 
+       /* If we have any large structure arguments, make a copy so we are passing
+-         by value.  */
++         by value.  The pointer array is cloned first: the caller owns
++         avalue[] and may reuse it for another call, so it must not be
++         modified.  */
+       {
+         ffi_type *at = cif->arg_types[i];
+         int size = at->size;
+         if (at->type == FFI_TYPE_STRUCT) /* && size > 4) All struct args? */
+           {
+             char *argcopy = alloca (size);
++            if (avalue_copy == NULL)
++              {
++                avalue_copy = alloca (cif->nargs * sizeof (void *));
++                memcpy (avalue_copy, avalue, cif->nargs * sizeof (void *));
++                avalue = avalue_copy;
++              }
+             memcpy (argcopy, avalue[i], size);
+             avalue[i] = argcopy;
+           }
+
+--- a/deps/libffi/src/pa/ffi.c
++++ b/deps/libffi/src/pa/ffi.c
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------------
+-   ffi.c - (c) 2011 Anthony Green
++   ffi.c - (c) 2011, 2026 Anthony Green
+            (c) 2008 Red Hat, Inc.
+ 	   (c) 2006 Free Software Foundation, Inc.
+            (c) 2003-2004 Randolph Chung <tausq@debian.org>
+@@ -280,9 +280,24 @@ static void ffi_size_stack_pa32(ffi_cif *cif)
+ 
+ #ifdef PA_HPUX
+ 	case FFI_TYPE_LONGDOUBLE:
++	  z += 1; /* passed by pointer, like a large struct */
++	  break;
+ #endif
++
+ 	case FFI_TYPE_STRUCT:
+-	  z += 1; /* pass by ptr, callee will copy */
++	  /* This must mirror the slot accounting in ffi_prep_args_pa32:
++	     structs of 1-4 bytes occupy one slot, structs of 5-8 bytes are
++	     passed inline in two even-aligned slots (exactly like a 64-bit
++	     value), and larger structs are passed by pointer in one slot.
++	     z stays offset from the marshaller's slot by FIRST_ARG_SLOT (odd),
++	     so (z & 1) tracks the same alignment the marshaller applies.  */
++	  {
++	    size_t len = (*ptr)->size;
++	    if (len <= 4 || len > 8)
++	      z += 1;
++	    else
++	      z += 2 + (z & 1);
++	  }
+ 	  break;
+ 
+ 	default: /* <= 32-bit values */
+@@ -363,23 +378,31 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+   extended_cif ecif;
+   size_t i, nargs = cif->nargs;
+   ffi_type **arg_types = cif->arg_types;
++  void **avalue_copy = NULL;
+ 
+   ecif.cif = cif;
+-  ecif.avalue = avalue;
+ 
+   /* If we have any large structure arguments, make a copy so we are passing
+-     by value.  */
++     by value.  The pointer array is cloned first: the caller owns avalue[]
++     and may reuse it for another call, so it must not be modified.  */
+   for (i = 0; i < nargs; i++)
+     {
+       ffi_type *at = arg_types[i];
+       int size = at->size;
+       if (at->type == FFI_TYPE_STRUCT && size > 8)
+ 	{
+ 	  char *argcopy = alloca (size);
++	  if (avalue_copy == NULL)
++	    {
++	      avalue_copy = alloca (nargs * sizeof (void *));
++	      memcpy (avalue_copy, avalue, nargs * sizeof (void *));
++	      avalue = avalue_copy;
++	    }
+ 	  memcpy (argcopy, avalue[i], size);
+ 	  avalue[i] = argcopy;
+ 	}
+     }
++  ecif.avalue = avalue;
+ 
+   /* If the return value is a struct and we don't have a return
+      value address then we need to make one.  */
+
+--- a/deps/libffi/src/pa/ffitarget.h
++++ b/deps/libffi/src/pa/ffitarget.h
+@@ -1,5 +1,5 @@
+ /* -----------------------------------------------------------------*-C-*-
+-   ffitarget.h - Copyright (c) 2012  Anthony Green
++   ffitarget.h - Copyright (c) 2012, 2026  Anthony Green
+                  Copyright (c) 1996-2003  Red Hat, Inc.
+    Target configuration macros for hppa.
+ 
+@@ -82,11 +82,19 @@ typedef enum ffi_abi {
+ #define FFI_TYPE_SMALL_STRUCT7 -7
+ #define FFI_TYPE_SMALL_STRUCT8 -8
+ 
+-/* linux.S and hpux32.S expect FFI_TYPE_COMPLEX is the last generic type.  */
+-#define FFI_PA_TYPE_LAST FFI_TYPE_COMPLEX
+-
+-/* If new generic types are added, the jump tables in linux.S and hpux32.S
+-   likely need updating.  */
++/* The return-value jump tables in linux.S and hpux32.S are indexed by
++   cif->flags, which ffi_prep_cif_machdep derives from the return type.  Any
++   return type it does not handle explicitly -- including FFI_TYPE_COMPLEX and
++   the 128-bit integer types FFI_TYPE_UINT128/FFI_TYPE_SINT128 -- falls through
++   to the default case and is mapped to FFI_TYPE_INT, so cif->flags never
++   exceeds FFI_TYPE_COMPLEX and the existing tables remain sufficient.  Bump
++   FFI_PA_TYPE_LAST to the current FFI_TYPE_LAST once you have confirmed any
++   newly added generic type is likewise handled (or the tables extended).  */
++#define FFI_PA_TYPE_LAST FFI_TYPE_SINT128
++
++/* Tripwire: when a new generic type is added FFI_TYPE_LAST changes and this
++   fires, forcing a review of ffi_prep_cif_machdep and the linux.S / hpux32.S
++   jump tables before FFI_PA_TYPE_LAST above is bumped.  */
+ #if FFI_TYPE_LAST != FFI_PA_TYPE_LAST
+ # error "You likely have broken jump tables"
+ #endif
+
+--- a/deps/libffi/src/powerpc/ffi.c
++++ b/deps/libffi/src/powerpc/ffi.c
+@@ -1,6 +1,6 @@
+ /* -----------------------------------------------------------------------
+    ffi.c - Copyright (C) 2013 IBM
+-           Copyright (C) 2011 Anthony Green
++           Copyright (C) 2011, 2026 Anthony Green
+            Copyright (C) 2011 Kyle Moffett
+            Copyright (C) 2008 Red Hat, Inc
+            Copyright (C) 2007, 2008 Free Software Foundation, Inc
+
+--- a/deps/libffi/src/powerpc/ffi_darwin.c
++++ b/deps/libffi/src/powerpc/ffi_darwin.c
+@@ -4,6 +4,7 @@
+    Copyright (C) 1998 Geoffrey Keating
+    Copyright (C) 2001 John Hornkvist
+    Copyright (C) 2002, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
++   Copyright (C) 2026 Anthony Green
+ 
+    FFI support for Darwin and AIX.
+    
+
+--- a/deps/libffi/src/powerpc/ffi_linux64.c
++++ b/deps/libffi/src/powerpc/ffi_linux64.c
+@@ -1,6 +1,6 @@
+ /* -----------------------------------------------------------------------
+    ffi_linux64.c - Copyright (C) 2013 IBM
+-                   Copyright (C) 2011 Anthony Green
++                   Copyright (C) 2011, 2026 Anthony Green
+                    Copyright (C) 2011 Kyle Moffett
+                    Copyright (C) 2008 Red Hat, Inc
+                    Copyright (C) 2007, 2008 Free Software Foundation, Inc

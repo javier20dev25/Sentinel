@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "expressjs_express_7351",
+    "repo": "expressjs/express",
+    "pr": 7351,
+    "url": "https://github.com/expressjs/express/pull/7351",
+    "profile": "infrastructure",
+    "description": "fix(view): handle view names ending with \".\" to avoid require(\"\")",
+    "state": "open",
+    "created_at": "2026-07-01T16:16:55Z",
+    "updated_at": "2026-07-03T09:07:03Z",
+    "sha": "fe2b5afd289fb618db5147c2a53d42da96937ac6",
+    "user": "webdevelopersrinu",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 23,
+    "deletions": 0,
+    "patchSize": 1427,
+    "patchHash": "48320f235ee75cef30a6df8e7fe16794a2480dbc3dc9e20135b23837c23266ec",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "network_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:00.774Z"
+}

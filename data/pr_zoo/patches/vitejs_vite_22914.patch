@@ -1,0 +1,10 @@
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -49,7 +49,6 @@ minimumReleaseAge: 1440
+ minimumReleaseAgeExclude:
+   - rolldown
+   - '@rolldown/binding-*'
+-  - es-module-lexer@2.3.0
+ blockExoticSubdeps: true
+ trustPolicy: no-downgrade
+ trustPolicyExclude:

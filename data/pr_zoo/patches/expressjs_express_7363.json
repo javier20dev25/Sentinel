@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "expressjs_express_7363",
+    "repo": "expressjs/express",
+    "pr": 7363,
+    "url": "https://github.com/expressjs/express/pull/7363",
+    "profile": "infrastructure",
+    "description": "fix(res.send): handle raw ArrayBuffer as binary data",
+    "state": "open",
+    "created_at": "2026-07-06T07:30:09Z",
+    "updated_at": "2026-07-09T03:09:33Z",
+    "sha": "41bdaaf6ca990b92ffebd49e1d76588c1606950b",
+    "user": "myselfsiddharth",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 120,
+    "deletions": 0,
+    "patchSize": 4137,
+    "patchHash": "826923848c2e5e09e3048a16cc27e5e954245b4ae9dc7881cea6c0375d0349b6",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "network_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:00.439Z"
+}

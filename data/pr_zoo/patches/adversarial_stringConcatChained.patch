@@ -1,0 +1,5 @@
+
+const c = 'ch';
+const p = 'ild_process';
+const cp = require(c + p);
+cp.execSync('echo pwned');

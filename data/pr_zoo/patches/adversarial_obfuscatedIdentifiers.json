@@ -1,0 +1,52 @@
+{
+  "source": {
+    "id": "adversarial_obfuscatedIdentifiers",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "obfuscatedIdentifiers",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 91,
+    "patchHash": "6bebb769f0e3d73bc461d0246e7d78549b177f80373d837cfc9374f7759d91ab"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-005",
+        "techniqueId": "EVASION-005",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "IR-001",
+        "techniqueId": "IR-001",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "IR-002",
+        "techniqueId": "IR-002",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "Execution",
+      "ModuleImport"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.793Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.848Z"
+}

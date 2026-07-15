@@ -1,0 +1,35 @@
+{
+  "source": {
+    "id": "nextauthjs_next_auth_13460",
+    "repo": "nextauthjs/next-auth",
+    "pr": 13460,
+    "url": "https://github.com/nextauthjs/next-auth/pull/13460",
+    "profile": "infrastructure",
+    "description": "feat(provider): add ThunderID provider",
+    "state": "open",
+    "created_at": "2026-06-25T15:59:46Z",
+    "updated_at": "2026-07-01T06:28:41Z",
+    "sha": "0a629d14b7207fa28bf3670dcb72abc512cdf124",
+    "user": "brionmario",
+    "labels": [
+      "providers",
+      "core"
+    ],
+    "files_changed": 6,
+    "additions": 414,
+    "deletions": 1,
+    "patchSize": 14227,
+    "patchHash": "12ea168d23c61d490d1e4a87e06cdfda112183286326e35e62876460934df7f1",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "BLOCK",
+    "riskScore": 0.76,
+    "findings": 2,
+    "capabilities": [
+      "credential_access",
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:14.968Z"
+}

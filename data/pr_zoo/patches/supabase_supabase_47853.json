@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "supabase_supabase_47853",
+    "repo": "supabase/supabase",
+    "pr": 47853,
+    "url": "https://github.com/supabase/supabase/pull/47853",
+    "profile": "backend",
+    "description": "fix(ui): button icon and hover state",
+    "state": "open",
+    "created_at": "2026-07-11T19:00:34Z",
+    "updated_at": "2026-07-11T19:03:07Z",
+    "sha": "3a88973605f7fce4e495a50f01a435ed8fceee91",
+    "user": "antlio",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 3,
+    "deletions": 3,
+    "patchSize": 1235,
+    "patchHash": "1893b22b8e8231461d0ed9bc578bf701ce4df518b1f390237a8d74424f9dcf41",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:13.907Z"
+}

@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "clean_unitTestEval",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "unitTestEval",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 141,
+    "patchHash": "1057acc41228062005f1f89c00335501b5409c2c547dfe817349837a7b1872f8"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-013",
+        "techniqueId": "EVASION-013",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "DynamicCodeExecution"
+    ],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-12T01:07:47.683Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.756Z"
+}

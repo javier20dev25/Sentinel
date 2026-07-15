@@ -1,0 +1,8 @@
+// Next.js config with system-like markers
+const nextConfig = {
+  env: {
+    SYSTEM_NAME: "my-app",
+    SYSTEM_VERSION: "1.0.0",
+  },
+};
+module.exports = nextConfig;

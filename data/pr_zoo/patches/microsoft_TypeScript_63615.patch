@@ -1,0 +1,49 @@
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -199,7 +199,7 @@ jobs:
+           node-version: 'lts/*'
+       - run: npm ci
+ 
+-      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
++      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+         with:
+           path: ~/.cache/dprint
+           key: ${{ runner.os }}-dprint-${{ hashFiles('package-lock.json', '.dprint.jsonc') }}
+
+--- a/.github/workflows/codeql.yml
++++ b/.github/workflows/codeql.yml
+@@ -46,7 +46,7 @@ jobs:
+ 
+       # Initializes the CodeQL tools for scanning.
+       - name: Initialize CodeQL
+-        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
++        uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
+         with:
+           config-file: ./.github/codeql/codeql-configuration.yml
+         # Override language selection by uncommenting this and choosing your languages
+@@ -56,7 +56,7 @@ jobs:
+       # Autobuild attempts to build any compiled languages (C/C++, C#, or Java).
+       # If this step fails, then you should remove it and run the build manually (see below).
+       - name: Autobuild
+-        uses: github/codeql-action/autobuild@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
++        uses: github/codeql-action/autobuild@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
+ 
+       # ℹ️ Command-line programs to run using the OS shell.
+       # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+@@ -70,4 +70,4 @@ jobs:
+       #     make release
+ 
+       - name: Perform CodeQL Analysis
+-        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
++        uses: github/codeql-action/analyze@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
+
+--- a/.github/workflows/scorecard.yml
++++ b/.github/workflows/scorecard.yml
+@@ -55,6 +55,6 @@ jobs:
+ 
+       # Upload the results to GitHub's code scanning dashboard.
+       - name: 'Upload to code-scanning'
+-        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
++        uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
+         with:
+           sarif_file: results.sarif

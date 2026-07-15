@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_suspiciousRegistry",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "suspiciousRegistry",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 42,
+    "patchHash": "d84805ddf5b9f44742e220e50373290bafb8b7b372b3839bf2974843c3323f7e"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-026",
+        "techniqueId": "EVASION-026",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "ModuleImport"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.946Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:33.012Z"
+}

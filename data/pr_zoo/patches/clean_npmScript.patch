@@ -1,0 +1,10 @@
+
+{
+  "name": "my-package",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest",
+    "build": "webpack --mode production",
+    "postinstall": "node setup.js"
+  }
+}

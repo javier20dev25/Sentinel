@@ -1,0 +1,7 @@
+
+let mod;
+try {
+  mod = require('optional-dep');
+} catch (e) {
+  mod = null;
+}

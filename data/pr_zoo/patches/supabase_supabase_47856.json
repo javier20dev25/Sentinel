@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "supabase_supabase_47856",
+    "repo": "supabase/supabase",
+    "pr": 47856,
+    "url": "https://github.com/supabase/supabase/pull/47856",
+    "profile": "backend",
+    "description": "[bot] Decrease ESLint ratchet baselines",
+    "state": "open",
+    "created_at": "2026-07-12T00:42:03Z",
+    "updated_at": "2026-07-12T00:50:33Z",
+    "sha": "f014fb0bc684344cebaa7cd617caccbb4a50f9f1",
+    "user": "supabase-supabase-autofixer[bot]",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 10,
+    "deletions": 34,
+    "patchSize": 14172,
+    "patchHash": "85c8bdd7162719ed6662b32d8ea0f9ee509bec1686200734020ec61207f64bd5",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:13.264Z"
+}

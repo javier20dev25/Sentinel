@@ -1,0 +1,40 @@
+{
+  "taxonomy": {
+    "family": "clean",
+    "technique": "benign_test_eval"
+  },
+  "variant": 0,
+  "source": {
+    "id": "mutationlab_evalInTest_0",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "evalInTest",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 282,
+    "patchHash": "76d7d9981f57871534026388309d62b004f1d50bb18821849ef9becd18b6b48d"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "clean",
+      "technique": "benign_test_eval"
+    },
+    "labelDate": "2026-07-12T04:33:01.451Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.451Z"
+}

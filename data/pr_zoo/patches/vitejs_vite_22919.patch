@@ -1,0 +1,333 @@
+--- a/docs/guide/api-plugin.md
++++ b/docs/guide/api-plugin.md
+@@ -655,6 +655,22 @@ export default function myPlugin() {
+ [`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`. These are also re-exported from `rolldown/filter` for convenience.
+ :::
+ 
++Vite also supports Rolldown's composable filter API in both dev and build:
++
++```js
++import { exclude, importerId, include } from 'rolldown/filter'
++
++export default {
++  name: 'composable-filter',
++  resolveId: {
++    filter: [exclude(importerId(/index\.html$/)), include(importerId(/.+/))],
++    handler(source) {
++      // Runs for imports whose importer matches the composed filter.
++    },
++  },
++}
++```
++
+ ## Chunk Import Map Information
+ 
+ :::info Experimental
+
+--- a/packages/vite/src/node/__tests__/plugins/index.spec.ts
++++ b/packages/vite/src/node/__tests__/plugins/index.spec.ts
+@@ -1,5 +1,15 @@
+ import { RUNTIME_MODULE_ID } from 'rolldown'
+-import { exactRegex } from 'rolldown/filter'
++import {
++  and,
++  code as filterCode,
++  exactRegex,
++  exclude,
++  id as filterId,
++  importerId,
++  include,
++  moduleType,
++  or,
++} from 'rolldown/filter'
+ import { afterAll, describe, expect, test, vi } from 'vitest'
+ import { type InlineConfig, type Plugin, build, createServer } from '../..'
+ 
+@@ -22,6 +32,9 @@ describe('hook filter with plugin container', async () => {
+   const load = vi.fn()
+   const transformWithId = vi.fn()
+   const transformWithCode = vi.fn()
++  const composableResolveId = vi.fn()
++  const composableLoad = vi.fn()
++  const composableTransform = vi.fn()
+   const any = expect.toSatisfy(() => true) // anything including undefined and null
+   const config = getConfigWithPlugin([
+     {
+@@ -46,6 +59,28 @@ describe('hook filter with plugin container', async () => {
+         handler: transformWithCode,
+       },
+     },
++    {
++      name: 'composable-filter',
++      resolveId: {
++        filter: [
++          exclude(importerId(/blocked/)),
++          include(or(importerId(/.+/), filterId(/^foo\.js$/))),
++        ],
++        handler: composableResolveId,
++      },
++      load: {
++        filter: [include(filterId(/\.js$/))],
++        handler: composableLoad,
++      },
++      transform: {
++        filter: [
++          include(
++            and(filterId(/\.js$/), filterCode('import_meta'), moduleType('js')),
++          ),
++        ],
++        handler: composableTransform,
++      },
++    },
+   ])
+   const server = await createServer(config)
+   afterAll(async () => {
+@@ -58,13 +93,19 @@ describe('hook filter with plugin container', async () => {
+     await pluginContainer.resolveId('foo.ts')
+     expect(resolveId).toHaveBeenCalledTimes(1)
+     expect(resolveId).toHaveBeenCalledWith('foo.js', any, any)
++    expect(composableResolveId).toHaveBeenCalledTimes(2)
++
++    await pluginContainer.resolveId('foo.js', 'blocked.js')
++    expect(composableResolveId).toHaveBeenCalledTimes(2)
+   })
+ 
+   test('load', async () => {
+     await pluginContainer.load('foo.js')
+     await pluginContainer.load('foo.ts')
+     expect(load).toHaveBeenCalledTimes(1)
+     expect(load).toHaveBeenCalledWith('foo.js', any)
++    expect(composableLoad).toHaveBeenCalledTimes(1)
++    expect(composableLoad).toHaveBeenCalledWith('foo.js', any)
+   })
+ 
+   test('transform', async () => {
+@@ -85,6 +126,12 @@ describe('hook filter with plugin container', async () => {
+       'foo.ts',
+       any,
+     )
++    expect(composableTransform).toHaveBeenCalledTimes(1)
++    expect(composableTransform).toHaveBeenCalledWith(
++      expect.stringContaining('import_meta'),
++      'foo.js',
++      any,
++    )
+   })
+ })
+ 
+@@ -93,6 +140,9 @@ describe('hook filter with build', async () => {
+   const load = vi.fn()
+   const transformWithId = vi.fn()
+   const transformWithCode = vi.fn()
++  const composableResolveId = vi.fn()
++  const composableLoad = vi.fn()
++  const composableTransform = vi.fn()
+   const any = expect.anything()
+   const config = getConfigWithPlugin(
+     [
+@@ -123,6 +173,32 @@ describe('hook filter with build', async () => {
+           handler: transformWithCode,
+         },
+       },
++      {
++        name: 'composable-filter',
++        resolveId: {
++          filter: [
++            exclude(importerId(/blocked/)),
++            include(or(importerId(/.+/), filterId(/^foo\.js$/))),
++          ],
++          handler: composableResolveId,
++        },
++        load: {
++          filter: [include(filterId(/\.js$/))],
++          handler: composableLoad,
++        },
++        transform: {
++          filter: [
++            include(
++              and(
++                filterId(/\.js$/),
++                filterCode('import_meta'),
++                moduleType('js'),
++              ),
++            ),
++          ],
++          handler: composableTransform,
++        },
++      },
+       {
+         name: 'resolver',
+         resolveId(id) {
+@@ -145,11 +221,16 @@ describe('hook filter with build', async () => {
+   test('resolveId', async () => {
+     expect(resolveId).toHaveBeenCalledTimes(1)
+     expect(resolveId).toHaveBeenCalledWith('foo.js', undefined, any)
++    expect(composableResolveId).toHaveBeenCalledTimes(2)
++    expect(composableResolveId).toHaveBeenCalledWith('foo.js', undefined, any)
++    expect(composableResolveId).toHaveBeenCalledWith('foo.ts', 'foo.js', any)
+   })
+ 
+   test('load', async () => {
+     expect(load).toHaveBeenCalledTimes(1)
+     expect(load).toHaveBeenCalledWith('foo.js', any)
++    expect(composableLoad).toHaveBeenCalledTimes(1)
++    expect(composableLoad).toHaveBeenCalledWith('foo.js', any)
+   })
+ 
+   test('transform', async () => {
+@@ -165,5 +246,11 @@ describe('hook filter with build', async () => {
+       'foo.ts',
+       any,
+     )
++    expect(composableTransform).toHaveBeenCalledTimes(1)
++    expect(composableTransform).toHaveBeenCalledWith(
++      expect.stringContaining('import_meta'),
++      'foo.js',
++      any,
++    )
+   })
+ })
+
+--- a/packages/vite/src/node/plugin.ts
++++ b/packages/vite/src/node/plugin.ts
+@@ -13,6 +13,7 @@ import type {
+   TransformPluginContext,
+   TransformResult,
+ } from 'rolldown'
++import type { TopLevelFilterExpression } from 'rolldown/filter'
+ import type {
+   ConfigEnv,
+   EnvironmentOptions,
+@@ -143,7 +144,9 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
+         isEntry: boolean
+       },
+     ) => Promise<ResolveIdResult> | ResolveIdResult,
+-    { filter?: { id?: StringFilter<RegExp> } }
++    {
++      filter?: { id?: StringFilter<RegExp> } | TopLevelFilterExpression[]
++    }
+   >
+   load?: ObjectHook<
+     (
+@@ -153,7 +156,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
+         ssr?: boolean | undefined
+       },
+     ) => Promise<LoadResult> | LoadResult,
+-    { filter?: { id?: StringFilter } }
++    { filter?: { id?: StringFilter } | TopLevelFilterExpression[] }
+   >
+   transform?: ObjectHook<
+     (
+@@ -166,11 +169,13 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
+       },
+     ) => Promise<TransformResult> | TransformResult,
+     {
+-      filter?: {
+-        id?: StringFilter
+-        code?: StringFilter
+-        moduleType?: ModuleTypeFilter
+-      }
++      filter?:
++        | {
++            id?: StringFilter
++            code?: StringFilter
++            moduleType?: ModuleTypeFilter
++          }
++        | TopLevelFilterExpression[]
+     }
+   >
+   /**
+
+--- a/packages/vite/src/node/plugins/index.ts
++++ b/packages/vite/src/node/plugins/index.ts
+@@ -1,6 +1,10 @@
+ import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
+ import colors from 'picocolors'
+ import type { ObjectHook } from 'rolldown'
++import {
++  interpreter as interpretFilter,
++  type TopLevelFilterExpression,
++} from 'rolldown/filter'
+ import {
+   viteAliasPlugin as nativeAliasPlugin,
+   viteJsonPlugin as nativeJsonPlugin,
+@@ -237,10 +241,11 @@ export function getHookHandler<T extends ObjectHook<Function>>(
+ }
+ 
+ type FilterForPluginValue = {
+-  resolveId?: PluginFilter | undefined
++  resolveId?: ResolveIdHookFilter | undefined
+   load?: PluginFilter | undefined
+   transform?: TransformHookFilter | undefined
+ }
++type ResolveIdHookFilter = (id: string, importer: string | undefined) => boolean
+ const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
+ 
+ export function getCachedFilterForPlugin<
+@@ -259,24 +264,32 @@ export function getCachedFilterForPlugin<
+   let filter: PluginFilter | TransformHookFilter | undefined
+   switch (hookName) {
+     case 'resolveId': {
+-      const rawFilter = extractFilter(plugin.resolveId)?.id
+-      filters.resolveId = createIdFilter(rawFilter)
++      const rawFilter = extractFilter(plugin.resolveId)
++      filters.resolveId = isComposableFilter(rawFilter)
++        ? (id, importer) =>
++            interpretFilter(rawFilter, undefined, id, undefined, importer)
++        : createIdFilter(rawFilter?.id)
+       filter = filters.resolveId
+       break
+     }
+     case 'load': {
+-      const rawFilter = extractFilter(plugin.load)?.id
+-      filters.load = createIdFilter(rawFilter)
++      const rawFilter = extractFilter(plugin.load)
++      filters.load = isComposableFilter(rawFilter)
++        ? (id) => interpretFilter(rawFilter, undefined, id)
++        : createIdFilter(rawFilter?.id)
+       filter = filters.load
+       break
+     }
+     case 'transform': {
+       const rawFilters = extractFilter(plugin.transform)
+-      filters.transform = createFilterForTransform(
+-        rawFilters?.id,
+-        rawFilters?.code,
+-        rawFilters?.moduleType,
+-      )
++      filters.transform = isComposableFilter(rawFilters)
++        ? (id, code, moduleType) =>
++            interpretFilter(rawFilters, code, id, moduleType)
++        : createFilterForTransform(
++            rawFilters?.id,
++            rawFilters?.code,
++            rawFilters?.moduleType,
++          )
+       filter = filters.transform
+       break
+     }
+@@ -290,6 +303,12 @@ function extractFilter<T extends Function, F>(
+   return hook && 'filter' in hook && hook.filter ? hook.filter : undefined
+ }
+ 
++function isComposableFilter(
++  filter: unknown,
++): filter is TopLevelFilterExpression[] {
++  return Array.isArray(filter)
++}
++
+ // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta
+ // if we can't resolve to something, which will error in `importAnalysis`
+ export const viteAliasCustomResolver: ResolverFunction = async function (
+
+--- a/packages/vite/src/node/server/pluginContainer.ts
++++ b/packages/vite/src/node/server/pluginContainer.ts
+@@ -396,7 +396,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
+       if (mergedSkip?.has(plugin)) continue
+ 
+       const filter = getCachedFilterForPlugin(plugin, 'resolveId')
+-      if (filter && !filter(rawId)) continue
++      if (filter && !filter(rawId, importer)) continue
+ 
+       ctx._plugin = plugin
+ 

@@ -1,0 +1,46 @@
+{
+  "source": {
+    "id": "adversarial_childProcessAlias",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "childProcessAlias",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 93,
+    "patchHash": "27a15e25e30c5874fb207b2003423c93a991ea407ac59fbc6a1f2e83db61c377"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "SEM-001",
+        "techniqueId": "SEM-001",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "IR-002",
+        "techniqueId": "IR-002",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.896Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.958Z"
+}

@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "lodash_lodash_6251",
+    "repo": "lodash/lodash",
+    "pr": 6251,
+    "url": "https://github.com/lodash/lodash/pull/6251",
+    "profile": "libraries",
+    "description": "fix(invert): handle __proto__ values in baseInverter",
+    "state": "open",
+    "created_at": "2026-07-06T18:00:19Z",
+    "updated_at": "2026-07-06T18:00:19Z",
+    "sha": "f41174b05f8af1aeb857d82f788d980cff82e758",
+    "user": "baima365-web",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 9,
+    "deletions": 1,
+    "patchSize": 909,
+    "patchHash": "0539747b9b9e57ebbb3ef1a0c7b2bf5b91dfbae312d02d8bd28f5474d97fff91",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:08.967Z"
+}

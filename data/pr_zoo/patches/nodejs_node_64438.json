@@ -1,0 +1,35 @@
+{
+  "source": {
+    "id": "nodejs_node_64438",
+    "repo": "nodejs/node",
+    "pr": 64438,
+    "url": "https://github.com/nodejs/node/pull/64438",
+    "profile": "infrastructure",
+    "description": "deps: update libffi to 3.7.1",
+    "state": "open",
+    "created_at": "2026-07-12T00:53:46Z",
+    "updated_at": "2026-07-12T00:53:55Z",
+    "sha": "f36521cbd07d82c4116b08903a696fcce0410027",
+    "user": "nodejs-github-bot",
+    "labels": [
+      "needs-ci",
+      "dependencies",
+      "ffi"
+    ],
+    "files_changed": 30,
+    "additions": 1320,
+    "deletions": 100,
+    "patchSize": 83190,
+    "patchHash": "464aef4ede95bbc3a7df6ce53bb0ab3b9acf730d980457c5fa8dd70805053abe",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "system_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:07.192Z"
+}

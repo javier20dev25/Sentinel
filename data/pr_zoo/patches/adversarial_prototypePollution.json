@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_prototypePollution",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "prototypePollution",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 29,
+    "patchHash": "b8a232f90ff713210718ee7c8d06546259d36effb6343e169e5007bcc89599e2"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-027",
+        "techniqueId": "EVASION-027",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.840Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.895Z"
+}

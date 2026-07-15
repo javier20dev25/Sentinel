@@ -1,0 +1,48 @@
+{
+  "taxonomy": {
+    "family": "prompt",
+    "technique": "prompt_injection"
+  },
+  "variant": 0,
+  "source": {
+    "id": "mutationlab_promptInjectSystem_0",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "promptInjectSystem",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 113,
+    "patchHash": "143e0316e6de992d438a99a1358156b2e0d123c16624e1680765f63084b208f7"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "PROMPT_INJECTION",
+        "techniqueId": "PROMPT_INJECTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "prompt_injection"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "prompt",
+      "technique": "prompt_injection"
+    },
+    "labelDate": "2026-07-12T04:33:01.457Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.457Z"
+}

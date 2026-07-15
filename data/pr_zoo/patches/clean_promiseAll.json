@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "clean_promiseAll",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "promiseAll",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 195,
+    "patchHash": "b99d17d3e9aca641582f70cd9fc2916b1d9f4c5660938524d251e64598cef07f"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-10T23:22:32.794Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.795Z"
+}

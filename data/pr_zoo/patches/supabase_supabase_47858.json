@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "supabase_supabase_47858",
+    "repo": "supabase/supabase",
+    "pr": 47858,
+    "url": "https://github.com/supabase/supabase/pull/47858",
+    "profile": "backend",
+    "description": "fix(studio): added bottom margin to schema graph's Minimap that was previously colliding with SchemaGraphLegend",
+    "state": "open",
+    "created_at": "2026-07-12T02:41:14Z",
+    "updated_at": "2026-07-12T02:43:53Z",
+    "sha": "ea7350252a53d6bc077f13ee1f36a95c06b23d4b",
+    "user": "YuDavidCao",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 1,
+    "deletions": 1,
+    "patchSize": 560,
+    "patchHash": "06db5c7dda2c73a2d3d7dd24138c5400ef43ad8911739a0eb69eca8d325acd0f",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:12.975Z"
+}

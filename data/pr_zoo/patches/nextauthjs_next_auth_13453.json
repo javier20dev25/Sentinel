@@ -1,0 +1,38 @@
+{
+  "source": {
+    "id": "nextauthjs_next_auth_13453",
+    "repo": "nextauthjs/next-auth",
+    "pr": 13453,
+    "url": "https://github.com/nextauthjs/next-auth/pull/13453",
+    "profile": "infrastructure",
+    "description": "fix: add homepage/bugs metadata to next-auth",
+    "state": "open",
+    "created_at": "2026-06-15T18:00:36Z",
+    "updated_at": "2026-06-15T18:05:04Z",
+    "sha": "9bdb64e75ea189fa8bcaba93a14faece25767810",
+    "user": "rock2089",
+    "labels": [
+      "frameworks",
+      "solidjs",
+      "svelte",
+      "next-auth",
+      "express"
+    ],
+    "files_changed": 9,
+    "additions": 50,
+    "deletions": 15,
+    "patchSize": 4427,
+    "patchHash": "3a09776886231593c05da71cf1aead9941fee3d5f7c51a0af5c38e49326f0ce8",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "BLOCK",
+    "riskScore": 0.76,
+    "findings": 2,
+    "capabilities": [
+      "credential_access",
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:16.340Z"
+}

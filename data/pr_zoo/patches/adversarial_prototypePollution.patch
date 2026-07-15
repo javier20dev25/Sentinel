@@ -1,0 +1,2 @@
+
+obj.__proto__.admin = true;

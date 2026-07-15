@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vercel_next_js_95695",
+    "repo": "vercel/next.js",
+    "pr": 95695,
+    "url": "https://github.com/vercel/next.js/pull/95695",
+    "profile": "frontend",
+    "description": "fix a potential deadlock in scope_and_block",
+    "state": "open",
+    "created_at": "2026-07-10T22:30:36Z",
+    "updated_at": "2026-07-10T23:01:24Z",
+    "sha": "db23e26a52a9b4647a368d7c902748d454000529",
+    "user": "lukesandberg",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 197,
+    "deletions": 44,
+    "patchSize": 16434,
+    "patchHash": "0a0d16af8438ff9f67d6ef59008a1526861c935b0b69c71228340a2753f41a7a",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-10T23:12:16.598Z"
+}

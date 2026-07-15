@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "lodash_lodash_6253",
+    "repo": "lodash/lodash",
+    "pr": 6253,
+    "url": "https://github.com/lodash/lodash/pull/6253",
+    "profile": "libraries",
+    "description": "fix: block prototype pollution in set, setWith, update, updateWith, zipObjectDeep",
+    "state": "open",
+    "created_at": "2026-07-10T15:29:47Z",
+    "updated_at": "2026-07-10T20:33:14Z",
+    "sha": "ab6e2689c3346c0379d7409fc1062ec334e7117f",
+    "user": "dlavrenuek",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 40,
+    "deletions": 1,
+    "patchSize": 2390,
+    "patchHash": "bfd8d388fddebe9cc3ead9ef947d2798c39aa47ee9eaa5d3ab539761e0f1fc2d",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:08.228Z"
+}

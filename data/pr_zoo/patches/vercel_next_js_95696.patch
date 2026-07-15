@@ -1,0 +1,632 @@
+--- a/packages/next/src/build/templates/app-page.ts
++++ b/packages/next/src/build/templates/app-page.ts
+@@ -937,6 +937,7 @@ export async function handler(
+             maxPostponedStateSizeBytes: parseMaxPostponedStateSize(
+               nextConfig.experimental.maxPostponedStateSize
+             ),
++            sriAlgorithm: nextConfig.experimental.sri?.algorithm,
+             exposeTestingApi,
+           },
+ 
+
+--- a/packages/next/src/build/templates/edge-ssr-app.ts
++++ b/packages/next/src/build/templates/edge-ssr-app.ts
+@@ -187,6 +187,7 @@ async function requestHandler(
+         maxPostponedStateSizeBytes: parseMaxPostponedStateSize(
+           nextConfig.experimental.maxPostponedStateSize
+         ),
++        sriAlgorithm: nextConfig.experimental.sri?.algorithm,
+         exposeTestingApi:
+           pageRouteModule.isDev === true ||
+           nextConfig.experimental.exposeTestingApiInProductionBuild === true,
+
+--- a/packages/next/src/server/app-render/app-render.tsx
++++ b/packages/next/src/server/app-render/app-render.tsx
+@@ -3267,6 +3267,7 @@ async function renderToStream(
+   } = renderOpts
+ 
+   const { cachedNavigations, appShells } = renderOpts.experimental
++  const { sriAlgorithm } = renderOpts.experimental
+ 
+   const { ServerInsertedHTMLProvider, renderServerInsertedHTML } =
+     createServerInsertedHTML()
+@@ -3775,7 +3776,8 @@ async function renderToStream(
+             const inlinedDataStream = createNodeInlinedDataStream(
+               reactServerResult.tee(),
+               nonce,
+-              formState
++              formState,
++              sriAlgorithm
+             )
+ 
+             // End the span since there's no async rendering in this path
+@@ -3829,7 +3831,8 @@ async function renderToStream(
+               inlinedDataStream: createNodeInlinedDataStream(
+                 reactServerResult.consume(),
+                 nonce,
+-                formState
++                formState,
++                sriAlgorithm
+               ),
+               getServerInsertedHTML,
+               getServerInsertedMetadata,
+@@ -3898,7 +3901,8 @@ async function renderToStream(
+           inlinedDataStream: createNodeInlinedDataStream(
+             reactServerResult.consume(),
+             nonce,
+-            formState
++            formState,
++            sriAlgorithm
+           ),
+           isStaticGeneration: generateStaticHTML,
+           allReady,
+@@ -3919,7 +3923,8 @@ async function renderToStream(
+             const inlinedDataStream = createWebInlinedDataStream(
+               reactServerResult.tee(),
+               nonce,
+-              formState
++              formState,
++              sriAlgorithm
+             )
+ 
+             // End the span since there's no async rendering in this path
+@@ -3973,7 +3978,8 @@ async function renderToStream(
+               inlinedDataStream: createWebInlinedDataStream(
+                 reactServerResult.consume(),
+                 nonce,
+-                formState
++                formState,
++                sriAlgorithm
+               ),
+               getServerInsertedHTML,
+               getServerInsertedMetadata,
+@@ -4036,7 +4042,8 @@ async function renderToStream(
+           inlinedDataStream: createWebInlinedDataStream(
+             reactServerResult.consume(),
+             nonce,
+-            formState
++            formState,
++            sriAlgorithm
+           ),
+           isStaticGeneration: generateStaticHTML,
+           allReady,
+@@ -4189,7 +4196,8 @@ async function renderToStream(
+               // render
+               reactServerResult.consume(),
+               nonce,
+-              formState
++              formState,
++              sriAlgorithm
+             ),
+             isStaticGeneration: generateStaticHTML,
+             deploymentId: ctx.sharedContext.deploymentId,
+@@ -4287,7 +4295,8 @@ async function renderToStream(
+               // render
+               reactServerResult.consume(),
+               nonce,
+-              formState
++              formState,
++              sriAlgorithm
+             ),
+             isStaticGeneration: generateStaticHTML,
+             deploymentId: ctx.sharedContext.deploymentId,
+@@ -7619,7 +7628,8 @@ async function continueStaticPrerenderWithInlinedData(
+   renderFlightStream: typeof renderToWebFlightStream,
+   clientModules: Parameters<typeof renderToWebFlightStream>[2],
+   filterStackFrameForError: typeof filterStackFrame,
+-  serverComponentsErrorHandler: (err: unknown) => string | undefined
++  serverComponentsErrorHandler: (err: unknown) => string | undefined,
++  sriAlgorithm?: import('../../build/webpack/plugins/subresource-integrity-plugin').SubresourceIntegrityAlgorithm
+ ): Promise<AnyStream> {
+   const hasFallbackRouteParams =
+     fallbackRouteParams && fallbackRouteParams.size > 0
+@@ -7650,7 +7660,8 @@ async function continueStaticPrerenderWithInlinedData(
+     const inlinedDataStream = createInlinedDataStream(
+       emptyReactServerResult.consumeAsStream(),
+       nonce,
+-      formState
++      formState,
++      sriAlgorithm
+     )
+     return continueStaticFallbackPrerender(htmlStream, {
+       inlinedDataStream,
+@@ -7663,7 +7674,8 @@ async function continueStaticPrerenderWithInlinedData(
+   const inlinedDataStream = createInlinedDataStream(
+     reactServerResult.consumeAsStream(),
+     nonce,
+-    formState
++    formState,
++    sriAlgorithm
+   )
+   return continueStaticPrerender(htmlStream, {
+     inlinedDataStream,
+@@ -7712,6 +7724,7 @@ async function prerenderToStream(
+   } = renderOpts
+ 
+   const { cachedNavigations, appShells } = renderOpts.experimental
++  const { sriAlgorithm } = renderOpts.experimental
+ 
+   const renderFlightStream = process.env.__NEXT_USE_NODE_STREAMS
+     ? renderToNodeFlightStream
+@@ -8715,7 +8728,8 @@ async function prerenderToStream(
+         renderFlightStream,
+         clientModules,
+         filterStackFrame,
+-        serverComponentsErrorHandler
++        serverComponentsErrorHandler,
++        sriAlgorithm
+       )
+ 
+       return {
+@@ -8961,7 +8975,8 @@ async function prerenderToStream(
+             inlinedDataStream: createInlinedDataStream(
+               reactServerResult.consumeAsStream(),
+               nonce,
+-              formState
++              formState,
++              sriAlgorithm
+             ),
+             getServerInsertedHTML,
+             getServerInsertedMetadata,
+@@ -9061,7 +9076,8 @@ async function prerenderToStream(
+           inlinedDataStream: createInlinedDataStream(
+             reactServerResult.consumeAsStream(),
+             nonce,
+-            formState
++            formState,
++            sriAlgorithm
+           ),
+           isStaticGeneration: true,
+           getServerInsertedHTML,
+@@ -9467,7 +9483,8 @@ async function prerenderToStream(
+           renderFlightStream,
+           clientModules,
+           filterStackFrame,
+-          serverComponentsErrorHandler
++          serverComponentsErrorHandler,
++          sriAlgorithm
+         )
+ 
+         errorServerResult.consume()
+@@ -9585,7 +9602,8 @@ async function prerenderToStream(
+           inlinedDataStream: createInlinedDataStream(
+             reactServerPrerenderResult.consumeAsStream(),
+             nonce,
+-            formState
++            formState,
++            sriAlgorithm
+           ),
+           isStaticGeneration: true,
+           getServerInsertedHTML: makeGetServerInsertedHTML({
+
+--- a/packages/next/src/server/app-render/stream-ops.node.ts
++++ b/packages/next/src/server/app-render/stream-ops.node.ts
+@@ -37,6 +37,7 @@ import {
+   htmlEscapeJsonString,
+ } from '../../shared/lib/htmlescape'
+ import { createInlinedDataReadableStream } from './use-flight-response'
++import type { SubresourceIntegrityAlgorithm } from '../../build/webpack/plugins/subresource-integrity-plugin'
+ import {
+   ReplayableNodeStream,
+   type AnyStream as AnyStreamType,
+@@ -924,22 +925,49 @@ export async function streamToString(stream: AnyStream): Promise<string> {
+ export function createWebInlinedDataStream(
+   source: AnyStream,
+   nonce: string | undefined,
+-  formState: unknown | null
++  formState: unknown | null,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): AnyStream {
+   const webSource = nodeReadableToWebReadableStream(source)
+-  const webResult = createInlinedDataReadableStream(webSource, nonce, formState)
++  const webResult = createInlinedDataReadableStream(
++    webSource,
++    nonce,
++    formState,
++    sriAlgorithm
++  )
+   return webToReadable(webResult)
+ }
+ 
++/**
++ * Compute a Subresource Integrity hash of a script's text content.
++ *
++ * Per the W3C SRI specification (https://www.w3.org/TR/SRI/#the-integrity-attribute),
++ * the integrity value for an inline script is "algorithm-base64hash" where the hash
++ * is computed over the script element's text content (the bytes between <script> and
++ * </script>).
++ *
++ * This enables strict CSP without 'unsafe-inline': when every inline script carries
++ * an integrity attribute whose hash matches its content, browsers that support SRI
++ * for inline scripts will execute them even under a script-src policy that omits
++ * 'unsafe-inline'. See also: https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
++ */
++function computeInlineScriptIntegritySync(
++  scriptContent: string,
++  algorithm: SubresourceIntegrityAlgorithm
++): string {
++  const { createHash } = require('crypto') as typeof import('crypto')
++  const hash = createHash(algorithm)
++    .update(scriptContent, 'utf-8')
++    .digest('base64')
++  return `${algorithm}-${hash}`
++}
++
+ export function createNodeInlinedDataStream(
+   source: AnyStream,
+   nonce: string | undefined,
+-  formState: unknown | null
++  formState: unknown | null,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): AnyStream {
+-  const startScriptTag = nonce
+-    ? `<script nonce="${htmlEscapeAttributeString(nonce)}">`
+-    : '<script>'
+-
+   const dataStream = webToReadable(source)
+   const pt = new PassThrough()
+ 
+@@ -952,10 +980,20 @@ export function createNodeInlinedDataStream(
+       JSON.stringify([INLINE_FLIGHT_PAYLOAD_FORM_STATE, formState])
+     )})`
+   }
+-  pt.push(Buffer.from(`${startScriptTag}${scriptContents}</script>`))
++
++  const integrityAttr = sriAlgorithm
++    ? ` integrity="${htmlEscapeAttributeString(computeInlineScriptIntegritySync(scriptContents, sriAlgorithm))}"`
++    : ''
++  const nonceAttr = nonce ? ` nonce="${htmlEscapeAttributeString(nonce)}"` : ''
++
++  pt.push(
++    Buffer.from(
++      `<script${nonceAttr}${integrityAttr}>${scriptContents}</script>`
++    )
++  )
+ 
+   // Pull from the flight data stream and wrap each chunk in a <script> tag
+-  pullFlightData(dataStream, pt, startScriptTag)
++  pullFlightData(dataStream, pt, nonce, sriAlgorithm)
+ 
+   return pt
+ }
+@@ -968,7 +1006,8 @@ const INLINE_FLIGHT_PAYLOAD_BINARY = 3
+ async function pullFlightData(
+   dataStream: Readable,
+   output: PassThrough,
+-  startScriptTag: string
++  nonce: string | undefined,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): Promise<void> {
+   function waitForReadableOrEnd(): Promise<void> {
+     if (dataStream.readableLength > 0 || dataStream.readableEnded) {
+@@ -1014,9 +1053,18 @@ async function pullFlightData(
+             JSON.stringify([INLINE_FLIGHT_PAYLOAD_BINARY, base64])
+           )
+         }
++
++        const scriptContents = `self.__next_f.push(${htmlInlinedData})`
++        const integrityAttr = sriAlgorithm
++          ? ` integrity="${htmlEscapeAttributeString(computeInlineScriptIntegritySync(scriptContents, sriAlgorithm))}"`
++          : ''
++        const nonceAttr = nonce
++          ? ` nonce="${htmlEscapeAttributeString(nonce)}"`
++          : ''
++
+         output.push(
+           Buffer.from(
+-            `${startScriptTag}self.__next_f.push(${htmlInlinedData})</script>`
++            `<script${nonceAttr}${integrityAttr}>${scriptContents}</script>`
+           )
+         )
+         continue
+
+--- a/packages/next/src/server/app-render/stream-ops.web.ts
++++ b/packages/next/src/server/app-render/stream-ops.web.ts
+@@ -26,6 +26,7 @@ import {
+   createDocumentClosingStream as webCreateDocumentClosingStream,
+ } from '../stream-utils/node-web-streams-helper'
+ import { createInlinedDataReadableStream } from './use-flight-response'
++import type { SubresourceIntegrityAlgorithm } from '../../build/webpack/plugins/subresource-integrity-plugin'
+ import { processPrelude as webProcessPrelude } from './app-render-prerender-utils'
+ import type { AnyStream as AnyStreamType } from './app-render-prerender-utils'
+ 
+@@ -194,19 +195,22 @@ export async function processPrelude(
+ export function createWebInlinedDataStream(
+   source: AnyStream,
+   nonce: string | undefined,
+-  formState: unknown | null
++  formState: unknown | null,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): AnyStream {
+   return createInlinedDataReadableStream(
+     source as ReadableStream<Uint8Array>,
+     nonce,
+-    formState
++    formState,
++    sriAlgorithm
+   )
+ }
+ 
+ export function createNodeInlinedDataStream(
+   _source: AnyStream,
+   _nonce: string | undefined,
+-  _formState: unknown | null
++  _formState: unknown | null,
++  _sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): AnyStream {
+   throw new Error('not implemented')
+ }
+
+--- a/packages/next/src/server/app-render/types.ts
++++ b/packages/next/src/server/app-render/types.ts
+@@ -6,6 +6,7 @@ import type {
+   PrefetchInliningConfig,
+   ValidationLevel,
+ } from '../../server/config-shared'
++import type { SubresourceIntegrityAlgorithm } from '../../build/webpack/plugins/subresource-integrity-plugin'
+ import type { NextFontManifest } from '../../build/webpack/plugins/next-font-manifest-plugin'
+ import type { ParsedUrlQuery } from 'querystring'
+ import type { AppPageModule } from '../route-modules/app-page/module'
+@@ -185,6 +186,14 @@ export interface RenderOptsPartial {
+      * drives instant navigation tests.
+      */
+     exposeTestingApi: boolean
++
++    /**
++     * The SRI algorithm used for subresource integrity (e.g. 'sha256',
++     * 'sha384', 'sha512'). When set, inline flight scripts will include
++     * integrity attributes so they can be trusted under strict CSP without
++     * 'unsafe-inline'.
++     */
++    sriAlgorithm?: SubresourceIntegrityAlgorithm | undefined
+   }
+   postponed?: string
+ 
+
+--- a/packages/next/src/server/app-render/use-flight-response.tsx
++++ b/packages/next/src/server/app-render/use-flight-response.tsx
+@@ -1,5 +1,6 @@
+ import type { BinaryStreamOf } from './app-render'
+ import type { Readable } from 'node:stream'
++import type { SubresourceIntegrityAlgorithm } from '../../build/webpack/plugins/subresource-integrity-plugin'
+ 
+ import {
+   htmlEscapeAttributeString,
+@@ -22,6 +23,54 @@ const flightResponses = new WeakMap<
+ >()
+ const encoder = new TextEncoder()
+ 
++/**
++ * Compute a Subresource Integrity hash of a script's text content.
++ *
++ * Per the W3C SRI specification (https://www.w3.org/TR/SRI/#the-integrity-attribute),
++ * the integrity value for an inline script is "algorithm-base64hash" where the hash
++ * is computed over the script element's text content (the bytes between <script> and
++ * </script>).
++ *
++ * This enables strict CSP without 'unsafe-inline': when every inline script carries
++ * an integrity attribute whose hash matches its content, browsers that support SRI
++ * for inline scripts will execute them even under a script-src policy that omits
++ * 'unsafe-inline'. See also: https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
++ *
++ * @param scriptContent The text content between <script> and </script> tags
++ * @param algorithm The hashing algorithm ('sha256', 'sha384', or 'sha512')
++ * @returns The integrity attribute value, e.g. "sha256-abc123..."
++ */
++async function computeInlineScriptIntegrity(
++  scriptContent: string,
++  algorithm: SubresourceIntegrityAlgorithm
++): Promise<string> {
++  const data = encoder.encode(scriptContent)
++  // Web Crypto API is available in all supported runtimes:
++  // Edge runtime, Node.js 18+ (globalThis.crypto.subtle), and browsers.
++  // This avoids bundling the Node.js 'crypto' module which isn't
++  // available in Edge/ESM builds.
++  // Map SRI algorithm names (e.g. 'sha256') to Web Crypto format ('SHA-256')
++  const webCryptoAlgorithm = algorithm
++    .toUpperCase()
++    .replace(/^(\D+)(\d+)$/, '$1-$2')
++  const hashBuffer = await globalThis.crypto.subtle.digest(
++    webCryptoAlgorithm,
++    data
++  )
++  const hashArray = new Uint8Array(hashBuffer)
++  let hashBase64 = ''
++  if (typeof Buffer !== 'undefined') {
++    hashBase64 = Buffer.from(hashArray).toString('base64')
++  } else {
++    // Edge runtime — no Buffer available, use manual base64
++    for (let i = 0; i < hashArray.length; i++) {
++      hashBase64 += String.fromCharCode(hashArray[i])
++    }
++    hashBase64 = btoa(hashBase64)
++  }
++  return `${algorithm}-${hashBase64}`
++}
++
+ const findSourceMapURL =
+   process.env.NODE_ENV !== 'production'
+     ? (require('../lib/source-maps') as typeof import('../lib/source-maps'))
+@@ -157,28 +206,32 @@ export function getFlightStream<T>(
+  * Creates a ReadableStream provides inline script tag chunks for writing hydration
+  * data to the client outside the React render itself.
+  *
++ * When an SRI algorithm is provided, each inline <script> tag receives an
++ * `integrity` attribute computed from its text content. This allows strict
++ * CSP policies (script-src without 'unsafe-inline') to trust these scripts
++ * via Subresource Integrity, as specified in:
++ * https://www.w3.org/TR/SRI/#the-integrity-attribute
++ *
+  * @param flightStream The RSC render stream
+  * @param nonce optionally a nonce used during this particular render
+  * @param formState optionally the formState used with this particular render
++ * @param sriAlgorithm optionally the SRI algorithm for computing integrity hashes
+  * @returns a ReadableStream without the complete property. This signifies a lazy ReadableStream
+  */
+ export function createInlinedDataReadableStream(
+   flightStream: ReadableStream<Uint8Array>,
+   nonce: string | undefined,
+-  formState: unknown | null
++  formState: unknown | null,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ): ReadableStream<Uint8Array> {
+-  const startScriptTag = nonce
+-    ? `<script nonce="${htmlEscapeAttributeString(nonce)}">`
+-    : '<script>'
+-
+   const flightReader = flightStream.getReader()
+   const decoder = new TextDecoder('utf-8', { fatal: true })
+ 
+   const readable = new ReadableStream({
+     type: 'bytes',
+     start(controller) {
+       try {
+-        writeInitialInstructions(controller, startScriptTag, formState)
++        writeInitialInstructions(controller, formState, nonce, sriAlgorithm)
+       } catch (error) {
+         // during encoding or enqueueing forward the error downstream
+         controller.error(error)
+@@ -194,14 +247,20 @@ export function createInlinedDataReadableStream(
+ 
+             // The chunk cannot be decoded as valid UTF-8 string as it might
+             // have arbitrary binary data.
+-            writeFlightDataInstruction(
++            await writeFlightDataInstruction(
+               controller,
+-              startScriptTag,
+-              decodedString
++              decodedString,
++              nonce,
++              sriAlgorithm
+             )
+           } catch {
+             // The chunk cannot be decoded as valid UTF-8 string.
+-            writeFlightDataInstruction(controller, startScriptTag, value)
++            await writeFlightDataInstruction(
++              controller,
++              value,
++              nonce,
++              sriAlgorithm
++            )
+           }
+         }
+ 
+@@ -219,10 +278,11 @@ export function createInlinedDataReadableStream(
+   return readable
+ }
+ 
+-function writeInitialInstructions(
++async function writeInitialInstructions(
+   controller: ReadableStreamDefaultController,
+-  scriptStart: string,
+-  formState: unknown | null
++  formState: unknown | null,
++  nonce: string | undefined,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ) {
+   let scriptContents = `(self.__next_f=self.__next_f||[]).push(${htmlEscapeJsonString(
+     JSON.stringify([INLINE_FLIGHT_PAYLOAD_BOOTSTRAP])
+@@ -234,13 +294,23 @@ function writeInitialInstructions(
+     )})`
+   }
+ 
+-  controller.enqueue(encoder.encode(`${scriptStart}${scriptContents}</script>`))
++  const integrityAttr = sriAlgorithm
++    ? ` integrity="${htmlEscapeAttributeString(await computeInlineScriptIntegrity(scriptContents, sriAlgorithm))}"`
++    : ''
++  const nonceAttr = nonce ? ` nonce="${htmlEscapeAttributeString(nonce)}"` : ''
++
++  controller.enqueue(
++    encoder.encode(
++      `<script${nonceAttr}${integrityAttr}>${scriptContents}</script>`
++    )
++  )
+ }
+ 
+-function writeFlightDataInstruction(
++async function writeFlightDataInstruction(
+   controller: ReadableStreamDefaultController,
+-  scriptStart: string,
+-  chunk: string | Uint8Array
++  chunk: string | Uint8Array,
++  nonce: string | undefined,
++  sriAlgorithm?: SubresourceIntegrityAlgorithm
+ ) {
+   let htmlInlinedData: string
+ 
+@@ -266,9 +336,15 @@ function writeFlightDataInstruction(
+     )
+   }
+ 
++  const scriptContents = `self.__next_f.push(${htmlInlinedData})`
++  const integrityAttr = sriAlgorithm
++    ? ` integrity="${htmlEscapeAttributeString(await computeInlineScriptIntegrity(scriptContents, sriAlgorithm))}"`
++    : ''
++  const nonceAttr = nonce ? ` nonce="${htmlEscapeAttributeString(nonce)}"` : ''
++
+   controller.enqueue(
+     encoder.encode(
+-      `${scriptStart}self.__next_f.push(${htmlInlinedData})</script>`
++      `<script${nonceAttr}${integrityAttr}>${scriptContents}</script>`
+     )
+   )
+ }
+
+--- a/packages/next/src/server/base-server.ts
++++ b/packages/next/src/server/base-server.ts
+@@ -599,6 +599,7 @@ export default abstract class Server<
+           this.dev === true ||
+           this.nextConfig.experimental.exposeTestingApiInProductionBuild ===
+             true,
++        sriAlgorithm: this.nextConfig.experimental.sri?.algorithm,
+       },
+       onInstrumentationRequestError:
+         this.instrumentationOnRequestError.bind(this),
+
+--- a/test/production/app-dir/subresource-integrity/subresource-integrity.test.ts
++++ b/test/production/app-dir/subresource-integrity/subresource-integrity.test.ts
+@@ -233,6 +233,44 @@ describe('Subresource Integrity', () => {
+         expect(scriptsWithIntegrity).toBeGreaterThanOrEqual(2)
+       })
+ 
++      it('includes integrity attributes on inline flight scripts', async () => {
++        // pages router doesn't have inline flight scripts
++        if (runtime === 'pages') return
++
++        const res = await next.fetch(`/${runtime}`)
++        expect(res.ok).toBe(true)
++
++        const html = await res.text()
++        const $ = cheerio.load(html)
++
++        // Find all inline scripts (self.__next_f.push) - these are the Flight
++        // hydration data scripts that carry the RSC payload
++        const inlineScripts = $('script:not([src])')
++        expect(inlineScripts.length).toBeGreaterThan(0)
++
++        // Verify that inline scripts have integrity attributes
++        let scriptsWithIntegrity = 0
++        inlineScripts.each((i, el) => {
++          const integrity = el.attribs['integrity']
++          if (integrity) {
++            scriptsWithIntegrity++
++            // Verify the integrity format: algorithm-base64hash
++            expect(integrity).toMatch(/^sha256-[A-Za-z0-9+/]+=*$/)
++
++            // Verify the hash matches the script content
++            const scriptContent = $(el).text()
++            const hash = crypto
++              .createHash('sha256')
++              .update(scriptContent)
++              .digest('base64')
++            expect(integrity).toBe(`sha256-${hash}`)
++          }
++        })
++
++        // At least some inline scripts should have integrity attributes
++        expect(scriptsWithIntegrity).toBeGreaterThan(0)
++      })
++
+       it('ignores malformed nonce values without failing the request', async () => {
+         const policies = [
+           `script-src 'nonce-"><script></script>"'`,

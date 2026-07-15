@@ -1,0 +1,257 @@
+--- a/packages/next/src/build/route-discovery.ts
++++ b/packages/next/src/build/route-discovery.ts
+@@ -114,6 +114,32 @@ export async function collectAppFiles(
+   return { appPaths, layoutPaths, defaultPaths }
+ }
+ 
++/**
++ * Cheaply determines whether the app directory contains any real app routes
++ * (page/route leaf files, metadata route files, or a root `not-found`),
++ * without necessarily walking the entire directory tree. Unlike
++ * `collectAppFiles`, this stops as soon as it finds a single match, so
++ * well-formed apps (which have a root `app/layout.tsx`) resolve after
++ * reading just the top-level directory. This is intended for existence
++ * checks (e.g. deciding whether an `app` directory should take over 404
++ * handling from `pages/404`), not for route collection.
++ */
++export async function hasAppRoutes(
++  appDir: string,
++  validFileMatcher: ReturnType<typeof createValidFileMatcher>
++): Promise<boolean> {
++  const matches = await recursiveReadDir(appDir, {
++    pathnameFilter: (absolutePath) =>
++      validFileMatcher.isAppRouterPage(absolutePath) ||
++      validFileMatcher.isRootNotFound(absolutePath),
++    ignorePartFilter: (part) => part.startsWith('_'),
++    stopAfterFirstMatch: true,
++    sortPathnames: false,
++  })
++
++  return matches.length > 0
++}
++
+ /**
+  * Collect pages from the pages directory
+  */
+
+--- a/packages/next/src/lib/recursive-readdir.ts
++++ b/packages/next/src/lib/recursive-readdir.ts
+@@ -36,6 +36,15 @@ export type RecursiveReadDirOptions = {
+    * Whether to return relative pathnames, true by default.
+    */
+   relativePathnames?: boolean
++
++  /**
++   * When true, stop descending into further subdirectories as soon as at
++   * least one pathname has matched. Useful for existence checks where only
++   * knowing "is there at least one match" is needed, since it avoids
++   * walking the rest of the tree. The returned list may be incomplete when
++   * this is enabled.
++   */
++  stopAfterFirstMatch?: boolean
+ }
+ 
+ /**
+@@ -56,6 +65,7 @@ export async function recursiveReadDir(
+     ignorePartFilter,
+     sortPathnames = true,
+     relativePathnames = true,
++    stopAfterFirstMatch = false,
+   } = options
+ 
+   // The list of pathnames to return.
+@@ -173,6 +183,12 @@ export async function recursiveReadDir(
+         }
+       }
+     }
++
++    // Stop descending into the remaining directories once we've already
++    // found a match, since the caller only cares whether any match exists.
++    if (stopAfterFirstMatch && pathnames.length > 0) {
++      break
++    }
+   }
+ 
+   // Sort the pathnames in place if requested.
+
+--- a/packages/next/src/server/base-server.ts
++++ b/packages/next/src/server/base-server.ts
+@@ -24,6 +24,7 @@ import {
+   DecodeError,
+   normalizeRepeatedSlashes,
+   MissingStaticPage,
++  PageNotFoundError,
+ } from '../shared/lib/utils'
+ import type { PagesManifest } from '../build/webpack/plugins/pages-manifest-plugin'
+ import type { BaseNextRequest, BaseNextResponse } from './base-http'
+@@ -2885,16 +2886,27 @@ export default abstract class Server<
+ 
+       if (is404) {
+         if (hasAppDir) {
+-          // Use the not-found entry in app directory
+-          result = await this.findPageComponents({
+-            locale: getRequestMeta(ctx.req, 'locale'),
+-            page: UNDERSCORE_NOT_FOUND_ROUTE_ENTRY,
+-            query,
+-            params: {},
+-            isAppPath: true,
+-            shouldEnsure: true,
+-            url: ctx.req.url,
+-          })
++          // Use the not-found entry in app directory. In dev, ensuring this
++          // entry throws `PageNotFoundError` when the app directory exists
++          // but has no real app routes (e.g. it's only there for an unrelated
++          // reason alongside a Pages Router app) - treat that the same as the
++          // app directory not having a not-found page, and fall back to
++          // `pages/404` below instead of crashing.
++          try {
++            result = await this.findPageComponents({
++              locale: getRequestMeta(ctx.req, 'locale'),
++              page: UNDERSCORE_NOT_FOUND_ROUTE_ENTRY,
++              query,
++              params: {},
++              isAppPath: true,
++              shouldEnsure: true,
++              url: ctx.req.url,
++            })
++          } catch (notFoundEntryErr) {
++            if (!(notFoundEntryErr instanceof PageNotFoundError)) {
++              throw notFoundEntryErr
++            }
++          }
+           using404Page = result !== null
+         }
+ 
+
+--- a/packages/next/src/server/dev/on-demand-entry-handler.ts
++++ b/packages/next/src/server/dev/on-demand-entry-handler.ts
+@@ -11,9 +11,10 @@ import type { RouteDefinition } from '../route-definitions/route-definition'
+ 
+ import createDebug from 'next/dist/compiled/debug'
+ import { EventEmitter } from 'events'
+-import { findPageFile } from '../lib/find-page-file'
++import { findPageFile, createValidFileMatcher } from '../lib/find-page-file'
+ import { runDependingOnPageType, isDeferredEntry } from '../../build/entries'
+ import { getStaticInfoIncludingLayouts } from '../../build/get-static-info-including-layouts'
++import { hasAppRoutes } from '../../build/route-discovery'
+ import { join, posix } from 'path'
+ import { normalizePathSep } from '../../shared/lib/page-path/normalize-path-sep'
+ import { normalizePagePath } from '../../shared/lib/page-path/normalize-page-path'
+@@ -478,14 +479,22 @@ export async function findPagePathData(
+         }
+       }
+ 
+-      // If they're not presented, then fallback to global-not-found
+-      return {
+-        filename: require.resolve(
+-          'next/dist/client/components/builtin/global-not-found'
+-        ),
+-        bundlePath: `app${UNDERSCORE_NOT_FOUND_ROUTE_ENTRY}`,
+-        page: UNDERSCORE_NOT_FOUND_ROUTE_ENTRY,
++      // If they're not presented, only fall back to the built-in
++      // `global-not-found` when the app directory actually contains real
++      // app routes. A directory that merely happens to be named `app`
++      // (e.g. living alongside a Pages Router app with no real usage)
++      // shouldn't hijack 404 handling away from `pages/404`.
++      const validFileMatcher = createValidFileMatcher(extensions, appDir)
++      if (await hasAppRoutes(appDir, validFileMatcher)) {
++        return {
++          filename: require.resolve(
++            'next/dist/client/components/builtin/global-not-found'
++          ),
++          bundlePath: `app${UNDERSCORE_NOT_FOUND_ROUTE_ENTRY}`,
++          page: UNDERSCORE_NOT_FOUND_ROUTE_ENTRY,
++        }
+       }
++      // Otherwise fall through so `pagesDir` can be checked for `pages/404`.
+     }
+     pagePath = await findPageFile(appDir, normalizedPagePath, extensions, true)
+     if (pagePath) {
+
+--- a/test/e2e/app-dir/pages-404-with-empty-app-dir/app/layout.tsx
++++ b/test/e2e/app-dir/pages-404-with-empty-app-dir/app/layout.tsx
+@@ -0,0 +1,8 @@
++import { ReactNode } from 'react'
++export default function Root({ children }: { children: ReactNode }) {
++  return (
++    <html>
++      <body>{children}</body>
++    </html>
++  )
++}
+
+--- a/test/e2e/app-dir/pages-404-with-empty-app-dir/next.config.js
++++ b/test/e2e/app-dir/pages-404-with-empty-app-dir/next.config.js
+@@ -0,0 +1,6 @@
++/**
++ * @type {import('next').NextConfig}
++ */
++const nextConfig = {}
++
++module.exports = nextConfig
+
+--- a/test/e2e/app-dir/pages-404-with-empty-app-dir/pages-404-with-empty-app-dir.test.ts
++++ b/test/e2e/app-dir/pages-404-with-empty-app-dir/pages-404-with-empty-app-dir.test.ts
+@@ -0,0 +1,48 @@
++import { nextTestSetup } from 'e2e-utils'
++
++describe('pages-404-with-empty-app-dir', () => {
++  const { next, isNextStart, isTurbopack } = nextTestSetup({
++    files: __dirname,
++  })
++
++  // Regression test for https://github.com/vercel/next.js/issues/58945
++  // An `app` directory that exists but has no real app routes (e.g. only a
++  // root layout, left over from an aborted App Router migration) must not
++  // hijack 404 handling away from a custom `pages/404`.
++  //
++  // Known gap: `next build --turbopack` still registers an implicit
++  // `_not-found` app route purely because the `app` directory exists,
++  // regardless of whether it contains any real routes. That entrypoint
++  // discovery happens on the Rust side (Turbopack's app-dir route
++  // collection) and isn't fixed by this change, which only covers `next dev`
++  // (both bundlers) and `next build` with webpack.
++  const itFailsWithTurbopackProductionBuild =
++    isNextStart && isTurbopack ? it.failing : it
++
++  it('should render the pages router home page', async () => {
++    const $ = await next.render$('/')
++    expect($('p').text()).toBe('hello world')
++  })
++
++  /* eslint-disable jest/no-standalone-expect */
++  itFailsWithTurbopackProductionBuild(
++    'should use the custom pages/404 instead of the app router built-in not-found',
++    async () => {
++      const res = await next.fetch('/does-not-exist')
++      expect(res.status).toBe(404)
++      const html = await res.text()
++      expect(html).toContain('PAGES ROUTER CUSTOM 404')
++    }
++  )
++
++  itFailsWithTurbopackProductionBuild(
++    'should use the custom pages/404 in the browser',
++    async () => {
++      const browser = await next.browser('/does-not-exist')
++      expect(await browser.elementByCss('p').text()).toBe(
++        'PAGES ROUTER CUSTOM 404'
++      )
++    }
++  )
++  /* eslint-enable jest/no-standalone-expect */
++})
+
+--- a/test/e2e/app-dir/pages-404-with-empty-app-dir/pages/404.tsx
++++ b/test/e2e/app-dir/pages-404-with-empty-app-dir/pages/404.tsx
+@@ -0,0 +1,3 @@
++export default function Custom404() {
++  return <p>PAGES ROUTER CUSTOM 404</p>
++}
+
+--- a/test/e2e/app-dir/pages-404-with-empty-app-dir/pages/index.tsx
++++ b/test/e2e/app-dir/pages-404-with-empty-app-dir/pages/index.tsx
+@@ -0,0 +1,3 @@
++export default function Home() {
++  return <p>hello world</p>
++}

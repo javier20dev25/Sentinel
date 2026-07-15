@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vercel_next_js_95696",
+    "repo": "vercel/next.js",
+    "pr": 95696,
+    "url": "https://github.com/vercel/next.js/pull/95696",
+    "profile": "frontend",
+    "description": "fix: add integrity attributes to inline flight scripts when experimental.sri is enabled",
+    "state": "open",
+    "created_at": "2026-07-10T23:01:21Z",
+    "updated_at": "2026-07-10T23:10:01Z",
+    "sha": "f3c354ef3715a72e6a9cc50cb8a6a985ac897231",
+    "user": "ashusnapx",
+    "labels": [],
+    "files_changed": 9,
+    "additions": 244,
+    "deletions": 48,
+    "patchSize": 23940,
+    "patchHash": "88d02355e10cc145ccf640e16930a5c182badddac1dbce0c09160feffe0c3766",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-10T23:12:16.298Z"
+}

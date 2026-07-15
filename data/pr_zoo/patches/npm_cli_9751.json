@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "npm_cli_9751",
+    "repo": "npm/cli",
+    "pr": 9751,
+    "url": "https://github.com/npm/cli/pull/9751",
+    "profile": "cli",
+    "description": "fix: prevent duplicate process.exit() on concurrent unhandledRejections",
+    "state": "open",
+    "created_at": "2026-07-11T13:43:07Z",
+    "updated_at": "2026-07-11T13:43:08Z",
+    "sha": "45fbd4b5970ab433af1efa56902e6478ee5cba67",
+    "user": "Gopi-Agasthia-S-005CIU744",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 35,
+    "deletions": 0,
+    "patchSize": 1958,
+    "patchHash": "2ce88adac4e4e7c4e2e15ad08b8987cee98d45c9511f2892ded4671133be4304",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:16.996Z"
+}

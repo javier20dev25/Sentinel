@@ -1,0 +1,35 @@
+{
+  "source": {
+    "id": "nodejs_node_64439",
+    "repo": "nodejs/node",
+    "pr": 64439,
+    "url": "https://github.com/nodejs/node/pull/64439",
+    "profile": "infrastructure",
+    "description": "deps: update googletest to 8240fa7d62f73e01c7af27d61ed965d6d66698fa",
+    "state": "open",
+    "created_at": "2026-07-12T00:53:48Z",
+    "updated_at": "2026-07-12T00:53:57Z",
+    "sha": "49326f73b5644aad469fedfa45f206eaf9c2c7b5",
+    "user": "nodejs-github-bot",
+    "labels": [
+      "test",
+      "needs-ci",
+      "dependencies"
+    ],
+    "files_changed": 2,
+    "additions": 16,
+    "deletions": 3,
+    "patchSize": 2566,
+    "patchHash": "0fdb6724216f640aa58e9b7d4b134995e187e5ec7e327f0f185cc5c08cfced78",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "system_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:06.815Z"
+}

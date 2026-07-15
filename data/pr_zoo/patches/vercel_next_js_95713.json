@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vercel_next_js_95713",
+    "repo": "vercel/next.js",
+    "pr": 95713,
+    "url": "https://github.com/vercel/next.js/pull/95713",
+    "profile": "frontend",
+    "description": "fix(next-dev): don't let an app dir without real routes override pages/404",
+    "state": "open",
+    "created_at": "2026-07-12T01:50:24Z",
+    "updated_at": "2026-07-12T02:07:44Z",
+    "sha": "38a32e6b095b665dfaab72e7d3ccc902c3ad7811",
+    "user": "thsid",
+    "labels": [],
+    "files_changed": 9,
+    "additions": 149,
+    "deletions": 18,
+    "patchSize": 9821,
+    "patchHash": "8c63f70718792991798fe182c5b972b443185934f31f6cd3bd88e9d35f585cef",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:18:57.200Z"
+}

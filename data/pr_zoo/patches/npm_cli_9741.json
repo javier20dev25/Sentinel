@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "npm_cli_9741",
+    "repo": "npm/cli",
+    "pr": 9741,
+    "url": "https://github.com/npm/cli/pull/9741",
+    "profile": "cli",
+    "description": "fix(diff): strip control chars from generated diff headers",
+    "state": "open",
+    "created_at": "2026-07-10T07:46:59Z",
+    "updated_at": "2026-07-10T07:47:00Z",
+    "sha": "090e433432dc108cfcc4ef0f14ee6220e39153ce",
+    "user": "ubeddulla",
+    "labels": [],
+    "files_changed": 4,
+    "additions": 68,
+    "deletions": 8,
+    "patchSize": 5914,
+    "patchHash": "bfb4174af3fd253e299e7703ccde39b7181a030c4a319dccf9e0ad042c66946c",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:18.418Z"
+}

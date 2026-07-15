@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_promptToolJsonRpc",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "promptToolJsonRpc",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 86,
+    "patchHash": "20735546de71b55c97c70f327f4c258aff28402d9cee82bbfe35c6a23033714a"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-010b",
+        "techniqueId": "EVASION-010b",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "PromptInjection"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.860Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.915Z"
+}

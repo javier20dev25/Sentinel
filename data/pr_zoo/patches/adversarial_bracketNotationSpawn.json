@@ -1,0 +1,46 @@
+{
+  "source": {
+    "id": "adversarial_bracketNotationSpawn",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "bracketNotationSpawn",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 107,
+    "patchHash": "a24be1d1ff9f1fe8e4b986aace8807c01273d2fc55dc61995bd88e5ae1742955"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "IR-001",
+        "techniqueId": "IR-001",
+        "severity": "HIGH"
+      },
+      {
+        "type": "IR-002",
+        "techniqueId": "IR-002",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.761Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.828Z"
+}

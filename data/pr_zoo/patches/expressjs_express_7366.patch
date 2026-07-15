@@ -1,0 +1,68 @@
+--- a/lib/request.js
++++ b/lib/request.js
+@@ -471,8 +471,8 @@ defineGetter(req, 'fresh', function(){
+   var res = this.res
+   var status = res.statusCode
+ 
+-  // GET or HEAD for weak freshness validation only
+-  if ('GET' !== method && 'HEAD' !== method) return false;
++  // GET, HEAD, or QUERY for weak freshness validation only
++  if ('GET' !== method && 'HEAD' !== method && 'QUERY' !== method) return false;
+ 
+   // 2xx or 304 as per rfc2616 14.26
+   if ((status >= 200 && status < 300) || 304 === status) {
+
+--- a/test/req.fresh.js
++++ b/test/req.fresh.js
+@@ -2,6 +2,7 @@
+ 
+ var express = require('../')
+   , request = require('supertest');
++var shouldSkipQuery = require('./support/utils').shouldSkipQuery
+ 
+ describe('req', function(){
+   describe('.fresh', function(){
+@@ -47,6 +48,43 @@ describe('req', function(){
+       .expect(200, 'false', done);
+     })
+ 
++    it('should return true for a QUERY request with a body when the resource is not modified', function(done){
++      if (shouldSkipQuery(process.versions.node)) {
++        this.skip()
++      }
++      var app = express();
++      var etag = '"12345"';
++
++      app.use(function(req, res){
++        res.set('ETag', etag);
++        res.send(req.fresh);
++      });
++
++      request(app)
++      .query('/')
++      .set('If-None-Match', etag)
++      .send({ ids: ['a', 'b'] })
++      .expect(304, done);
++    })
++
++    it('should return false for a QUERY request with a body when the resource is modified', function(done){
++      if (shouldSkipQuery(process.versions.node)) {
++        this.skip()
++      }
++      var app = express();
++
++      app.use(function(req, res){
++        res.set('ETag', '"123"');
++        res.send(req.fresh);
++      });
++
++      request(app)
++      .query('/')
++      .set('If-None-Match', '"12345"')
++      .send({ ids: ['a', 'b'] })
++      .expect(200, 'false', done);
++    })
++
+     it('should ignore "If-Modified-Since" when "If-None-Match" is present', function(done) {
+       var app = express();
+       const etag = '"FooBar"'

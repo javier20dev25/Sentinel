@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "npm_cli_9749",
+    "repo": "npm/cli",
+    "pr": 9749,
+    "url": "https://github.com/npm/cli/pull/9749",
+    "profile": "cli",
+    "description": "chore: assert bundled production deps resolve in the packed npm",
+    "state": "open",
+    "created_at": "2026-07-10T18:39:25Z",
+    "updated_at": "2026-07-10T19:00:10Z",
+    "sha": "b3ef19c0c07ca2afeb8c3bc000699c3b404a7e85",
+    "user": "reggi",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 95,
+    "deletions": 0,
+    "patchSize": 2836,
+    "patchHash": "9bc7b0f9c7a073dca2f36ad51ef9c0ccdfcf0adcd1d17680528f8859a6f06c68",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:17.361Z"
+}

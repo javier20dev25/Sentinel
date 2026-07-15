@@ -1,0 +1,34 @@
+{
+  "source": {
+    "id": "vitejs_vite_22909",
+    "repo": "vitejs/vite",
+    "pr": 22909,
+    "url": "https://github.com/vitejs/vite/pull/22909",
+    "profile": "frontend",
+    "description": "perf(optimizer): check popular package manager lockfiles first",
+    "state": "open",
+    "created_at": "2026-07-10T05:19:13Z",
+    "updated_at": "2026-07-10T05:19:54Z",
+    "sha": "bd9927a7b2cbedef7e91433e43a357e537a90c48",
+    "user": "sapphi-red",
+    "labels": [
+      "p2-nice-to-have",
+      "feat: deps optimizer"
+    ],
+    "files_changed": 1,
+    "additions": 20,
+    "deletions": 17,
+    "patchSize": 1417,
+    "patchHash": "abce4dc6d0bfdd0497a483d6e06540e4128a8a4bd651824d5282611c452a9605",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:12.338Z"
+}

@@ -1,0 +1,34 @@
+{
+  "source": {
+    "id": "microsoft_TypeScript_63593",
+    "repo": "microsoft/TypeScript",
+    "pr": 63593,
+    "url": "https://github.com/microsoft/TypeScript/pull/63593",
+    "profile": "language",
+    "description": "ci: pin GitHub Actions to full commit SHAs",
+    "state": "open",
+    "created_at": "2026-06-28T03:54:56Z",
+    "updated_at": "2026-07-06T16:02:55Z",
+    "sha": "a54d1189153002d6c010a46c05bd5e7f2c005f75",
+    "user": "XananasX7",
+    "labels": [
+      "For Uncommitted Bug",
+      "Voight-Kampff Anomaly"
+    ],
+    "files_changed": 1,
+    "additions": 1,
+    "deletions": 1,
+    "patchSize": 547,
+    "patchHash": "0ffdf5d69933909bbd6c4c5bd012226b742ca1504689bff3d9c46c693d5db3cc",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "build_pipeline"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:04.320Z"
+}

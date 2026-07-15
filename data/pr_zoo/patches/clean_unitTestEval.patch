@@ -1,0 +1,7 @@
+
+describe('calculator', () => {
+  it('evaluates expression', () => {
+    const result = eval('2 + 2');
+    expect(result).toBe(4);
+  });
+});

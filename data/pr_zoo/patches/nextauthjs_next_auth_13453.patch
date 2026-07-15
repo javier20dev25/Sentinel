@@ -1,0 +1,165 @@
+--- a/package.json
++++ b/package.json
+@@ -189,5 +189,9 @@
+     "patchedDependencies": {
+       "@balazsorban/monorepo-release@0.5.1": "patches/@balazsorban__monorepo-release@0.5.1.patch"
+     }
++  },
++  "homepage": "https://github.com/nextauthjs/next-auth",
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/core/package.json
++++ b/packages/core/package.json
+@@ -15,9 +15,9 @@
+   ],
+   "homepage": "https://authjs.dev",
+   "repository": "https://github.com/nextauthjs/next-auth.git",
+-  "author": "Balázs Orbán <info@balazsorban.com>",
++  "author": "Bal\u00e1zs Orb\u00e1n <info@balazsorban.com>",
+   "contributors": [
+-    "Balázs Orbán <info@balazsorban.com>",
++    "Bal\u00e1zs Orb\u00e1n <info@balazsorban.com>",
+     "Nico Domino <yo@ndo.dev>",
+     "Lluis Agusti <hi@llu.lu>",
+     "Thang Huu Vu <hi@thvu.dev>",
+@@ -110,5 +110,8 @@
+     "postcss-nesting": "^12.1.5",
+     "typedoc": "^0.25.12",
+     "typedoc-plugin-markdown": "4.0.0-next.53"
++  },
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/frameworks-express/package.json
++++ b/packages/frameworks-express/package.json
+@@ -60,5 +60,9 @@
+     "Lachie Hill <lachiehill@gmail.com>"
+   ],
+   "repository": "https://github.com/nextauthjs/next-auth",
+-  "license": "ISC"
+-}
++  "license": "ISC",
++  "homepage": "https://github.com/nextauthjs/next-auth",
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
++  }
++}
+\ No newline at end of file
+
+--- a/packages/frameworks-qwik/package.json
++++ b/packages/frameworks-qwik/package.json
+@@ -63,5 +63,8 @@
+     "typescript": "^5.4.5",
+     "vite-plugin-dts": "^4.5.4",
+     "vite-plugin-static-copy": "^2.3.2"
++  },
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/frameworks-solid-start/package.json
++++ b/packages/frameworks-solid-start/package.json
+@@ -66,5 +66,8 @@
+   "peerDependencies": {
+     "solid-js": "^1.5.7",
+     "solid-start": "^0.2.14"
++  },
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/frameworks-sveltekit/package.json
++++ b/packages/frameworks-sveltekit/package.json
+@@ -22,7 +22,7 @@
+   "author": "Thang Huu Vu <hi@thvu.dev>",
+   "contributors": [
+     "Thang Huu Vu <hi@thvu.dev>",
+-    "Balázs Orbán <info@balazsorban.com>",
++    "Bal\u00e1zs Orb\u00e1n <info@balazsorban.com>",
+     "Nico Domino <yo@ndo.dev>",
+     "Lluis Agusti <hi@llu.lu>",
+     "Iain Collins <me@iaincollins.com>"
+@@ -105,5 +105,8 @@
+       "import": "./dist/providers/*.js"
+     },
+     "./package.json": "./package.json"
++  },
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/frameworks-template/package.json
++++ b/packages/frameworks-template/package.json
+@@ -51,5 +51,9 @@
+   "author": "",
+   "contributors": [],
+   "repository": "https://github.com/nextauthjs/next-auth",
+-  "license": "ISC"
+-}
++  "license": "ISC",
++  "homepage": "https://github.com/nextauthjs/next-auth",
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
++  }
++}
+\ No newline at end of file
+
+--- a/packages/next-auth/package.json
++++ b/packages/next-auth/package.json
+@@ -4,7 +4,7 @@
+   "description": "Authentication for Next.js",
+   "homepage": "https://nextjs.authjs.dev",
+   "repository": "https://github.com/nextauthjs/next-auth.git",
+-  "author": "Balázs Orbán <info@balazsorban.com>",
++  "author": "Bal\u00e1zs Orb\u00e1n <info@balazsorban.com>",
+   "contributors": [
+     "Iain Collins <me@iaincollins.com>",
+     "Nico Domino <yo@ndo.dev>",
+@@ -112,5 +112,8 @@
+     "next": "15.5.18",
+     "nodemailer": "^8.0.5",
+     "react": "^18.2.0"
++  },
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
+   }
+-}
++}
+\ No newline at end of file
+
+--- a/packages/utils/package.json
++++ b/packages/utils/package.json
+@@ -10,5 +10,13 @@
+   "type": "module",
+   "dependencies": {
+     "unplugin-swc": "^1.4.4"
++  },
++  "homepage": "https://github.com/nextauthjs/next-auth",
++  "bugs": {
++    "url": "https://github.com/nextauthjs/next-auth/issues"
++  },
++  "repository": {
++    "type": "git",
++    "url": "git+https://github.com/nextauthjs/next-auth.git"
+   }
+-}
++}
+\ No newline at end of file

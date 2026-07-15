@@ -1,0 +1,4 @@
+
+require('dotenv').config();
+const db = require('./db');
+db.connect(process.env.MONGO_URI);

@@ -1,0 +1,51 @@
+{
+  "source": {
+    "id": "adversarial_functionConstructor",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "functionConstructor",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 78,
+    "patchHash": "d2c0ca3488e2c06e07b1d84e9de4cbd94d98ccf40766b04993f9978855b262a9"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-011b",
+        "techniqueId": "EVASION-011b",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "EVASION-014",
+        "techniqueId": "EVASION-014",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EVASION-014b",
+        "techniqueId": "EVASION-014b",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "DynamicCodeExecution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.806Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.859Z"
+}

@@ -1,0 +1,1478 @@
+--- a/apps/docs/components/Navigation/NavigationMenu/NavigationMenu.constants.ts
++++ b/apps/docs/components/Navigation/NavigationMenu/NavigationMenu.constants.ts
+@@ -3071,6 +3071,7 @@ export const self_hosting: NavMenuConstant = {
+           url: '/guides/self-hosting/self-hosted-proxy-https',
+         },
+         { name: 'Envoy API Gateway', url: '/guides/self-hosting/self-hosted-envoy' },
++        { name: 'Update your deployment', url: '/guides/self-hosting/updating' },
+         { name: 'Upgrade to Postgres 17', url: '/guides/self-hosting/postgres-upgrade-17' },
+         {
+           name: 'Restore Project from Platform',
+
+--- a/apps/docs/content/guides/self-hosting/docker.mdx
++++ b/apps/docs/content/guides/self-hosting/docker.mdx
+@@ -414,17 +414,24 @@ The `config add` / `config remove` commands manage the `COMPOSE_FILE` [variable]
+ 
+ ## Updating
+ 
+-We publish stable releases of the Docker Compose setup approximately once a month. The versions in each release are tested together, so they may lag behind the latest images on Docker Hub. To update, apply the latest changes from the repository, then stop and start the services. If you want to run different versions of individual services, you can change the image tags in the Docker Compose file, but compatibility is **not guaranteed**. All Supabase images are available on [Docker Hub](https://hub.docker.com/u/supabase).
++The `update.sh` script updates an existing deployment in place. It pulls a newer version of the Docker configuration and merges it over your files with a three-way merge, so your secrets, overrides, and local edits are preserved and any genuine conflicts are surfaced rather than silently overwritten.
+ 
+-To follow the changes and updates, refer to the self-hosted Supabase [changelog](https://github.com/supabase/supabase/blob/master/docker/CHANGELOG.md). Make sure to also check the [GitHub Discussions](https://github.com/orgs/supabase/discussions/categories/changelog?discussions_q=is%3Aopen+category%3AChangelog+label%3Aself-hosted).
++```sh
++sh update.sh --dry-run   # preview the changes
++sh update.sh             # apply the update
++sh run.sh pull           # pull new images
++sh run.sh recreate       # restart to pick up the changes
++```
++
++See [Update your self-hosted deployment](/docs/guides/self-hosting/updating) for the full walkthrough - breaking changes, conflict resolution, pinning a release, and older installs without a recorded version. We publish stable releases approximately once a month; the versions in each release are tested together, so they may lag behind the latest images on Docker Hub.
+ 
+-After updating the configuration, stop and start the stack or individual services to pick up the changes. This may result in downtime for your applications and users.
++To follow the changes between releases, refer to the self-hosted Supabase [changelog](https://github.com/supabase/supabase/blob/master/docker/CHANGELOG.md) and the [GitHub Discussions](https://github.com/orgs/supabase/discussions/categories/changelog?discussions_q=is%3Aopen+category%3AChangelog+label%3Aself-hosted).
+ 
+-For example, you'd like to update or rollback the Studio image. Follow the steps below:
++To change or roll back a **single** service's image instead of updating everything - for example, Studio:
+ 
+ 1. Check the [supabase/studio](https://hub.docker.com/r/supabase/studio/tags) images on [Supabase Docker Hub](https://hub.docker.com/u/supabase)
+-2. Find the latest version (tag) number. It looks something like `2026.04.27-sha-5f60601`
+-3. Update the Studio `image` configuration in the `docker-compose.yml` file. It should look like this: `image: supabase/studio:2026.04.27-sha-5f60601`
++2. Find the version (tag) you want. It looks something like `2026.04.27-sha-5f60601`
++3. Update the Studio `image` in `docker-compose.yml`: `image: supabase/studio:2026.04.27-sha-5f60601`
+ 4. Run `sh run.sh pull` to pull the new image, then `sh run.sh recreate studio` to update Studio without taking down the rest of the stack.
+ 
+ ## Uninstalling
+
+--- a/apps/docs/content/guides/self-hosting/updating.mdx
++++ b/apps/docs/content/guides/self-hosting/updating.mdx
+@@ -0,0 +1,166 @@
++---
++title: 'Update your self-hosted deployment'
++description: 'Update an existing self-hosted Supabase deployment to a newer release with update.sh, preserving your configuration and data.'
++subtitle: 'Update an existing self-hosted Supabase deployment to a newer release with update.sh, preserving your configuration and data.'
++---
++
++A supplemental script (`update.sh`) pulls a newer version of the self-hosted Supabase **configuration** on top of your existing deployment. It uses a three-way merge, so your secrets, overrides, and local edits survive, and genuine conflicts are surfaced rather than silently overwritten.
++
++<Admonition type="note" title="No recorded version yet?">
++
++`update.sh` needs to know the release your deployment started from, recorded in a `.supabase-version` file. A recent `setup.sh` writes it, but **older or manually-set-up deployments will not have it**. If yours doesn't, start with [Coming from an old install](#coming-from-an-old-untracked-install) - it is a one-time step.
++
++</Admonition>
++
++## How it works
++
++`update.sh` compares three versions of every vendor file:
++
++- **base** - the release your deployment is currently on, recorded in `.supabase-version` (written by `setup.sh`, then advanced to the new release after each successful update)
++- **new** - the release you are updating to (the latest `self-hosted/v*` tag by default)
++- **user's** - the files in your deployment directory
++
++It applies the changes between base and new to your files. Where you never edited a file, it updates cleanly. Where you edited a file but the release did not touch the same lines, your edit is kept. Only when both changed the same lines do you get a conflict to resolve.
++
++Your secrets and data are never merged. The values in the `.env` file you set are kept (new keys from `.env.example` are appended), and paths listed in `.gitignore` are left untouched.
++
++## Before you start
++
++<Admonition type="danger" title="Back up your database">
++
++`update.sh` backs up your configuration files to `backups/`, but it does not back up Postgres or Storage data. Back those up separately first.
++
++</Admonition>
++
++- Run from your deployment directory (where `docker-compose.yml` and `.env` live).
++- `update.sh` needs `git` and `jq` on the host (both are installed by `setup.sh`).
++- Deployments created with `setup.sh` record their version in `.supabase-version`, and `update.sh` advances it after each successful update. If that file is missing (older or manual installs), refer to [Setting a recorded version](#setting-a-recorded-version).
++
++## How to update
++
++Preview what would change, without affecting anything:
++
++```sh
++sh update.sh --dry-run
++```
++
++Apply the update (targets the latest `self-hosted/v*` release):
++
++```sh
++sh update.sh
++```
++
++Pull the new images and recreate the containers:
++
++```sh
++sh run.sh pull
++sh run.sh recreate
++```
++
++Review the summary `update.sh` prints - especially any conflicts, new `.env` keys, and breaking-change notices.
++
++### What it changes
++
++Updated:
++
++- `docker-compose.yml`, override templates, `volumes/*`, scripts, `.env.example`
++- `volumes/functions/main/index.ts` (vendor bundle)
++
++Excluded:
++
++- Current `.env` configuration
++- Paths in `.gitignore`: data directories, snippets, your edge functions
++
++## Breaking changes
++
++Some releases need a manual step before their files can be applied - for example a Postgres major upgrade. `update.sh` detects these from the release manifest and stops to list them **before** modifying anything, so you can abort with your deployment untouched.
++
++Complete the listed steps (including any `utils/*.sh` migration script mentioned), then re-run `sh update.sh`. Use `--yes` only when you have already done the required work.
++
++## Resolving conflicts
++
++If the summary lists conflicts, `update.sh` has written standard merge markers into those files and exits with status `2`. Open each file, pick the correct content, and remove the `<<<<<<<`, `=======`, and `>>>>>>>` markers:
++
++```yaml
++<<<<<<< yours (docker-compose.yml)
++      image: supabase/studio:your-pinned-tag
++=======
++      image: supabase/studio:new-tag
++>>>>>>> new (self-hosted/v0.7.0)
++```
++
++Then start the stack:
++
++```sh
++sh run.sh pull
++sh run.sh recreate
++```
++
++A conflict means you edited a vendor file and the release changed the same lines. If you enabled auth providers by uncommenting lines in `docker-compose.yml`, this is where you re-apply them when a release reworks those lines.
++
++While conflicts remain, `update.sh` does **not** advance `.supabase-version` - it records the new release only on a clean run. After you resolve the markers, re-run `sh update.sh` to finalize the version stamp.
++
++## Update to a specific release
++
++```sh
++sh update.sh --to self-hosted/v0.7.0
++```
++
++See the [changelog](https://github.com/supabase/supabase/blob/master/docker/CHANGELOG.md) for available releases.
++
++## Setting a recorded version
++
++Without `.supabase-version`, `update.sh` cannot merge safely and runs in **report-only** mode: it lists what is new but writes nothing. Record the version your files came from once, then re-run.
++
++Prefer the **exact commit** your `./docker` files were copied from, if you can find it (for example, from the `git clone` you originally set up from). An exact base gives the cleanest merge - conflicts only where you hand-edited a file that the release also changed:
++
++```sh
++printf 'ref=<commit-sha>\n' > .supabase-version
++```
++
++To find that commit: if you still have the `git clone` of `supabase/supabase` you originally set up from, run `git -C /path/to/your/clone rev-parse HEAD` - it prints the SHA. That is accurate as long as you have not run `git pull` in that clone since you deployed; check the date it points at with `git -C /path/to/your/clone log -1 --format='%H %cd'`. If you no longer have the clone, or are unsure, do not guess - use the closest release tag below, which you can verify against your image tags.
++
++Otherwise use the **closest release tag** - compare the image tags in `docker-compose.yml` / `.env` against [versions.md](https://github.com/supabase/supabase/blob/master/docker/versions.md). This is an approximation, so expect conflicts roughly proportional to how far your files have drifted:
++
++```sh
++printf 'ref=self-hosted/v0.7.0\n' > .supabase-version
++```
++
++Either way, you can supply it for a single run instead of writing the file:
++
++```sh
++sh update.sh --from <commit-sha-or-tag>
++```
++
++{/* supa-mdx-lint-disable-next-line Rule003Spelling */}
++
++## Coming from an old, untracked install
++
++If you have run self-hosted for a long time without `.supabase-version` and your files have drifted from any release, the first catch-up is manual - but you only do it once. After it succeeds the version is recorded, and every future update is a clean, gated merge.
++
++1. **See what is coming.** Run `sh update.sh` once. With no recorded version it stays in report-only mode and lists the new files and `.env` keys without changing anything.
++2. **Record your base** (see [Setting a recorded version](#setting-a-recorded-version)) - an exact commit SHA if you can find it, otherwise the closest tag.
++3. **Preview.** Run `sh update.sh --dry-run` and check the conflict count. If it is overwhelming, try an older or closer base; the better the base matches your real files, the fewer conflicts.
++4. **Back up your database** separately - `update.sh` backs up configuration only.
++5. **Apply**, then resolve any conflict markers (see [Resolving conflicts](#resolving-conflicts)).
++6. **Handle Postgres.** Postgres 17 became the default in v0.6.0. If you are still on Postgres 15, do **not** recreate straight onto 17 - follow [Upgrade to Postgres 17](/docs/guides/self-hosting/postgres-upgrade-17), or pin Postgres 15 with the `docker-compose.pg15.yml` override. Read the [changelog](https://github.com/supabase/supabase/blob/master/docker/CHANGELOG.md) for the breaking changes across the range you are crossing.
++7. Run `sh run.sh pull`, then `sh run.sh recreate`.
++
++<Admonition type="note">
++
++If your deployment has drifted heavily, a clean reinstall at the latest release with `setup.sh` plus a data migration can be less work than resolving a large merge. Consider it if the dry run in step 3 shows an unmanageable number of conflicts.
++
++</Admonition>
++
++## Restore from backup
++
++**Configuration backups** are written to `backups/pre-update-*.tgz` before each update. If something goes wrong, extract or compare against that archive.
++
++## Command-line options
++
++| Flag           | Purpose                                                     |
++| -------------- | ----------------------------------------------------------- |
++| `--dry-run`    | Show the plan; write nothing                                |
++| `--to <tag>`   | Update to a specific release                                |
++| `--from <ref>` | Supply the base version when `.supabase-version` is missing |
++| `--yes`        | Skip the breaking-change confirmation prompt                |
+
+--- a/docker/.gitignore
++++ b/docker/.gitignore
+@@ -1,5 +1,12 @@
+ volumes/db/data
+ volumes/storage
++volumes/snippets
++volumes/functions/**
++!volumes/functions/main/
++volumes/functions/main/**
++!volumes/functions/main/index.ts
+ .env
+ test.http
+ docker-compose.override.yml
++.supabase-version
++backups
+
+--- a/docker/README.md
++++ b/docker/README.md
+@@ -45,19 +45,20 @@ This Docker Compose configuration includes the following services:
+ - **[versions.md](./versions.md)** - Complete history of Docker image versions for rollback reference
+ - **[Ask DeepWiki / Supabase](https://deepwiki.com/supabase/supabase/3-self-hosted-deployment)** - DeepWiki-generated description of self-hosted configuration
+ - **[CONFIG.md](./CONFIG.md)** - Configuration reference for all environment variables
++- **[UPGRADING.md](./UPGRADING.md)** - Upgrade an existing deployment with `update.sh`
+ 
+ ## Updates
+ 
+-To update your self-hosted Supabase instance:
++Back up your database, then:
+ 
+-1. Review [CHANGELOG.md](./CHANGELOG.md) for breaking changes
+-2. Check [versions.md](./versions.md) for new image versions
+-3. Update `docker-compose.yml` if there are configuration changes
+-4. Pull the latest images: `docker compose pull`
+-5. Stop services: `docker compose down`
+-6. Start services with new configuration: `docker compose up -d`
++```sh
++sh update.sh --dry-run   # optional preview
++sh update.sh
++sh run.sh pull && sh run.sh recreate
++```
+ 
+-**Note:** Consider to always backup your database before updating.
++See **[UPGRADING.md](./UPGRADING.md)** for conflicts, breaking changes, pinning a
++release, and older installs without `.supabase-version`.
+ 
+ ## Community & Support
+ 
+
+--- a/docker/UPGRADING.md
++++ b/docker/UPGRADING.md
+@@ -0,0 +1,51 @@
++# Updating self-hosted Supabase
++
++`update.sh` updates an existing `./docker` deployment in place, merging a newer release over your files with a 3-way merge so your secrets, overrides, and data are preserved and real conflicts are surfaced instead of overwritten.
++
++Read the [Update your self-hosted deployment](https://supabase.com/docs/guides/self-hosting/updating) for more information.
++
++**No `.supabase-version` file?** Most existing deployments won't have one yet - see [No `.supabase-version`](#no-supabase-version-older-or-manual-installs) below before your first update.
++
++## Quick reference
++
++Run from your deployment directory (where `docker-compose.yml` and `.env` live). It needs `git` and `jq` on the host (both installed by `setup.sh`). Back up your database first - `update.sh` backs up configuration, not data.
++
++```sh
++sh update.sh --dry-run   # preview; writes nothing
++sh update.sh             # apply (targets the latest self-hosted/v* release)
++sh run.sh pull           # pull new images
++sh run.sh recreate       # restart to pick up the changes
++```
++
++`update.sh` updates vendor files (`docker-compose.yml`, override templates, `volumes/*`, scripts, `.env.example`) and appends new `.env` keys. It never touches `.env` values you set, `docker-compose.override.yml`, or paths in `.gitignore` (data directories, snippets, your edge functions).
++
++## Conflicts
++
++If the summary lists **CONFLICTS**, `update.sh` wrote merge markers into those files and exits with status `2`. Edit each file, pick the correct content, remove the `<<<<<<<` / `=======` / `>>>>>>>` markers, then run `sh run.sh pull && sh run.sh recreate`. While conflicts remain the version stamp is not advanced; it updates on your next clean run.
++
++## Breaking changes
++
++Some releases need a manual step first (for example, a Postgres major upgrade). `update.sh` lists them **before** modifying anything and waits for confirmation. Complete the steps (including any `utils/*.sh` script mentioned), then re-run.
++
++## No `.supabase-version` (older or manual installs)
++
++Most existing deployments won't have this file yet. Without a recorded base version `update.sh` runs in **report-only** mode. Record the version your files came from once, then re-run - prefer the exact commit SHA if you can find it (if you still have the `git clone` you set up from: `git -C /path/to/your/clone rev-parse HEAD`), otherwise the closest release tag:
++
++```sh
++printf 'ref=<commit-sha>\n' > .supabase-version          # best: the exact commit
++printf 'ref=self-hosted/v0.7.0\n' > .supabase-version    # or the closest release tag
++# or, for a single run:  sh update.sh --from <sha-or-tag>
++```
++
++First time updating an old, untracked install? See [Coming from an old, untracked install](https://supabase.com/docs/guides/self-hosting/updating#coming-from-an-old-untracked-install) for the step-by-step.
++
++## Options
++
++| Flag | Purpose |
++| --- | --- |
++| `--dry-run` | Show the plan; write nothing |
++| `--to <tag>` | Update to a specific release (e.g. `self-hosted/v0.7.0`) |
++| `--from <ref>` | Supply the base version when `.supabase-version` is missing |
++| `--yes` | Skip the breaking-change confirmation prompt |
++
++For the full walkthrough see the [guide](https://supabase.com/docs/guides/self-hosting/updating); [CHANGELOG.md](./CHANGELOG.md) and [versions.md](./versions.md) list releases.
+
+--- a/docker/tests/test-s3-backend.sh
++++ b/docker/tests/test-s3-backend.sh
+@@ -4,7 +4,7 @@
+ #
+ # Validates that the S3-compatible backend (MinIO, RustFS, etc.) handles
+ # all S3 operations that Storage relies on. Uses the aws cli so the test
+-# is backend-agnostic — no vendor-specific tools required.
++# is backend-agnostic - no vendor-specific tools required.
+ #
+ # Usage:
+ #   sh test-s3-backend.sh                   # Uses localhost:9100
+
+--- a/docker/tests/test-s3.sh
++++ b/docker/tests/test-s3.sh
+@@ -3,7 +3,7 @@
+ # Test S3 protocol endpoint for self-hosted Supabase Storage.
+ #
+ # Verifies that the S3-compatible endpoint at /storage/v1/s3 works with
+-# standard S3 clients — the same way end users interact with it via
++# standard S3 clients - the same way end users interact with it via
+ # aws cli, rclone, or other S3-compatible tools.
+ #
+ # Usage:
+
+--- a/docker/tests/test-self-hosted.sh
++++ b/docker/tests/test-self-hosted.sh
+@@ -167,7 +167,7 @@ else
+     check "Create user (admin)" "true" "false"
+ fi
+ 
+-# Public signup (optional — depends on email autoconfirm setting)
++# Public signup (optional - depends on email autoconfirm setting)
+ signup_email="smoke-signup-$$@example.com"
+ signup_resp=$(http_body "$BASE_URL/auth/v1/signup" \
+     -H "apikey: $ANON_KEY" \
+
+--- a/docker/tests/test-upgrade.sh
++++ b/docker/tests/test-upgrade.sh
+@@ -0,0 +1,317 @@
++#!/bin/sh
++#
++# Hermetic test for update.sh (the self-hosted in-place update script).
++#
++# Builds a tiny synthetic "upstream" git repo with two tagged releases
++# (self-hosted/v0.9.0 and self-hosted/v1.1.0; 1.0.0 exists only as a manifest
++# key), where the target ships a two-entry breaking-change manifest. It then
++# simulates a configured deployment
++# based on v0.9.0 and runs update.sh via a SUPABASE_REPO_URL override (no
++# network), asserting: the 3-way merge preserves secrets/data/overrides, adds
++# new .env keys (but not ones the user commented out), applies clean merges,
++# reports real conflicts, honors .gitignore for user-owned paths, surfaces the
++# multi-entry gate, and advances the stamp ONLY on a clean apply. Also covers
++# the clean-apply path, default-target resolution, --from, --dry-run, and the
++# missing-stamp report-only path.
++#
++# Usage:
++#   sh tests/test-upgrade.sh        # run from the docker/ directory
++#
++
++set -eu
++
++# Isolate from the developer's global/system git config (gpgsign, hooksPath,
++# templateDir, core.excludesfile) so neither the synthetic commits nor update.sh's
++# internal git calls (fetch, merge-file, check-ignore) are affected. Exported so
++# the update.sh subprocess inherits them too.
++export GIT_CONFIG_GLOBAL=/dev/null
++export GIT_CONFIG_NOSYSTEM=1
++
++SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
++DOCKER_DIR=$(dirname "$SCRIPT_DIR")
++UPDATE_SH="$DOCKER_DIR/update.sh"
++
++[ -f "$UPDATE_SH" ] || { echo "ERROR: $UPDATE_SH not found"; exit 1; }
++
++WORK=$(mktemp -d)
++cleanup() { rm -rf "$WORK"; }
++trap cleanup EXIT INT TERM
++
++PASS=0
++FAIL=0
++ok()   { PASS=$((PASS+1)); printf "  ok   - %s\n" "$1"; }
++bad()  { FAIL=$((FAIL+1)); printf "  FAIL - %s\n" "$1"; }
++
++assert_file_contains() { # <file> <pattern> <desc>
++    if grep -qF "$2" "$1" 2>/dev/null; then ok "$3"; else bad "$3 (missing '$2' in $1)"; fi
++}
++assert_file_missing_pattern() { # <file> <pattern> <desc>
++    if grep -qF "$2" "$1" 2>/dev/null; then bad "$3 (unexpected '$2' in $1)"; else ok "$3"; fi
++}
++assert_line() { # <file> <ERE> <desc>
++    if grep -qE "$2" "$1" 2>/dev/null; then ok "$3"; else bad "$3 (no line matching /$2/ in $1)"; fi
++}
++assert_no_line() { # <file> <ERE> <desc>
++    if grep -qE "$2" "$1" 2>/dev/null; then bad "$3 (unexpected line matching /$2/ in $1)"; else ok "$3"; fi
++}
++assert_path_exists() { # <path> <desc>
++    if [ -e "$1" ]; then ok "$2"; else bad "$2 ($1 missing)"; fi
++}
++assert_path_absent() { # <path> <desc>
++    if [ -e "$1" ]; then bad "$2 ($1 should not exist)"; else ok "$2"; fi
++}
++
++# portable in-place sed (BSD + GNU): sedi <expr> <file>
++sedi() { sed "$1" "$2" > "$2.tmp" && mv "$2.tmp" "$2"; }
++
++# --- 1. Build the synthetic upstream repo -----------------------------------
++
++SRC="$WORK/upstream"
++mkdir -p "$SRC/docker/volumes/api"
++cd "$SRC"
++git init -q
++git config user.email t@t.t
++git config user.name t
++
++cat > docker/docker-compose.yml <<'EOF'
++services:
++  studio:
++    image: supabase/studio:OLD
++  db:
++    image: supabase/postgres:15
++EOF
++cat > docker/.env.example <<'EOF'
++POSTGRES_PASSWORD=changeme
++JWT_SECRET=changeme
++KEEP_ME=base-default
++EOF
++printf 'base kong\n' > docker/volumes/api/kong.yml
++printf 'remove me\n'  > docker/old-only.txt
++cp "$DOCKER_DIR/.gitignore" docker/.gitignore
++mkdir -p docker/volumes/functions/main
++printf 'base main\n' > docker/volumes/functions/main/index.ts
++git add -A && git commit -qm base && git tag self-hosted/v0.9.0
++
++# target commit
++cat > docker/docker-compose.yml <<'EOF'
++services:
++  studio:
++    image: supabase/studio:NEW
++  db:
++    image: supabase/postgres:17
++EOF
++cat > docker/.env.example <<'EOF'
++POSTGRES_PASSWORD=changeme
++JWT_SECRET=changeme
++KEEP_ME=base-default
++NEW_KEY=new-default
++EOF
++printf 'brand new\n' > docker/new-only.txt
++printf 'target main\n' > docker/volumes/functions/main/index.ts
++mkdir -p docker/volumes/functions/hello
++printf 'target hello\n' > docker/volumes/functions/hello/index.ts
++# A gitignored sample under volumes/snippets shipped by upstream: must NOT
++# overwrite the user's file of the same name (exercises is_excluded directly).
++mkdir -p docker/volumes/snippets
++printf 'VENDOR SEED\n' > docker/volumes/snippets/seed.sql
++# Two-entry manifest. 1.0.0 carries requires+gate; 1.1.0 is breaking with NO
++# 'requires' and, sorting last with no _schema after it, guards the set -e
++# regression where a requires-less final entry aborted the script.
++cat > docker/upgrades.json <<'EOF'
++{
++  "1.0.0": {
++    "breaking": true,
++    "gate": "utils/demo-migrate.sh",
++    "migration_guide_url": "https://example.test/guide",
++    "requires": ["Run the demo migration first."]
++  },
++  "1.1.0": {
++    "breaking": true
++  }
++}
++EOF
++git rm -q docker/old-only.txt
++git add -A
++git add -f docker/volumes/functions/hello/index.ts docker/volumes/snippets/seed.sql
++# Release tag for the target / default-target (latest self-hosted/v*) path.
++git commit -qm target && git tag self-hosted/v1.1.0
++
++# --- helper: lay down a deployment based on v0.9.0 --------------------------
++# make_deploy <dir> [conflict]  - pass "conflict" to pin the studio image so the
++# merge produces a real conflict; omit for a clean apply.
++
++make_deploy() { # <dir> [conflict]
++    d="$1"
++    _mode="${2:-clean}"
++    mkdir -p "$d"
++    git -C "$SRC" archive self-hosted/v0.9.0 docker | tar -x -C "$d" --strip-components=1
++    cp "$UPDATE_SH" "$d/update.sh"
++    # configured .env: real secret, an extra user key, and KEEP_ME commented out
++    # on purpose (must NOT be re-added by the .env key-union).
++    cp "$d/.env.example" "$d/.env"
++    sedi "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=test-secret-123/" "$d/.env"
++    sedi "s/^KEEP_ME=/#KEEP_ME=/" "$d/.env"
++    printf 'EXTRA_USER_KEY=mine\n' >> "$d/.env"
++    # user-owned override (must never be touched)
++    printf 'services: {}\n# my override\n' > "$d/docker-compose.override.yml"
++    # data dirs with sentinels (must never be touched)
++    mkdir -p "$d/volumes/db/data" "$d/volumes/storage"
++    printf 'DBDATA\n' > "$d/volumes/db/data/keep.txt"
++    printf 'OBJ\n'    > "$d/volumes/storage/keep.txt"
++    # user adds a line to kong (upstream unchanged -> clean merge, must survive)
++    printf 'user added line\n' >> "$d/volumes/api/kong.yml"
++    # user-owned paths per .gitignore (must not be touched by the merge)
++    mkdir -p "$d/volumes/snippets" "$d/volumes/functions/my-fn"
++    printf 'USER_SNIPPET\n' > "$d/volumes/snippets/user.sql"
++    printf 'user fn\n' > "$d/volumes/functions/my-fn/index.ts"
++    # user file at the SAME path as the vendor snippet shipped at target:
++    # is_excluded must skip it so the user's content survives.
++    printf 'USER SEED\n' > "$d/volumes/snippets/seed.sql"
++    # legacy sample fn in snapshot at target but gitignored - must not overwrite
++    mkdir -p "$d/volumes/functions/hello"
++    printf 'user hello\n' > "$d/volumes/functions/hello/index.ts"
++    # version stamp pointing at the base (ref only; update.sh derives the rest)
++    printf 'ref=self-hosted/v0.9.0\n' > "$d/.supabase-version"
++    if [ "$_mode" = "conflict" ]; then
++        # user pins the studio image (same line upstream changes -> conflict)
++        sedi "s#supabase/studio:OLD#supabase/studio:USER-PINNED#" "$d/docker-compose.yml"
++    fi
++}
++
++echo ""
++echo "=== update.sh: apply path (with a conflict) ==="
++
++DEPLOY="$WORK/deploy"
++make_deploy "$DEPLOY" conflict
++cd "$DEPLOY"
++rc=0
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --to self-hosted/v1.1.0 --yes > "$WORK/apply.log" 2>&1 || rc=$?
++
++sed 's/^/      | /' "$WORK/apply.log"
++
++if [ "$rc" = "2" ]; then ok "exit status 2 signals conflicts"; else bad "expected exit 2 (conflicts), got $rc"; fi
++assert_file_contains  ".env" "POSTGRES_PASSWORD=test-secret-123" "user secret preserved"
++assert_file_contains  ".env" "NEW_KEY=new-default"               "new .env key appended"
++assert_file_contains  ".env" "EXTRA_USER_KEY=mine"               "extra user key kept"
++assert_line           ".env" "^#KEEP_ME=base-default"            "user's commented key left commented"
++assert_no_line        ".env" "^KEEP_ME="                         "commented .env key not re-added uncommented"
++assert_file_contains  "docker-compose.override.yml" "my override" "override untouched"
++assert_file_contains  "volumes/db/data/keep.txt" "DBDATA"        "db data untouched"
++assert_file_contains  "volumes/storage/keep.txt" "OBJ"           "storage untouched"
++assert_file_contains  "docker-compose.yml" "<<<<<<<"             "conflict open marker written"
++assert_file_contains  "docker-compose.yml" "======="            "conflict separator written"
++assert_file_contains  "docker-compose.yml" ">>>>>>>"            "conflict close marker written"
++assert_file_contains  "docker-compose.yml" "USER-PINNED"        "user value present in conflict"
++assert_file_contains  "docker-compose.yml" "supabase/studio:NEW" "upstream value present in conflict"
++assert_file_contains  "docker-compose.yml" "supabase/postgres:17" "non-conflicting line merged (pg17)"
++assert_path_exists    "new-only.txt"                             "new upstream file added"
++assert_path_exists    "old-only.txt"                             "removed-upstream file left in place"
++assert_file_contains  "volumes/api/kong.yml" "user added line"   "clean merge preserved user line"
++assert_file_contains  ".supabase-version" "ref=self-hosted/v0.9.0" "stamp NOT advanced on conflict"
++assert_file_contains  "$WORK/apply.log" "Files with merge conflicts" "conflicts reported in summary"
++assert_file_contains  "$WORK/apply.log" "[1.0.0]"               "manifest entry 1.0.0 surfaced"
++assert_file_contains  "$WORK/apply.log" "[1.1.0] BREAKING"      "requires-less last entry surfaced (no set -e abort)"
++assert_file_contains  "$WORK/apply.log" "Run the demo migration first." "manifest gate step surfaced"
++assert_file_contains  "$WORK/apply.log" "utils/demo-migrate.sh" "manifest gate script surfaced"
++assert_file_contains  "$WORK/apply.log" "example.test/guide"    "manifest migration guide surfaced"
++assert_file_contains  "$WORK/apply.log" "gone from the new .env.example" ".env key-removal section shown"
++assert_file_contains  "$WORK/apply.log" "EXTRA_USER_KEY"        "removed .env key listed in report"
++if ls backups/*.tgz >/dev/null 2>&1; then
++    ok "backup archive created"
++    for _bk in backups/*.tgz; do break; done
++    tar tzf "$_bk" > "$WORK/bk.list" 2>/dev/null || true
++    assert_file_contains        "$WORK/bk.list" ".env"            "backup includes .env"
++    assert_file_missing_pattern "$WORK/bk.list" "volumes/db/data" "backup excludes db data dir"
++    assert_file_missing_pattern "$WORK/bk.list" "volumes/storage" "backup excludes storage dir"
++    assert_file_missing_pattern "$WORK/bk.list" "backups/"        "backup excludes backups dir"
++else
++    bad "no backup archive"
++fi
++assert_file_contains  "volumes/snippets/user.sql" "USER_SNIPPET"     "snippets left untouched"
++# seed.sql and hello/index.ts are the only files that are BOTH shipped in the
++# target snapshot AND gitignored, so they are the real is_excluded coverage.
++# Assert the user's content survives AND no vendor content / conflict markers
++# leaked in - i.e. the file was skipped, not merged/conflicted.
++assert_file_contains         "volumes/snippets/seed.sql" "USER SEED"   "gitignored snippet: user content kept"
++assert_file_missing_pattern  "volumes/snippets/seed.sql" "VENDOR SEED" "gitignored snippet: no vendor content"
++assert_file_missing_pattern  "volumes/snippets/seed.sql" "<<<<<<<"     "gitignored snippet: not conflicted (skipped)"
++assert_file_contains  "volumes/functions/my-fn/index.ts" "user fn"   "custom edge fn left untouched"
++assert_file_contains  "volumes/functions/main/index.ts" "target main" "vendor main/index.ts updated"
++assert_file_contains         "volumes/functions/hello/index.ts" "user hello"   "gitignored fn: user content kept"
++assert_file_missing_pattern  "volumes/functions/hello/index.ts" "target hello" "gitignored fn: no vendor content"
++assert_file_missing_pattern  "volumes/functions/hello/index.ts" "<<<<<<<"      "gitignored fn: not conflicted (skipped)"
++
++echo ""
++echo "=== update.sh: clean apply (no conflict) advances the stamp and exits 0 ==="
++
++CLEAN="$WORK/clean"
++make_deploy "$CLEAN"
++cd "$CLEAN"
++rc=0
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --to self-hosted/v1.1.0 --yes > "$WORK/clean.log" 2>&1 || rc=$?
++if [ "$rc" = "0" ]; then ok "clean apply exits 0"; else bad "clean apply expected exit 0, got $rc"; fi
++assert_file_contains "$WORK/clean.log" "Update applied cleanly."       "clean apply announced"
++assert_file_missing_pattern "docker-compose.yml" "<<<<<<<"             "clean apply wrote no conflict markers"
++assert_file_contains ".supabase-version" "ref=self-hosted/v1.1.0"     "stamp advanced on clean apply"
++assert_file_contains ".env" "NEW_KEY=new-default"                     "new .env key appended (clean)"
++assert_file_contains "docker-compose.yml" "supabase/studio:NEW"       "vendor file updated (clean)"
++assert_file_contains "volumes/api/kong.yml" "user added line"         "clean merge preserved user line (clean)"
++
++echo ""
++echo "=== update.sh: default target resolves to latest self-hosted/v* tag ==="
++
++TAGD="$WORK/tagdefault"
++make_deploy "$TAGD"
++cd "$TAGD"
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --yes > "$WORK/tag.log" 2>&1 || true
++assert_file_contains "$WORK/tag.log" "Latest release tag: self-hosted/v1.1.0" "resolved latest release tag (no --to)"
++assert_file_contains ".supabase-version" "ref=self-hosted/v1.1.0"            "stamp advanced to the tag"
++assert_file_contains ".env" "NEW_KEY=new-default"                            "update applied via default target"
++
++echo ""
++echo "=== update.sh: --from supplies the base when the stamp is missing ==="
++
++FROMD="$WORK/fromd"
++make_deploy "$FROMD"
++cd "$FROMD"
++rm -f .supabase-version
++rc=0
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --from self-hosted/v0.9.0 --to self-hosted/v1.1.0 --yes > "$WORK/from.log" 2>&1 || rc=$?
++assert_file_missing_pattern "$WORK/from.log" "REPORT-ONLY"     "--from performs a real update (not report-only)"
++assert_file_contains ".env" "NEW_KEY=new-default"              "--from applied the update"
++assert_file_contains ".supabase-version" "ref=self-hosted/v1.1.0" "--from advanced the stamp"
++
++echo ""
++echo "=== update.sh: --dry-run writes nothing ==="
++
++DRYD="$WORK/dry"
++make_deploy "$DRYD" conflict
++cd "$DRYD"
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --to self-hosted/v1.1.0 --dry-run > "$WORK/dry.log" 2>&1 || true
++assert_file_missing_pattern ".env" "NEW_KEY"              "dry-run did not append env key"
++assert_file_missing_pattern "docker-compose.yml" "<<<<<<<" "dry-run did not write conflict"
++assert_file_contains ".supabase-version" "ref=self-hosted/v0.9.0" "dry-run left stamp unchanged"
++assert_path_absent   "backups"                            "dry-run took no backup"
++assert_file_contains "$WORK/dry.log" "DRY RUN"            "dry-run labeled output"
++
++echo ""
++echo "=== update.sh: missing stamp -> report-only (still surfaces the gate) ==="
++
++MISS="$WORK/miss"
++make_deploy "$MISS"
++cd "$MISS"
++rm -f .supabase-version
++rc=0
++SUPABASE_REPO_URL="$SRC" sh ./update.sh --to self-hosted/v1.1.0 > "$WORK/miss.log" 2>&1 || rc=$?
++if [ "$rc" = "0" ]; then ok "report-only exits 0"; else bad "report-only expected exit 0, got $rc"; fi
++assert_file_contains "$WORK/miss.log" "REPORT-ONLY"       "report-only mode announced"
++assert_file_missing_pattern ".env" "NEW_KEY"             "report-only wrote nothing to .env"
++assert_path_absent   "backups"                           "report-only took no backup"
++assert_file_contains "$WORK/miss.log" "Breaking changes / required manual steps" "report-only surfaces the gate"
++assert_file_contains "$WORK/miss.log" "[1.0.0]"          "report-only lists in-range breaking release"
++
++# --- summary -----------------------------------------------------------------
++
++echo ""
++echo "=== Result: $PASS passed, $FAIL failed ==="
++[ "$FAIL" = "0" ] || exit 1
+
+--- a/docker/tests/test-upgrades-manifest.sh
++++ b/docker/tests/test-upgrades-manifest.sh
+@@ -0,0 +1,86 @@
++#!/bin/sh
++#
++# Validate the upgrade manifest (upgrades.json), which update.sh reads with jq.
++#
++#   - json:    upgrades.json is valid JSON
++#   - keys:    top-level keys are bare-semver versions (e.g. "0.7.0"), plus the
++#              optional "_schema" documentation block
++#   - schema:  each version-keyed entry has valid field types
++#   - gate:    any non-null "gate" points at a script that exists in the repo
++#
++# The manifest is the source of truth for gating; the CHANGELOG is display only,
++# so this test deliberately does NOT cross-check the two. Requires jq (already a
++# runtime dependency of update.sh); no yq, no generation step.
++#
++# Usage:
++#   sh tests/test-upgrades-manifest.sh      # run from the docker/ directory
++#
++set -eu
++
++SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
++DOCKER_DIR=$(dirname "$SCRIPT_DIR")
++cd "$DOCKER_DIR"
++
++JSON=upgrades.json
++
++command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required"; exit 1; }
++[ -f "$JSON" ] || { echo "ERROR: $JSON missing"; exit 1; }
++
++TMP=$(mktemp -d)
++trap 'rm -rf "$TMP"' EXIT INT TERM
++
++PASS=0; FAIL=0
++ok()  { PASS=$((PASS+1)); printf "  ok   - %s\n" "$1"; }
++bad() { FAIL=$((FAIL+1)); printf "  FAIL - %s\n" "$1"; }
++
++echo ""
++echo "=== upgrades.json is valid JSON ==="
++if jq -e . "$JSON" >/dev/null 2>"$TMP/err"; then
++    ok "upgrades.json parses"
++else
++    bad "upgrades.json is not valid JSON: $(cat "$TMP/err" 2>/dev/null)"
++    echo "=== Result: $PASS passed, $FAIL failed ==="; exit 1
++fi
++
++echo ""
++echo "=== top-level keys are versions (or _schema) ==="
++for k in $(jq -r 'keys[]' "$JSON"); do
++    case "$k" in
++        _schema)       ok "doc block '_schema' present" ;;
++        [0-9]*.[0-9]*) ok "version key $k" ;;
++        *)             bad "unexpected top-level key '$k' (want bare semver like 0.7.0)" ;;
++    esac
++done
++
++echo ""
++echo "=== version-keyed entries have valid field types ==="
++for k in $(jq -r 'keys[]' "$JSON"); do
++    case "$k" in [0-9]*.[0-9]*) ;; *) continue ;; esac
++    errs=$(jq -r --arg k "$k" '.[$k] |
++        [ (if (.breaking != null) and ((.breaking|type) != "boolean") then "breaking must be bool" else empty end),
++          (if (.gate != null) and ((.gate|type) != "string") then "gate must be string|null" else empty end),
++          (if (.migration_guide_url != null) and ((.migration_guide_url|type) != "string") then "migration_guide_url must be string|null" else empty end),
++          (if (.requires != null) and ((.requires|type) != "array") then "requires must be array" else empty end)
++        ] | join("; ")' "$JSON")
++    if [ -z "$errs" ]; then ok "entry $k valid"; else bad "entry $k: $errs"; fi
++done
++
++echo ""
++echo "=== gate scripts referenced by entries exist ==="
++checked=0
++for k in $(jq -r 'keys[]' "$JSON"); do
++    case "$k" in [0-9]*.[0-9]*) ;; *) continue ;; esac
++    gate=$(jq -r --arg k "$k" '.[$k].gate // empty' "$JSON")
++    [ -n "$gate" ] || continue
++    checked=$((checked+1))
++    if [ -f "$gate" ]; then
++        ok "gate for $k exists: $gate"
++    else
++        bad "gate for $k missing: $gate"
++    fi
++done
++[ "$checked" = 0 ] && echo "  (no entries reference a gate script)"
++
++echo ""
++echo "=== Result: $PASS passed, $FAIL failed ==="
++[ "$FAIL" = 0 ] || exit 1
+
+--- a/docker/update.sh
++++ b/docker/update.sh
+@@ -0,0 +1,664 @@
++#!/bin/sh
++#
++# Update an existing self-hosted Supabase deployment in place.
++#
++# The deployment directory mixes vendor-owned files (docker-compose.yml, the
++# override files, volumes/*, scripts, .env.example) with user-owned state
++# (.env, docker-compose.override.yml, volumes/db/data, volumes/storage, etc.).
++# This script pulls a newer version of the Supabase files on top of yours
++# using a 3-way merge against the version you started from, so local edits
++# survive and genuine conflicts are surfaced rather than silently overwritten.
++#
++# The version you started from is recorded in .supabase-version (written by
++# setup.sh). If it is missing, pass --from <ref> or follow the printed guidance.
++#
++# What it never touches: .env values you set, docker-compose.override.yml, and
++# the data directories (volumes/db/data, volumes/storage, etc.). New keys from
++# .env.example are appended to your .env; existing values are kept as-is.
++#
++# By default it updates to the latest self-hosted/v* release tag (or 'master'
++# until the first tag exists). Pass --to to pin a specific tag/branch.
++#
++# Usage:
++#   sh update.sh                       # update to the latest release tag
++#   sh update.sh --dry-run             # show what would change, write nothing
++#   sh update.sh --to <tag>            # update to a specific tag/branch
++#   sh update.sh --from <ref>          # base to merge from (if no .supabase-version)
++#   sh update.sh --yes                 # don't prompt, even on breaking changes
++#
++# Env:
++#   SUPABASE_REPO_URL   Override the upstream repo (default: github supabase/supabase)
++#
++# Documentation:
++#   - UPGRADING.md
++#   - https://supabase.com/docs/guides/self-hosting/updating
++#
++
++set -e
++
++cd "$(dirname "$0")"
++
++# Pipeline (see main at the bottom):
++#   resolve refs -> fetch base+target snapshots -> [report-only exit]
++#   -> build manifest gate -> confirm_gate (before any writes)
++#   -> backup → merge vendor files + .env keys -> summary → stamp
++#
++# Three trees for every vendor file path:
++#   - base - upstream at BASE_REF (.supabase-version ref=, or --from)
++#   - target - upstream at TARGET_REF (--to, or latest self-hosted/v* tag)
++#   - user's - the deployment directory (cwd); _not_ a git checkout
++#
++# Git is only used to fetch snapshots (fetch_snapshot) and to run git merge-file.
++#
++# Breaking-change gate (upgrades.json on the target snapshot):
++#   - Keyed by version (e.g. "0.7.0"); window = entries in (BASE_VER, TARGET_VER],
++#     where the bounds are the base/target refs reduced to bare semver
++#     (self-hosted/vX.Y.Z -> X.Y.Z) and compared with sort -V.
++#   - If a bound is not a release tag (a commit SHA, or "master"), that side of
++#     the window is left open and all applicable entries are shown with a warning.
++#   - Prompt when an entry has breaking:true or a gate script; runs before
++#     backup/merge so abort leaves the deployment untouched.
++#   - CHANGELOG.md is never parsed (update.sh only points users at it); routine
++#     "requires compose update" items are applied by the merge, not listed here.
++#
++# User-owned paths skipped during merge are defined in .gitignore (loaded from the
++# target snapshot). git check-ignore --no-index applies negation rules (e.g.
++# volumes/functions/** ignored except volumes/functions/main/index.ts).
++# .git/ is excluded here only - never listed in .gitignore.
++#
++# .env is never 3-way merged: append missing keys from .env.example only.
++
++# --- globals (set during main) -----------------------------------------------
++
++REPO_URL="${SUPABASE_REPO_URL:-https://github.com/supabase/supabase}"
++STAMP_FILE=".supabase-version"
++DRY_RUN=0
++ASSUME_YES=0
++TO_REF=""
++FROM_REF=""
++
++TARGET_REF=""
++BASE_REF=""
++BASE_VER=""
++TARGET_VER=""
++REPORT_ONLY=0
++
++TMP_ROOT=""
++TARGET_DIR=""
++BASE_DIR=""
++REPORT=""
++ENV_ADDED=""
++ENV_REMOVED=""
++GATE_REPORT=""
++GATE_REQUIRED=0
++IGNORE_FILE=""
++IGNORE_GIT_DIR=""
++
++# --- logging -----------------------------------------------------------------
++
++log()  { printf "===> %s\n" "$*"; }
++warn() { printf "WARNING: %s\n" "$*" >&2; }
++die()  { printf "ERROR: %s\n" "$*" >&2; exit 1; }
++
++print_help() {
++    awk 'NR==1 {next} /^#/ {sub(/^# ?/,""); print; next} {exit}' "$0"
++}
++
++# --- small helpers -----------------------------------------------------------
++
++# load_ignore_file - vendor/user split from the target snapshot's .gitignore.
++# Uses a throwaway git dir so check-ignore works on deployment trees that are
++# not git repos (and on Apple Git, which rejects --git-dir=/dev/null).
++load_ignore_file() {
++    if [ -f "$TARGET_DIR/.gitignore" ]; then
++        IGNORE_FILE="$TARGET_DIR/.gitignore"
++    elif [ -f .gitignore ]; then
++        IGNORE_FILE="$(pwd)/.gitignore"
++    else
++        IGNORE_FILE=""
++        warn "No .gitignore found; only .git paths are excluded from the merge."
++        return 0
++    fi
++    case "$IGNORE_FILE" in
++        /*) ;;
++        *) IGNORE_FILE="$(cd "$(dirname "$IGNORE_FILE")" && pwd)/$(basename "$IGNORE_FILE")" ;;
++    esac
++    IGNORE_GIT_DIR="$TMP_ROOT/ignore-git"
++    git init -q "$IGNORE_GIT_DIR"
++}
++
++# is_excluded <relpath> - true when the path is user-owned and must not merge.
++is_excluded() {
++    case "$1" in
++        .git|.git/*) return 0 ;;
++    esac
++    [ -n "$IGNORE_FILE" ] || return 1
++    git -C "$IGNORE_GIT_DIR" -c "core.excludesfile=$IGNORE_FILE" \
++        check-ignore -q --no-index "$1" 2>/dev/null
++}
++
++read_stamp_ref() {
++    [ -f "$STAMP_FILE" ] || return 1
++    val=$(grep -E '^ref=' "$STAMP_FILE" 2>/dev/null | head -n1 | cut -d= -f2- | tr -d "\r\"' ")
++    if [ -z "$val" ]; then
++        val=$(grep -vE '^[[:space:]]*#' "$STAMP_FILE" 2>/dev/null \
++            | grep -vE '^[[:space:]]*$' | head -n1 | tr -d "\r\"' ")
++    fi
++    [ -n "$val" ] && printf '%s' "$val"
++}
++
++# env_has_key <key> <file> - true if the key appears as KEY=, even commented
++# (e.g. "#GOOGLE_ENABLED="), so we never re-add a key the user disabled on purpose.
++env_has_key() {
++    grep -qE "^[[:space:]]*#?[[:space:]]*$1=" "$2" 2>/dev/null
++}
++
++record() { printf '%s:%s\n' "$1" "$2" >> "$REPORT"; }
++
++count_status() { grep -cE "^$1:" "$REPORT" 2>/dev/null || true; }
++
++list_status() {
++    grep -E "^$1:" "$REPORT" 2>/dev/null | cut -d: -f2- | sed 's/^/    /'
++}
++
++# --- upstream snapshots ------------------------------------------------------
++
++_sparse_init() {
++    git -C "$1" init -q
++    git -C "$1" remote add origin "$REPO_URL"
++    git -C "$1" config core.sparseCheckout true
++    git -C "$1" sparse-checkout init --cone >/dev/null 2>&1
++    git -C "$1" sparse-checkout set docker >/dev/null 2>&1
++}
++
++# fetch_snapshot <ref> <dest_dir>
++# Materializes ./docker at <ref> into <dest_dir> via a shallow fetch. Also the
++# seam an artifact source (tarball + sha256) would slot into later.
++fetch_snapshot() {
++    _ref="$1"
++    _dest="$2"
++    _work=$(mktemp -d "$TMP_ROOT/fetch.XXXXXX")
++    if _sparse_init "$_work" \
++        && git -C "$_work" fetch --depth=1 -q origin "$_ref" 2>/dev/null \
++        && git -C "$_work" checkout -q FETCH_HEAD 2>/dev/null \
++        && [ -d "$_work/docker" ]; then
++        mkdir -p "$_dest"
++        cp -rf "$_work/docker/." "$_dest/"
++        rm -rf "$_work"
++    else
++        rm -rf "$_work"
++        return 1
++    fi
++}
++
++latest_release_tag() {
++    git ls-remote --tags --refs "$REPO_URL" 2>/dev/null \
++        | sed 's#^.*refs/tags/##' \
++        | grep -E '^self-hosted/v[0-9]' \
++        | sort -V | tail -n1
++}
++
++list_files() {
++    ( cd "$1" && find . -type f | sed 's|^\./||' | grep -vE '^\.git(/|$)' | sort )
++}
++
++# normalize_version <ref> - reduce a ref to bare semver (0.7.0) for comparison,
++# or empty when it is not a self-hosted release tag (commit SHA, "master", …).
++normalize_version() {
++    _v="${1#refs/tags/}"
++    _v="${_v#self-hosted/}"
++    _v="${_v#v}"
++    case "$_v" in
++        [0-9]*.[0-9]*) printf '%s' "$_v" ;;
++        *) ;;
++    esac
++}
++
++# ver_gt A B - true when version A is strictly greater than B (sort -V order).
++ver_gt() {
++    if [ "$1" = "$2" ]; then return 1; fi
++    [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
++}
++
++# ver_in_window VER - true when BASE_VER < VER <= TARGET_VER. An empty bound
++# leaves that side open (over-reports a gate rather than hiding one).
++ver_in_window() {
++    if [ -n "$TARGET_VER" ] && ver_gt "$1" "$TARGET_VER"; then return 1; fi
++    if [ -n "$BASE_VER" ] && ! ver_gt "$1" "$BASE_VER"; then return 1; fi
++    return 0
++}
++
++# --- ref resolution ----------------------------------------------------------
++
++resolve_target_ref() {
++    if [ -n "$TO_REF" ]; then
++        TARGET_REF="$TO_REF"
++        return
++    fi
++    TARGET_REF=$(latest_release_tag)
++    if [ -n "$TARGET_REF" ]; then
++        log "Latest release tag: $TARGET_REF"
++    else
++        TARGET_REF="master"
++        warn "No self-hosted/v* release tags found; targeting 'master'. Pin a version with --to."
++    fi
++}
++
++resolve_base_ref() {
++    REPORT_ONLY=0
++    if [ -n "$FROM_REF" ]; then
++        BASE_REF="$FROM_REF"
++    elif BASE_REF=$(read_stamp_ref) && [ -n "$BASE_REF" ]; then
++        :
++    else
++        REPORT_ONLY=1
++        BASE_REF=""
++    fi
++}
++
++print_report_only_guidance() {
++    warn "No $STAMP_FILE found and no --from <ref> given; cannot determine the version you started from."
++    cat >&2 <<EOF
++
++Without a base version a safe 3-way merge is not possible. To fix this, find the
++version your deployment was based on and record it, then re-run:
++
++  1. Identify your base - the self-hosted/vX.Y.Z release (or commit) your files
++     came from. Cross-reference the image tags in docker-compose.yml / .env
++     against versions.md, or the newest CHANGELOG.md section you remember pulling.
++  2. Write it to $STAMP_FILE, e.g.:
++         printf 'ref=self-hosted/v0.7.0\n' > $STAMP_FILE
++  3. Re-run: sh update.sh
++
++Or supply it inline for this run:  sh update.sh --from <commit-sha-or-tag>
++
++Continuing in REPORT-ONLY mode: showing files and .env keys that are new in
++'$TARGET_REF' versus your current deployment. Nothing will be written.
++EOF
++}
++
++fetch_snapshots() {
++    TARGET_DIR="$TMP_ROOT/target"
++    log "Fetching target snapshot ($TARGET_REF)"
++    fetch_snapshot "$TARGET_REF" "$TARGET_DIR" \
++        || die "Could not fetch target snapshot '$TARGET_REF' from $REPO_URL"
++
++    if [ "$REPORT_ONLY" = "1" ]; then
++        return
++    fi
++
++    BASE_DIR="$TMP_ROOT/base"
++    log "Fetching base snapshot ($BASE_REF)"
++    fetch_snapshot "$BASE_REF" "$BASE_DIR" \
++        || die "Could not fetch base snapshot '$BASE_REF' from $REPO_URL"
++}
++
++run_report_only() {
++    log "Files present in '$TARGET_REF' but missing locally:"
++    while IFS= read -r f; do
++        is_excluded "$f" && continue
++        [ -f "$f" ] || echo "  new: $f"
++    done <<EOF
++$(list_files "$TARGET_DIR")
++EOF
++    echo ""
++    log ".env keys present in target .env.example but missing from your .env:"
++    if [ -f "$TARGET_DIR/.env.example" ]; then
++        while IFS= read -r k; do
++            env_has_key "$k" .env || echo "  + $k"
++        done <<EOF
++$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$TARGET_DIR/.env.example" | cut -d= -f1)
++EOF
++    fi
++    echo ""
++    log "Report-only complete. Record a base version (see above) to perform a real update."
++}
++
++# --- breaking-change gate (manifest-driven, before any writes) ---------------
++# Reads docker/upgrades.json from the target snapshot; gating keys off manifest
++# entries in (BASE_VER, TARGET_VER].
++
++build_gate_report() {
++    _manifest="$TARGET_DIR/upgrades.json"
++    GATE_REQUIRED=0
++    : > "$GATE_REPORT"
++
++    if [ ! -f "$_manifest" ]; then
++        return 0
++    fi
++    if ! jq -e 'type == "object"' "$_manifest" >/dev/null 2>&1; then
++        die "$_manifest is present but is not a valid JSON object; refusing to update without a working breaking-change gate. Please report this to the maintainers."
++    fi
++
++    if [ -z "$BASE_VER" ] || [ -z "$TARGET_VER" ]; then
++        warn "Base or target is not a self-hosted/vX.Y.Z tag; cannot compute an exact"
++        warn "update window. Showing all applicable manual-action releases - review"
++        warn "which ones apply to your deployment."
++    fi
++
++    for k in $(jq -r 'keys[]' "$_manifest" 2>/dev/null); do
++        case "$k" in [0-9]*.[0-9]*) ;; *) continue ;; esac
++        ver_in_window "$k" || continue
++
++        breaking=$(jq -r --arg k "$k" '.[$k].breaking // false' "$_manifest")
++        gate=$(jq -r --arg k "$k" '.[$k].gate // empty' "$_manifest")
++        url=$(jq -r --arg k "$k" '.[$k].migration_guide_url // empty' "$_manifest")
++        reqs=$(jq -r --arg k "$k" '.[$k].requires[]? // empty' "$_manifest")
++
++        if [ "$breaking" = "true" ] || [ -n "$gate" ]; then
++            GATE_REQUIRED=1
++        fi
++
++        {
++            [ "$breaking" = "true" ] && echo "[$k] BREAKING" || echo "[$k]"
++            [ -n "$gate" ] && echo "    gate: '$gate' must be run first (see the steps below for the exact command)"
++            [ -n "$url" ]  && echo "    guide: $url"
++            [ -n "$reqs" ] && printf '%s\n' "$reqs" | sed 's/^/    - /'
++        } >> "$GATE_REPORT"
++    done
++    # Explicit success: the loop's last iteration can end on a false test (e.g.
++    # an entry with no 'requires'), which would otherwise make this function
++    # return non-zero and abort the whole script under 'set -e'.
++    return 0
++}
++
++confirm_gate() {
++    [ "$GATE_REQUIRED" = "1" ] || return 0
++    [ "$DRY_RUN" != "1" ] || return 0
++    [ "$ASSUME_YES" != "1" ] || return 0
++
++    echo "" >&2
++    warn "This update requires manual action - review before continuing:"
++    sed 's/^/    /' "$GATE_REPORT" >&2
++    echo "" >&2
++
++    if { : > /dev/tty; } 2>/dev/null; then
++        printf "Have you completed the required steps and want to continue? [y/N]: " > /dev/tty
++        read -r reply < /dev/tty
++        case "$reply" in
++            y|Y|yes|YES) return 0 ;;
++            *) die "Aborted by user. Nothing was modified." ;;
++        esac
++    fi
++    die "Breaking/gated changes present and no controlling terminal to confirm. Re-run with --yes to proceed."
++}
++
++# --- backup ------------------------------------------------------------------
++
++take_backup() {
++    if [ "$DRY_RUN" = "1" ]; then
++        log "Dry run: no backup taken, nothing will be written."
++        return 0
++    fi
++    mkdir -p backups
++    _backup="backups/pre-update-$(date +%Y%m%d-%H%M%S).tgz"
++    log "Backing up current configuration to $_backup (excluding data directories)"
++    tar czf "$_backup" \
++        --exclude='./backups' \
++        --exclude='./volumes/db/data' \
++        --exclude='./volumes/storage' \
++        . 2>/dev/null || warn "Backup archive reported errors; review $_backup before relying on it."
++    warn "This does NOT back up your database. Back it up separately before updating."
++}
++
++# --- vendor file merge -------------------------------------------------------
++
++apply_file() {
++    [ "$DRY_RUN" = "1" ] && return 0
++    _dir=$(dirname "$1")
++    [ "$_dir" = "." ] || mkdir -p "$_dir"
++    cp -f "$2" "$1"
++}
++
++# Per-file 3-way merge (u=yours, b=base snapshot, t=target snapshot):
++#   no t           → keep u; report removed-upstream
++#   no u           → copy t; report new
++#   u == t         → report unchanged
++#   u == b         → copy t; report updated (user never edited)
++#   else           → git merge-file u b t; report merged-clean or CONFLICT
++# If b had no file, an empty file stands in for b.
++merge_one_file() {
++    f="$1"
++    empty="$2"
++    merged="$TMP_ROOT/merged.out"
++
++    b="$BASE_DIR/$f"
++    t="$TARGET_DIR/$f"
++    u="$f"
++
++    if [ ! -f "$t" ]; then
++        [ -f "$u" ] && record "removed-upstream" "$f"
++        return 0
++    fi
++
++    if [ ! -f "$u" ]; then
++        apply_file "$f" "$t"
++        record "new" "$f"
++        return 0
++    fi
++
++    if cmp -s "$u" "$t"; then
++        record "unchanged" "$f"
++        return 0
++    fi
++
++    base_for_merge="$b"
++    [ -f "$base_for_merge" ] || base_for_merge="$empty"
++
++    if cmp -s "$u" "$base_for_merge"; then
++        apply_file "$f" "$t"
++        record "updated" "$f"
++        return 0
++    fi
++
++    if git merge-file -p -q \
++        -L "yours ($f)" -L "base" -L "new ($TARGET_REF)" \
++        "$u" "$base_for_merge" "$t" > "$merged" 2>/dev/null; then
++        [ "$DRY_RUN" != "1" ] && cp -f "$merged" "$u"
++        record "merged-clean" "$f"
++    elif [ -s "$merged" ]; then
++        # Non-zero exit with output = a normal conflict (markers written).
++        [ "$DRY_RUN" != "1" ] && cp -f "$merged" "$u"
++        record "CONFLICT" "$f"
++    else
++        # git merge-file errored and produced no output; keep the user's file
++        # intact rather than truncating it to empty.
++        record "merge-failed" "$f"
++    fi
++}
++
++merge_vendor_files() {
++    _empty="$TMP_ROOT/empty"
++    : > "$_empty"
++    : > "$REPORT"
++
++    while IFS= read -r f; do
++        [ -n "$f" ] || continue
++        is_excluded "$f" && continue
++        merge_one_file "$f" "$_empty"
++    done <<EOF
++$( { list_files "$BASE_DIR"; list_files "$TARGET_DIR"; } | sort -u )
++EOF
++}
++
++# --- .env key-union merge ----------------------------------------------------
++
++merge_env_file() {
++    _example="$TARGET_DIR/.env.example"
++    : > "$ENV_ADDED"
++    : > "$ENV_REMOVED"
++    [ -f "$_example" ] || return 0
++
++    while IFS= read -r k; do
++        env_has_key "$k" .env || echo "$k" >> "$ENV_ADDED"
++    done <<EOF
++$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$_example" | cut -d= -f1)
++EOF
++
++    while IFS= read -r k; do
++        env_has_key "$k" "$_example" || echo "$k" >> "$ENV_REMOVED"
++    done <<EOF
++$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env | cut -d= -f1)
++EOF
++
++    if [ ! -s "$ENV_ADDED" ] || [ "$DRY_RUN" = "1" ]; then
++        return 0
++    fi
++
++    {
++        echo ""
++        echo "############"
++        echo "# Added by update.sh on $(date +%Y-%m-%d) from .env.example ($TARGET_REF)."
++        echo "# Review and set values as needed."
++        echo "############"
++        while IFS= read -r k; do
++            grep -E "^${k}=" "$_example" | head -n1
++        done < "$ENV_ADDED"
++    } >> .env
++}
++
++# --- summary and finish ------------------------------------------------------
++
++print_summary() {
++    echo ""
++    if [ "$DRY_RUN" = "1" ]; then
++        log "DRY RUN - the following WOULD change (nothing was written):"
++    else
++        log "Update applied. Summary:"
++    fi
++    printf "  updated:          %s\n" "$(count_status updated)"
++    printf "  new:              %s\n" "$(count_status new)"
++    printf "  merged (clean):   %s\n" "$(count_status merged-clean)"
++    printf "  CONFLICTS:        %s\n" "$(count_status CONFLICT)"
++    printf "  merge failures:   %s\n" "$(count_status merge-failed)"
++    printf "  removed upstream: %s\n" "$(count_status removed-upstream)"
++    printf "  env keys added:   %s\n" "$( [ -s "$ENV_ADDED" ] && wc -l < "$ENV_ADDED" | tr -d ' ' || echo 0 )"
++
++    if [ "$(count_status CONFLICT)" != "0" ]; then
++        echo ""
++        warn "Files with merge conflicts (edit these and remove the <<<<<<< ======= >>>>>>> markers):"
++        list_status CONFLICT
++    fi
++    if [ "$(count_status merge-failed)" != "0" ]; then
++        echo ""
++        warn "Files git could not merge (left unchanged - update these manually):"
++        list_status merge-failed
++    fi
++    if [ "$(count_status merged-clean)" != "0" ]; then
++        echo ""
++        log "Files merged cleanly (review recommended):"
++        list_status merged-clean
++    fi
++    if [ "$(count_status removed-upstream)" != "0" ]; then
++        echo ""
++        log "Removed upstream but kept in place (you may no longer need these):"
++        list_status removed-upstream
++    fi
++    if [ -s "$ENV_ADDED" ]; then
++        echo ""
++        log ".env keys added (review values):"
++        sed 's/^/    + /' "$ENV_ADDED"
++    fi
++    if [ -s "$ENV_REMOVED" ]; then
++        echo ""
++        log ".env keys you have that are gone from the new .env.example (review/remove manually):"
++        sed 's/^/    - /' "$ENV_REMOVED"
++    fi
++    if [ -s "$GATE_REPORT" ]; then
++        echo ""
++        log "Required manual steps for this update (from upgrades.json):"
++        sed 's/^/  /' "$GATE_REPORT"
++    fi
++    echo ""
++    log "For what changed in this update, see CHANGELOG.md (from $BASE_REF to $TARGET_REF)."
++}
++
++write_stamp() {
++    {
++        echo "# Supabase self-hosted version stamp. Managed by setup.sh / update.sh."
++        echo "# Do not commit or edit by hand. Records the ref this deployment was based on."
++        echo "ref=$TARGET_REF"
++    } > "$STAMP_FILE"
++}
++
++print_next_steps() {
++    echo ""
++    log "Next steps:"
++    echo "  1. Review the changes (git diff, or compare against the backup in backups/)."
++    echo "  2. sh run.sh pull"
++    echo "  3. sh run.sh recreate"
++}
++
++# --- main --------------------------------------------------------------------
++
++while [ $# -gt 0 ]; do
++    case "$1" in
++        --dry-run)  DRY_RUN=1; shift ;;
++        --yes|-y)   ASSUME_YES=1; shift ;;
++        --to)       [ $# -ge 2 ] || die "--to requires a <tag> argument."; TO_REF="$2"; shift 2 ;;
++        --from)     [ $# -ge 2 ] || die "--from requires a <ref> argument."; FROM_REF="$2"; shift 2 ;;
++        -h|--help)  print_help; exit 0 ;;
++        *) echo "Unknown option: $1" >&2; print_help; exit 1 ;;
++    esac
++done
++
++[ -f docker-compose.yml ] || die "docker-compose.yml not found in $(pwd). Run this from your deployment directory."
++[ -f .env ] || die ".env not found in $(pwd). This does not look like a configured deployment."
++command -v git >/dev/null 2>&1 || die "git is required but was not found on PATH."
++command -v jq >/dev/null 2>&1 || die "jq is required but was not found on PATH."
++
++resolve_target_ref
++resolve_base_ref
++TARGET_VER=$(normalize_version "$TARGET_REF")
++BASE_VER=$(normalize_version "$BASE_REF")
++[ "$REPORT_ONLY" = "1" ] && print_report_only_guidance
++
++TMP_ROOT=$(mktemp -d)
++REPORT="$TMP_ROOT/report"
++ENV_ADDED="$TMP_ROOT/env_added"
++ENV_REMOVED="$TMP_ROOT/env_removed"
++GATE_REPORT="$TMP_ROOT/gate_report"
++trap 'rm -rf "$TMP_ROOT"' EXIT INT TERM
++
++fetch_snapshots
++load_ignore_file
++
++if [ "$REPORT_ONLY" = "1" ]; then
++    run_report_only
++    build_gate_report
++    if [ -s "$GATE_REPORT" ]; then
++        echo ""
++        log "Breaking changes / required manual steps in this range (from upgrades.json):"
++        sed 's/^/  /' "$GATE_REPORT"
++        warn "Record a base version (see above) and re-run to apply with the gate enforced."
++    fi
++    exit 0
++fi
++
++build_gate_report
++confirm_gate
++
++take_backup
++merge_vendor_files
++merge_env_file
++print_summary
++
++if [ "$DRY_RUN" = "1" ]; then
++    echo ""
++    log "Dry run complete. Re-run without --dry-run to apply."
++    exit 0
++fi
++
++if [ "$(count_status CONFLICT)" != "0" ] || [ "$(count_status merge-failed)" != "0" ]; then
++    echo ""
++    warn "Update applied WITH CONFLICTS. Resolve the files listed above (remove the"
++    warn "<<<<<<< ======= >>>>>>> markers, or fix the files git could not merge)"
++    warn "before starting the stack."
++    warn "The version stamp was NOT advanced; it will update on your next clean run."
++    warn "Exiting with status 2."
++    exit 2
++fi
++
++write_stamp
++print_next_steps
++log "Update applied cleanly."
+
+--- a/docker/upgrades.json
++++ b/docker/upgrades.json
+@@ -0,0 +1,30 @@
++{
++  "_schema": {
++    "description": "Manual-action manifest for self-hosted upgrades, read by update.sh with jq. Hand-edit this file directly; it is the source of truth (no generation step). Keys are self-hosted release versions as bare semver (e.g. \"0.7.0\"), matching the self-hosted/vX.Y.Z tag and the \"## [0.7.0]\" CHANGELOG heading. Only add an entry for a release that needs an action a file diff cannot encode: a data migration, a run-this-first script, or a breaking default. Routine config changes are applied automatically by update.sh's 3-way merge and must NOT be listed here. update.sh gates on entries in (your version, target version], ordered with sort -V.",
++    "fields": {
++      "breaking": "bool - requires explicit user confirmation before applying",
++      "gate": "string|null - script to run before upgrading past this release (e.g. utils/upgrade-pg17.sh)",
++      "migration_guide_url": "string|null - link to the per-release migration guide",
++      "requires": "string[] - free-text manual steps shown to the user"
++    }
++  },
++  "0.6.0": {
++    "breaking": true,
++    "gate": "utils/upgrade-pg17.sh",
++    "migration_guide_url": "https://supabase.com/docs/guides/self-hosting/postgres-upgrade-17",
++    "requires": [
++      "Postgres 17 is now the default. Do NOT start Postgres 17 against an existing Postgres 15 data directory - back up your database first.",
++      "Run 'sudo bash utils/upgrade-pg17.sh' (needs bash + root) to migrate Postgres 15 -> 17, then recreate containers. To defer, pin Postgres 15 with the docker-compose.pg15.yml override.",
++      "Includes a security fix for the API gateway (Realtime /api/tenants and /api/openapi routes) - strongly recommended for any instance running Realtime."
++    ]
++  },
++  "0.7.0": {
++    "breaking": true,
++    "gate": null,
++    "migration_guide_url": "https://github.com/orgs/supabase/discussions/47093",
++    "requires": [
++      "API_EXTERNAL_URL now includes the /auth/v1 path prefix, and SAML SSO endpoints moved to /auth/v1/sso/saml/*. Update custom OAuth provider callback URLs and any SAML configuration accordingly.",
++      "Anon (publishable) key access to the OpenAPI spec at /rest/v1/ has been removed. Use the service role or secret API key if you relied on it; normal data access via /rest/v1/<table> is unaffected."
++    ]
++  }
++}
+
+--- a/docker/volumes/api/kong.yml
++++ b/docker/volumes/api/kong.yml
+@@ -305,7 +305,7 @@ services:
+             - anon
+ 
+   ## Storage API endpoint (with Authorization header transformation).
+-  ## No key-auth — S3 protocol requests don't carry an apikey header.
++  ## No key-auth - S3 protocol requests don't carry an apikey header.
+   ##
+   ## The request-transformer translates opaque API keys to asymmetric JWTs
+   ## and passes through existing Authorization headers (user JWTs, AWS SigV4).

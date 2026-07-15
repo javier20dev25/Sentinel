@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-07-12T00:33:09.347Z",
+  "config": {
+    "samples": 83,
+    "warm": false,
+    "budgets": false,
+    "phaseBreakdown": false,
+    "nodeVersion": "v24.13.1",
+    "platform": "win32"
+  },
+  "stats": {
+    "samples": 83,
+    "time": {
+      "avg": 6.321748192771086,
+      "p50": 5.030799999999999,
+      "p90": 9.255100000000027,
+      "p95": 10.766300000000001,
+      "p99": 52.12009999999998,
+      "min": 2.873299999999972,
+      "max": 52.12009999999998
+    },
+    "memory": {
+      "avg": 0.030240963855421802,
+      "p95": 0.49,
+      "max": 1.21
+    },
+    "quality": {
+      "avg": 7.283132530120482,
+      "min": 6,
+      "max": 9.5
+    },
+    "divergences": {
+      "total": 83,
+      "escalated": 55,
+      "deescaped": 0,
+      "pct": "100.0"
+    },
+    "groundTruth": {
+      "samplesWithGT": 68,
+      "baseline": {
+        "avgPrecision": 0,
+        "avgRecall": 0.45588235294117646,
+        "avgF1": 0.5441176470588235,
+        "verdictAccuracy": 0.294
+      },
+      "experimental": {
+        "avgPrecision": 0.6781764705882353,
+        "avgRecall": 0.9852941176470589,
+        "avgF1": 0.7265147058823531,
+        "verdictAccuracy": 0.912
+      },
+      "bySource": {
+        "clean_corpus": {
+          "count": 20,
+          "baselineAvgF1": 0.05,
+          "experimentalAvgF1": 0.95
+        },
+        "mutation_lab": {
+          "count": 48,
+          "baselineAvgF1": 0.75,
+          "experimentalAvgF1": 0.6333958333333334
+        }
+      }
+    },
+    "byRepo": {
+      "expressjs/express": {
+        "count": 5,
+        "totalTime": 79.5898,
+        "divergedCount": 5
+      },
+      "microsoft/TypeScript": {
+        "count": 5,
+        "totalTime": 28.619700000000023,
+        "divergedCount": 5
+      },
+      "vercel/next.js": {
+        "count": 5,
+        "totalTime": 52.747299999999996,
+        "divergedCount": 5
+      },
+      "sentinel/clean": {
+        "count": 20,
+        "totalTime": 131.12459999999982,
+        "divergedCount": 20
+      },
+      "sentinel/adversarial": {
+        "count": 48,
+        "totalTime": 232.6237000000002,
+        "divergedCount": 48
+      }
+    }
+  },
+  "groundTruth": {
+    "samplesWithGT": 68,
+    "baseline": {
+      "avgPrecision": 0,
+      "avgRecall": 0.45588235294117646,
+      "avgF1": 0.5441176470588235,
+      "verdictAccuracy": 0.294
+    },
+    "experimental": {
+      "avgPrecision": 0.6781764705882353,
+      "avgRecall": 0.9852941176470589,
+      "avgF1": 0.7265147058823531,
+      "verdictAccuracy": 0.912
+    },
+    "bySource": {
+      "clean_corpus": {
+        "count": 20,
+        "baselineAvgF1": 0.05,
+        "experimentalAvgF1": 0.95
+      },
+      "mutation_lab": {
+        "count": 48,
+        "baselineAvgF1": 0.75,
+        "experimentalAvgF1": 0.6333958333333334
+      }
+    }
+  },
+  "budgets": {
+    "passed": true,
+    "failures": []
+  },
+  "divergences": 83
+}

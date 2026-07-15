@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "lodash_lodash_6254",
+    "repo": "lodash/lodash",
+    "pr": 6254,
+    "url": "https://github.com/lodash/lodash/pull/6254",
+    "profile": "libraries",
+    "description": "block nested __proto__ traversal in baseUnset",
+    "state": "open",
+    "created_at": "2026-07-11T05:17:13Z",
+    "updated_at": "2026-07-11T05:17:13Z",
+    "sha": "6cb6d456809b354dc971e4a898b0fae6643bc4ac",
+    "user": "Ramya-9353",
+    "labels": [],
+    "files_changed": 4,
+    "additions": 38,
+    "deletions": 4,
+    "patchSize": 8628,
+    "patchHash": "fd9b414237d8fafd7766cb6c35f8c05bbb997e6b6f2b9397aac0e16be78536a4",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:07.875Z"
+}

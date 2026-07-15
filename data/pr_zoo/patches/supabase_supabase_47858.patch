@@ -1,0 +1,11 @@
+--- a/apps/studio/components/interfaces/Database/Schemas/SchemaGraph.tsx
++++ b/apps/studio/components/interfaces/Database/Schemas/SchemaGraph.tsx
+@@ -553,7 +553,7 @@ export const SchemaGraph = () => {
+                     zoomable
+                     nodeColor={miniMapNodeColor}
+                     maskColor={miniMapMaskColor}
+-                    className="border rounded-md shadow-xs"
++                    className="border rounded-md shadow-xs mb-11!"
+                   />
+                   <SchemaGraphLegend />
+                   {hasNextPage && (

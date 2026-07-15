@@ -1,0 +1,57 @@
+{
+  "source": {
+    "id": "adversarial_multiLayerDecode",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "multiLayerDecode",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 97,
+    "patchHash": "b1550f6455204c52f112f46a26cca69090823f8134c18c7c730777a7bc85c25f"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "EVASION-013",
+        "techniqueId": "EVASION-013",
+        "severity": "CRITICAL"
+      },
+      {
+        "type": "EVASION-030",
+        "techniqueId": "EVASION-030",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EVASION-020",
+        "techniqueId": "EVASION-020",
+        "severity": "CRITICAL"
+      },
+      {
+        "type": "IR-003",
+        "techniqueId": "IR-003",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "Decode",
+      "DynamicCodeExecution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.884Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.943Z"
+}

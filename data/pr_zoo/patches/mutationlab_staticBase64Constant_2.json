@@ -1,0 +1,40 @@
+{
+  "taxonomy": {
+    "family": "clean",
+    "technique": "benign_base64"
+  },
+  "variant": 2,
+  "source": {
+    "id": "mutationlab_staticBase64Constant_2",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "staticBase64Constant",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 182,
+    "patchHash": "f57334a6e72589946eefc732c3147224fae0a1ad3656e303bebe10ce8cd1070a"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "clean",
+      "technique": "benign_base64"
+    },
+    "labelDate": "2026-07-12T04:33:01.425Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.425Z"
+}

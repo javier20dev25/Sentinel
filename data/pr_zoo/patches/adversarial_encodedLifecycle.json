@@ -1,0 +1,63 @@
+{
+  "source": {
+    "id": "adversarial_encodedLifecycle",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "encodedLifecycle",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 73,
+    "patchHash": "6a932b01f0e750e2b306dccfe341a11e16b5ceae7e56e60938093e626225ec1e"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "EVASION-013",
+        "techniqueId": "EVASION-013",
+        "severity": "CRITICAL"
+      },
+      {
+        "type": "EVASION-025",
+        "techniqueId": "EVASION-025",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EVASION-030",
+        "techniqueId": "EVASION-030",
+        "severity": "HIGH"
+      },
+      {
+        "type": "SIG-003",
+        "techniqueId": "SIG-003",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "SIG-007",
+        "techniqueId": "SIG-007",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "DynamicCodeExecution",
+      "Decode",
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.954Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:33.022Z"
+}

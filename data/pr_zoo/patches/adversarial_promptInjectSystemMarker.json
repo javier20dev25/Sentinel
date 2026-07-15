@@ -1,0 +1,46 @@
+{
+  "source": {
+    "id": "adversarial_promptInjectSystemMarker",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "promptInjectSystemMarker",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 44,
+    "patchHash": "717587904c85f3adf226d837e23951b63aed6861963a98296aa797b71f0cc149"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-009",
+        "techniqueId": "EVASION-009",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "SIG-006",
+        "techniqueId": "SIG-006",
+        "severity": "LOW"
+      }
+    ],
+    "capabilities": [
+      "PromptInjection"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.853Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.908Z"
+}

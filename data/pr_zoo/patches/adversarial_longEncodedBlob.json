@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "adversarial_longEncodedBlob",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "longEncodedBlob",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 109,
+    "patchHash": "5dab6de0a53a4d958fc59f0aff3b9253358496c8720a7b53b32c2724bbd8018f"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.887Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.948Z"
+}

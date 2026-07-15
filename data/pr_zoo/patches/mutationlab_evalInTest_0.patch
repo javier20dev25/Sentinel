@@ -1,0 +1,11 @@
+// unit test: eval should not be blocked in test files
+it("should evaluate expression", function() {
+  var result = eval("2 + 2");
+  assert.equal(result, 4);
+});
+
+describe("calculator", function() {
+  it("parse expression", function() {
+    var tokens = eval("1 + 2 * 3");
+  });
+});

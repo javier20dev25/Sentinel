@@ -1,0 +1,16 @@
+id,repo,pr,total,parse,normalize,graph,evidence
+expressjs_express_7349,expressjs/express,7349,37.25,10.29,0.04,12.95,13.88
+expressjs_express_7351,expressjs/express,7351,8.01,2.41,0.02,1.62,3.95
+expressjs_express_7363,expressjs/express,7363,10.80,3.45,0.04,2.22,5.07
+expressjs_express_7366,expressjs/express,7366,9.14,2.29,0.02,3.17,3.64
+expressjs_express_7369,expressjs/express,7369,6.65,1.36,0.01,1.66,3.60
+microsoft_TypeScript_63593,microsoft/TypeScript,63593,7.09,1.51,0.01,3.29,2.26
+microsoft_TypeScript_63594,microsoft/TypeScript,63594,5.68,1.76,0.02,2.00,1.89
+microsoft_TypeScript_63608,microsoft/TypeScript,63608,6.72,3.59,0.01,1.53,1.57
+microsoft_TypeScript_63615,microsoft/TypeScript,63615,9.47,1.98,0.01,0.96,6.49
+microsoft_TypeScript_63633,microsoft/TypeScript,63633,8.76,3.74,0.03,2.32,2.65
+vercel_next_js_95692,vercel/next.js,95692,10.75,2.77,0.01,1.73,6.22
+vercel_next_js_95693,vercel/next.js,95693,7.92,1.60,0.01,1.41,4.89
+vercel_next_js_95694,vercel/next.js,95694,20.71,2.13,0.01,1.79,16.77
+vercel_next_js_95695,vercel/next.js,95695,12.35,2.48,0.09,1.82,7.95
+vercel_next_js_95696,vercel/next.js,95696,14.61,3.46,0.01,1.41,9.72

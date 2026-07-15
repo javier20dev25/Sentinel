@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "expressjs_express_7349",
+    "repo": "expressjs/express",
+    "pr": 7349,
+    "url": "https://github.com/expressjs/express/pull/7349",
+    "profile": "infrastructure",
+    "description": "test: add coverage for req.is() with array argument",
+    "state": "open",
+    "created_at": "2026-07-01T13:04:22Z",
+    "updated_at": "2026-07-03T08:04:03Z",
+    "sha": "d5a5bc956e796fd2913b3c48d92ebb85b6b23bd0",
+    "user": "roshnithakor07",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 30,
+    "deletions": 0,
+    "patchSize": 864,
+    "patchHash": "bf6936c99fd536467af10e287adc270c022d6c77a2bfcb4245dc869fd6f684cc",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "network_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:01.099Z"
+}

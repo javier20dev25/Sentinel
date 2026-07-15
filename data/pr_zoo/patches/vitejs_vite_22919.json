@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vitejs_vite_22919",
+    "repo": "vitejs/vite",
+    "pr": 22919,
+    "url": "https://github.com/vitejs/vite/pull/22919",
+    "profile": "frontend",
+    "description": "feat: support composable hook filters in dev",
+    "state": "open",
+    "created_at": "2026-07-11T20:12:11Z",
+    "updated_at": "2026-07-11T20:13:36Z",
+    "sha": "1a6f4df8d715bf02b3fa178b2979e0c8368cb554",
+    "user": "Minghan2005",
+    "labels": [],
+    "files_changed": 5,
+    "additions": 146,
+    "deletions": 19,
+    "patchSize": 10891,
+    "patchHash": "c75aefd225374c0c830ebdeda84bd7da83529d3f28f3e43fd366e25b061d23b0",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:10.267Z"
+}

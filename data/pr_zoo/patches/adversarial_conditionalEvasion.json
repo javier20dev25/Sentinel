@@ -1,0 +1,46 @@
+{
+  "source": {
+    "id": "adversarial_conditionalEvasion",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "conditionalEvasion",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 115,
+    "patchHash": "0ed373890dd6304212f0c32172e14891287db3a5e367ed7fc6777b3a86763a9c"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "SEM-001",
+        "techniqueId": "SEM-001",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "IR-002",
+        "techniqueId": "IR-002",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.902Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.968Z"
+}

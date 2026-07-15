@@ -1,0 +1,60 @@
+--- a/packages/vite/src/node/optimizer/index.ts
++++ b/packages/vite/src/node/optimizer/index.ts
+@@ -1225,6 +1225,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
+ }
+ 
+ const lockfileFormats = [
++  {
++    path: 'node_modules/.pnpm/lock.yaml',
++    // Included in lockfile
++    checkPatchesDir: false,
++    manager: 'pnpm',
++  },
+   {
+     path: 'node_modules/.package-lock.json',
+     checkPatchesDir: 'patches',
+@@ -1236,6 +1242,20 @@ const lockfileFormats = [
+     checkPatchesDir: false,
+     manager: 'yarn',
+   },
++  {
++    path: 'bun.lock',
++    checkPatchesDir: 'patches',
++    manager: 'bun',
++  },
++  {
++    path: '.rush/temp/shrinkwrap-deps.json',
++    // Included in lockfile
++    checkPatchesDir: false,
++    manager: 'pnpm',
++  },
++
++  // discouraged package manager lockfiles
++  // or deprecated lockfiles
+   {
+     // Yarn v3+ PnP
+     path: '.pnp.cjs',
+@@ -1254,23 +1274,6 @@ const lockfileFormats = [
+     checkPatchesDir: 'patches',
+     manager: 'yarn',
+   },
+-  {
+-    path: 'node_modules/.pnpm/lock.yaml',
+-    // Included in lockfile
+-    checkPatchesDir: false,
+-    manager: 'pnpm',
+-  },
+-  {
+-    path: '.rush/temp/shrinkwrap-deps.json',
+-    // Included in lockfile
+-    checkPatchesDir: false,
+-    manager: 'pnpm',
+-  },
+-  {
+-    path: 'bun.lock',
+-    checkPatchesDir: 'patches',
+-    manager: 'bun',
+-  },
+   {
+     path: 'bun.lockb',
+     checkPatchesDir: 'patches',

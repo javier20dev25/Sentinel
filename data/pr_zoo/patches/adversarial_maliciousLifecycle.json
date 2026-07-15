@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_maliciousLifecycle",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "maliciousLifecycle",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 34,
+    "patchHash": "148f3dfcc056b75c32f95a6c0978b3a046310fda5c9bf5bc92954dd028f8879a"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-025",
+        "techniqueId": "EVASION-025",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.934Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:33.007Z"
+}

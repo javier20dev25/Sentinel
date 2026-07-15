@@ -1,0 +1,6 @@
+id,repo,pr,baselineVerdict,baselineRisk,baselineFindings,experimentalVerdict,experimentalRisk,experimentalFindings,verdictChange,riskDelta,findingsAdded,findingsRemoved,capsAdded,capsRemoved,timeMs,memoryMb,qualityScore,gtSource,gtPrecision,gtRecall,gtF1,gtVerdictAccurate,experimentalConfidence,experimentalMaxConfidence
+expressjs_express_7349,expressjs/express,7349,PASS,0.68,1,REVIEW,0.15000000000000002,2,ESCALATED,-0.53,1,1,0,1,44.5,1.0,6.5,,,,,,0.2,low
+microsoft_TypeScript_63593,microsoft/TypeScript,63593,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,6.6,0.2,6,,,,,,0.95,high
+vercel_next_js_95692,vercel/next.js,95692,PASS,0.58,1,PASS,0,0,UNCHANGED,-0.58,0,1,0,1,11.6,1.4,6,,,,,,0.95,high
+clean_expressServer,sentinel/clean,0,PASS,0.11,1,PASS,0,0,UNCHANGED,-0.11,0,1,2,1,18.4,-1.2,7,clean_corpus,1,1,1,true,0.95,high
+adversarial_bracketNotationExec,sentinel/adversarial,0,PASS,0.11,1,REVIEW,0.55,3,ESCALATED,0.44,3,1,3,1,6.6,0.2,9.5,mutation_lab,1,1,1,true,0.95,high

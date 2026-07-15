@@ -1,0 +1,241 @@
+{
+  "timestamp": "2026-07-15T00:10:16.208Z",
+  "config": {
+    "samples": 152,
+    "warm": false,
+    "budgets": false,
+    "phaseBreakdown": false,
+    "nodeVersion": "v24.13.1",
+    "platform": "win32"
+  },
+  "stats": {
+    "samples": 152,
+    "time": {
+      "avg": 6.8088361842105245,
+      "p50": 5.701399999999921,
+      "p90": 9.75870000000009,
+      "p95": 11.781799999999976,
+      "p99": 30.619199999999864,
+      "min": 3.6309000000001106,
+      "max": 38.16119999999998
+    },
+    "memory": {
+      "avg": 0.06440789473684198,
+      "p95": 0.47,
+      "max": 1.23
+    },
+    "quality": {
+      "avg": 7.0855263157894735,
+      "min": 6,
+      "max": 9.5
+    },
+    "divergences": {
+      "total": 152,
+      "escalated": 79,
+      "deescaped": 5,
+      "pct": "100.0"
+    },
+    "groundTruth": {
+      "samplesWithGT": 92,
+      "baseline": {
+        "micro": {
+          "tp": 0,
+          "fp": 92,
+          "fn": 104,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        },
+        "macro": {
+          "avgPrecision": 0,
+          "avgRecall": 0.34782608695652173,
+          "avgF1": 0.6521739130434783
+        },
+        "verdictAccuracy": 0.348
+      },
+      "experimental": {
+        "micro": {
+          "tp": 81,
+          "fp": 54,
+          "fn": 23,
+          "precision": 0.6,
+          "recall": 0.779,
+          "f1": 0.678
+        },
+        "macro": {
+          "avgPrecision": 0.7391304347826086,
+          "avgRecall": 0.8641304347826086,
+          "avgF1": 0.8695760869565218
+        },
+        "verdictAccuracy": 0.87
+      },
+      "cleanAccuracy": 1,
+      "cleanFpRate": 0,
+      "cleanCount": 32,
+      "bySource": {
+        "clean_corpus": {
+          "count": 20,
+          "baselineAvgF1": 0.1,
+          "experimentalAvgF1": 1
+        },
+        "mutation_lab": {
+          "count": 72,
+          "baselineAvgF1": 0.8055555555555556,
+          "experimentalAvgF1": 0.8333472222222222
+        }
+      }
+    },
+    "byRepo": {
+      "expressjs/express": {
+        "count": 10,
+        "totalTime": 96.82450000000031,
+        "divergedCount": 10
+      },
+      "microsoft/TypeScript": {
+        "count": 10,
+        "totalTime": 54.68179999999995,
+        "divergedCount": 10
+      },
+      "vercel/next.js": {
+        "count": 10,
+        "totalTime": 92.51469999999972,
+        "divergedCount": 10
+      },
+      "sentinel/clean": {
+        "count": 20,
+        "totalTime": 155.01830000000007,
+        "divergedCount": 20
+      },
+      "sentinel/adversarial": {
+        "count": 48,
+        "totalTime": 262.21759999999983,
+        "divergedCount": 48
+      },
+      "sentinel/mutationlab": {
+        "count": 24,
+        "totalTime": 129.56849999999952,
+        "divergedCount": 24
+      },
+      "nodejs/node": {
+        "count": 5,
+        "totalTime": 49.16120000000046,
+        "divergedCount": 5
+      },
+      "lodash/lodash": {
+        "count": 5,
+        "totalTime": 35.05569999999989,
+        "divergedCount": 5
+      },
+      "vitejs/vite": {
+        "count": 5,
+        "totalTime": 29.764599999999973,
+        "divergedCount": 5
+      },
+      "supabase/supabase": {
+        "count": 5,
+        "totalTime": 60.433300000000145,
+        "divergedCount": 5
+      },
+      "nextauthjs/next-auth": {
+        "count": 5,
+        "totalTime": 37.15470000000005,
+        "divergedCount": 5
+      },
+      "npm/cli": {
+        "count": 5,
+        "totalTime": 32.548199999999724,
+        "divergedCount": 5
+      }
+    },
+    "byFamily": {
+      "clean": {
+        "count": 12,
+        "accurate": 12,
+        "inaccurate": 0,
+        "failureReasons": {}
+      },
+      "obfuscation": {
+        "count": 4,
+        "accurate": 4,
+        "inaccurate": 0,
+        "failureReasons": {}
+      },
+      "supply_chain": {
+        "count": 2,
+        "accurate": 2,
+        "inaccurate": 0,
+        "failureReasons": {}
+      },
+      "prompt": {
+        "count": 2,
+        "accurate": 2,
+        "inaccurate": 0,
+        "failureReasons": {}
+      },
+      "prototype": {
+        "count": 2,
+        "accurate": 2,
+        "inaccurate": 0,
+        "failureReasons": {}
+      },
+      "sandbox": {
+        "count": 2,
+        "accurate": 2,
+        "inaccurate": 0,
+        "failureReasons": {}
+      }
+    }
+  },
+  "groundTruth": {
+    "samplesWithGT": 92,
+    "baseline": {
+      "micro": {
+        "tp": 0,
+        "fp": 92,
+        "fn": 104,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "macro": {
+        "avgPrecision": 0,
+        "avgRecall": 0.34782608695652173,
+        "avgF1": 0.6521739130434783
+      },
+      "verdictAccuracy": 0.348
+    },
+    "experimental": {
+      "micro": {
+        "tp": 81,
+        "fp": 54,
+        "fn": 23,
+        "precision": 0.6,
+        "recall": 0.779,
+        "f1": 0.678
+      },
+      "macro": {
+        "avgPrecision": 0.7391304347826086,
+        "avgRecall": 0.8641304347826086,
+        "avgF1": 0.8695760869565218
+      },
+      "verdictAccuracy": 0.87
+    },
+    "bySource": {
+      "clean_corpus": {
+        "count": 20,
+        "baselineAvgF1": 0.1,
+        "experimentalAvgF1": 1
+      },
+      "mutation_lab": {
+        "count": 72,
+        "baselineAvgF1": 0.8055555555555556,
+        "experimentalAvgF1": 0.8333472222222222
+      }
+    }
+  },
+  "budgets": {
+    "passed": true,
+    "failures": []
+  },
+  "divergences": 152
+}

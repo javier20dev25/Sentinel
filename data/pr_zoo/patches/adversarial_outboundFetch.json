@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_outboundFetch",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "outboundFetch",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 84,
+    "patchHash": "779916f7445402e0137c8e6a9c8355ec40c2ee7c1d94ce48e4f995d05124437d"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-021",
+        "techniqueId": "EVASION-021",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "NetworkAccess"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.912Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.983Z"
+}

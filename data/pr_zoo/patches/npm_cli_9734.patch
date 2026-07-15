@@ -1,0 +1,201 @@
+--- a/docs/package.json
++++ b/docs/package.json
+@@ -33,7 +33,7 @@
+     "remark-parse": "^11.0.0",
+     "remark-rehype": "^11.1.2",
+     "semver": "^7.3.8",
+-    "tap": "^16.3.8",
++    "tap": "^21.7.4",
+     "unified": "^11.0.5",
+     "yaml": "^2.2.1"
+   },
+
+--- a/mock-globals/package.json
++++ b/mock-globals/package.json
+@@ -51,6 +51,6 @@
+   "devDependencies": {
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   }
+ }
+
+--- a/mock-registry/package.json
++++ b/mock-registry/package.json
+@@ -53,6 +53,6 @@
+     "nock": "^14.0.0",
+     "npm-package-arg": "^14.0.0",
+     "pacote": "^22.0.0",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   }
+ }
+
+--- a/package.json
++++ b/package.json
+@@ -208,7 +208,7 @@
+     "remark-github": "^12.0.0",
+     "rimraf": "^6.0.1",
+     "spawk": "^1.7.1",
+-    "tap": "^16.3.9"
++    "tap": "^21.7.4"
+   },
+   "scripts": {
+     "dependencies": "node scripts/bundle-and-gitignore-deps.js && node scripts/dependency-graph.js",
+
+--- a/smoke-tests/package.json
++++ b/smoke-tests/package.json
+@@ -25,7 +25,7 @@
+     "@npmcli/template-oss": "5.1.1",
+     "proxy": "^2.1.1",
+     "rimraf": "^6.0.1",
+-    "tap": "^16.3.8",
++    "tap": "^21.7.4",
+     "which": "^7.0.0"
+   },
+   "author": "GitHub Inc.",
+
+--- a/workspaces/arborist/package.json
++++ b/workspaces/arborist/package.json
+@@ -47,7 +47,7 @@
+     "benchmark": "^2.1.4",
+     "minify-registry-metadata": "^4.0.0",
+     "nock": "^14.0.0",
+-    "tap": "^16.3.8",
++    "tap": "^21.7.4",
+     "tar-stream": "^3.0.0",
+     "tcompare": "^5.0.6"
+   },
+
+--- a/workspaces/config/package.json
++++ b/workspaces/config/package.json
+@@ -34,7 +34,7 @@
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/mock-globals": "^1.0.0",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "dependencies": {
+     "@npmcli/map-workspaces": "^6.0.0",
+
+--- a/workspaces/libnpmaccess/package.json
++++ b/workspaces/libnpmaccess/package.json
+@@ -19,7 +19,7 @@
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/mock-registry": "^1.0.0",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmdiff/package.json
++++ b/workspaces/libnpmdiff/package.json
+@@ -44,7 +44,7 @@
+   "devDependencies": {
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "dependencies": {
+     "@npmcli/arborist": "^10.0.0",
+
+--- a/workspaces/libnpmexec/package.json
++++ b/workspaces/libnpmexec/package.json
+@@ -61,7 +61,7 @@
+     "chalk": "^5.2.0",
+     "just-extend": "^6.2.0",
+     "just-safe-set": "^4.2.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "dependencies": {
+     "@gar/promise-retry": "^1.0.0",
+
+--- a/workspaces/libnpmfund/package.json
++++ b/workspaces/libnpmfund/package.json
+@@ -43,7 +43,7 @@
+   "devDependencies": {
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "dependencies": {
+     "@npmcli/arborist": "^10.0.0"
+
+--- a/workspaces/libnpmorg/package.json
++++ b/workspaces/libnpmorg/package.json
+@@ -32,7 +32,7 @@
+     "@npmcli/template-oss": "5.1.1",
+     "minipass": "^7.1.1",
+     "nock": "^14.0.0",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmpack/package.json
++++ b/workspaces/libnpmpack/package.json
+@@ -27,7 +27,7 @@
+     "@npmcli/template-oss": "5.1.1",
+     "nock": "^14.0.0",
+     "spawk": "^1.7.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmpublish/package.json
++++ b/workspaces/libnpmpublish/package.json
+@@ -28,7 +28,7 @@
+     "@npmcli/mock-globals": "^1.0.0",
+     "@npmcli/mock-registry": "^1.0.0",
+     "@npmcli/template-oss": "5.1.1",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmsearch/package.json
++++ b/workspaces/libnpmsearch/package.json
+@@ -29,7 +29,7 @@
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+     "nock": "^14.0.0",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmteam/package.json
++++ b/workspaces/libnpmteam/package.json
+@@ -19,7 +19,7 @@
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+     "nock": "^14.0.0",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "repository": {
+     "type": "git",
+
+--- a/workspaces/libnpmversion/package.json
++++ b/workspaces/libnpmversion/package.json
+@@ -35,7 +35,7 @@
+     "@npmcli/eslint-config": "^5.0.1",
+     "@npmcli/template-oss": "5.1.1",
+     "require-inject": "^1.4.4",
+-    "tap": "^16.3.8"
++    "tap": "^21.7.4"
+   },
+   "dependencies": {
+     "@npmcli/git": "^8.0.0",

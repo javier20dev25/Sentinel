@@ -16,6 +16,7 @@
     "./python_inspector": "./src/python_inspector.ts",
     "./rust_inspector": "./src/rust_inspector.ts",
     "./ast_inspector": "./src/ast_inspector.ts",
+    "./lockfile_filter": "./src/lockfile_filter.ts",
     "./types": "./src/types.ts"
   },
   "dependencies": {

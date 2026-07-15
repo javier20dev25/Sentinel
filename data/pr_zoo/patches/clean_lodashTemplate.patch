@@ -1,0 +1,2 @@
+
+const result = _.template('hello <%= user %>!')({ user: 'fred' });

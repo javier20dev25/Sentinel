@@ -1,0 +1,36 @@
+{
+  "source": {
+    "id": "nodejs_node_64440",
+    "repo": "nodejs/node",
+    "pr": 64440,
+    "url": "https://github.com/nodejs/node/pull/64440",
+    "profile": "infrastructure",
+    "description": "tools: update nixpkgs-unstable to 716c7a2664ca8325617b8a7fbb609273f2c",
+    "state": "open",
+    "created_at": "2026-07-12T00:54:23Z",
+    "updated_at": "2026-07-12T00:54:31Z",
+    "sha": "ad82100dd7ed7d8a7651467ab6270065c8c08564",
+    "user": "nodejs-github-bot",
+    "labels": [
+      "tools",
+      "dont-land-on-v22.x",
+      "dont-land-on-v24.x",
+      "dont-land-on-v26.x"
+    ],
+    "files_changed": 1,
+    "additions": 2,
+    "deletions": 2,
+    "patchSize": 484,
+    "patchHash": "182161f5ddb596668f480cc0cd08bf745cbbff617dcd7d44dab2327e62bd6a56",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "system_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:06.373Z"
+}

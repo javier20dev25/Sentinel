@@ -1,0 +1,34 @@
+{
+  "source": {
+    "id": "npm_cli_9734",
+    "repo": "npm/cli",
+    "pr": 9734,
+    "url": "https://github.com/npm/cli/pull/9734",
+    "profile": "cli",
+    "description": "chore(deps): bump the npm_and_yarn group across 1 directory with 4 updates",
+    "state": "open",
+    "created_at": "2026-07-08T19:28:52Z",
+    "updated_at": "2026-07-10T15:00:55Z",
+    "sha": "731059d049ec74f1a5a32eb958c5d8f75297b496",
+    "user": "dependabot[bot]",
+    "labels": [
+      "Dependencies",
+      "javascript"
+    ],
+    "files_changed": 18,
+    "additions": 7422,
+    "deletions": 8052,
+    "patchSize": 4916,
+    "patchHash": "9be217ebe2bc3710ca1f71fc0b2ab2bc69b082fc8f23df1386455d2d06f8ae33",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:18.844Z"
+}

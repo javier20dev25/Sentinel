@@ -1,0 +1,47 @@
+{
+  "source": {
+    "id": "adversarial_hexEscapedRequire",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "hexEscapedRequire",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 92,
+    "patchHash": "38b23497c7a9d20933c4789ce8d89fd4598ffc50a42ac249b00b275b34d698db"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-003",
+        "techniqueId": "EVASION-003",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "IR-002",
+        "techniqueId": "IR-002",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "ModuleImport",
+      "Execution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.784Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.840Z"
+}

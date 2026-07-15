@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "lodash_lodash_6248",
+    "repo": "lodash/lodash",
+    "pr": 6248,
+    "url": "https://github.com/lodash/lodash/pull/6248",
+    "profile": "libraries",
+    "description": "fix(clone): reverse deep/shallow buffer cloning",
+    "state": "open",
+    "created_at": "2026-07-03T19:23:12Z",
+    "updated_at": "2026-07-03T19:50:44Z",
+    "sha": "72991678e4d1277f36477287f350849aea605a37",
+    "user": "jonchurch",
+    "labels": [],
+    "files_changed": 4,
+    "additions": 6,
+    "deletions": 4,
+    "patchSize": 5289,
+    "patchHash": "cb0d86030a39bb33f1a249ab4c0fd546c3abbf662ed26af707d6c9ad97bd08ca",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:09.368Z"
+}

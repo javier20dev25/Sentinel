@@ -1,0 +1,34 @@
+{
+  "source": {
+    "id": "supabase_supabase_47851",
+    "repo": "supabase/supabase",
+    "pr": 47851,
+    "url": "https://github.com/supabase/supabase/pull/47851",
+    "profile": "backend",
+    "description": "feat(self-hosted): add update script",
+    "state": "open",
+    "created_at": "2026-07-11T16:22:51Z",
+    "updated_at": "2026-07-11T16:23:01Z",
+    "sha": "a9aadc9e412684fae6552388e84718ee2465f176",
+    "user": "aantti",
+    "labels": [
+      "documentation",
+      "self-hosted"
+    ],
+    "files_changed": 14,
+    "additions": 1348,
+    "deletions": 18,
+    "patchSize": 65501,
+    "patchHash": "dcfbaa5b3a8cca6cf81ceaf2aed426f15fa9ccfea80f394327ba4fd66aff987a",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:14.295Z"
+}

@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "clean_reactSetState",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "reactSetState",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 165,
+    "patchHash": "f024771722e6f3cfb813462a547305e4c8aa6ae4d17ef709b50d590e3374c0e3"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-10T23:22:32.805Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.807Z"
+}

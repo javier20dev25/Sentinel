@@ -1,0 +1,1 @@
+define(["react","react-dom"],function(e,t){var n=function(){return e.createElement("div",null,"Hello")};t.render(e.createElement(n),document.getElementById("root"))});

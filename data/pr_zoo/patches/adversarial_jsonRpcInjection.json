@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_jsonRpcInjection",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "jsonRpcInjection",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 73,
+    "patchHash": "efd375fe119aa91bcea3217f769a418f56e2a180b638cb1dc648d6791c3acbb8"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-018",
+        "techniqueId": "EVASION-018",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "NetworkAccess"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.875Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.935Z"
+}

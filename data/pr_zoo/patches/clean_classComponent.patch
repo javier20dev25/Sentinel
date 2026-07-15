@@ -1,0 +1,12 @@
+
+class UserService {
+  constructor(db) {
+    this.db = db;
+  }
+  async findById(id) {
+    return this.db.users.findOne({ where: { id } });
+  }
+  async create(data) {
+    return this.db.users.create(data);
+  }
+}

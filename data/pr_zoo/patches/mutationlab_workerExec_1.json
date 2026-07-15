@@ -1,0 +1,54 @@
+{
+  "taxonomy": {
+    "family": "sandbox",
+    "technique": "worker_thread_exec"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_workerExec_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "workerExec",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 151,
+    "patchHash": "bdf3ab91bffddad847bb0e928afdf17b124e377f16bc8736e6a86ead08087d41"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "WORKER_THREAD",
+        "techniqueId": "WORKER_THREAD",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EXECUTION",
+        "techniqueId": "EXECUTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "execution",
+      "sandbox_escape"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "sandbox",
+      "technique": "worker_thread_exec"
+    },
+    "labelDate": "2026-07-12T04:33:01.493Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.493Z"
+}

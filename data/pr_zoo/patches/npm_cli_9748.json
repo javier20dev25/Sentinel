@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "npm_cli_9748",
+    "repo": "npm/cli",
+    "pr": 9748,
+    "url": "https://github.com/npm/cli/pull/9748",
+    "profile": "cli",
+    "description": "chore: add ci check requiring deps: commits for prod dependency changes",
+    "state": "open",
+    "created_at": "2026-07-10T18:06:53Z",
+    "updated_at": "2026-07-10T19:00:17Z",
+    "sha": "9819323a796c7acd580c9c9ee3f34b972a62b098",
+    "user": "reggi",
+    "labels": [],
+    "files_changed": 2,
+    "additions": 206,
+    "deletions": 0,
+    "patchSize": 7654,
+    "patchHash": "ca69e4514f5df6bef3bad84903b3af641f53efa7b873203bf535205cb61e474d",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "supply_chain"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:17.719Z"
+}

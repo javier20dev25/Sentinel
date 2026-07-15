@@ -44,6 +44,13 @@ const CONFIG = {
 
     SCORING: {
         DAMPING_FACTOR: 1.5,
+        SEVERITY_MAP: {
+            'CRITICAL': 0.95,
+            'HIGH': 0.75,
+            'MEDIUM': 0.50,
+            'LOW': 0.25,
+            'INFO': 0.05
+        },
         CONTEXT_WEIGHTS: {
             'package.json': 1.2,
             'src': 1.0,

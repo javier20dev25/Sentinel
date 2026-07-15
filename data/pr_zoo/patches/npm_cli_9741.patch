@@ -1,0 +1,144 @@
+--- a/lib/utils/patch-diff.js
++++ b/lib/utils/patch-diff.js
+@@ -7,6 +7,11 @@ const { join, sep } = require('node:path')
+ 
+ const IGNORE = new Set(['node_modules', '.git'])
+ 
++// filenames come from the untrusted package being patched; a name with an
++// embedded newline would otherwise forge extra diff header lines in the patch
++// eslint-disable-next-line no-control-regex
++const cleanHeader = str => str.replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
++
+ // Recursively list file paths under dir, relative and posix-separated.
+ const listFiles = async dir => {
+   const out = []
+@@ -69,16 +74,17 @@ const diffDirs = async (originalDir, editedDir, ignore = new Set()) => {
+       continue
+     }
+ 
++    const safe = cleanHeader(file)
+     let patch = createTwoFilesPatch(
+-      `a/${file}`, `b/${file}`, a || '', b || '', '', ''
++      `a/${safe}`, `b/${safe}`, a || '', b || '', '', ''
+     ).replace('===================================================================\n', '')
+ 
+     // mark adds and deletes with /dev/null so the apply step creates/removes files
+     if (a === null) {
+-      patch = patch.replace(`--- a/${file}\t`, '--- /dev/null\t')
++      patch = patch.replace(`--- a/${safe}\t`, '--- /dev/null\t')
+     }
+     if (b === null) {
+-      patch = patch.replace(`+++ b/${file}\t`, '+++ /dev/null\t')
++      patch = patch.replace(`+++ b/${safe}\t`, '+++ /dev/null\t')
+     }
+     result += patch
+   }
+
+--- a/test/lib/utils/patch-diff.js
++++ b/test/lib/utils/patch-diff.js
+@@ -147,3 +147,15 @@ t.test('round-trip: applying the diff reproduces the edited tree', async t => {
+   t.equal(read(orig, 'lib', 'deep', 'x.js'), 'after\n', 'nested file matches edit')
+   t.notOk(existsSync(resolve(orig, 'del.js')), 'deleted file was removed')
+ })
++
++t.test('control chars in a filename cannot forge diff headers', async t => {
++  const { writeFileSync } = require('node:fs')
++  const dir = t.testdir({ orig: {}, edit: {} })
++  // an extracted package can carry a filename with an embedded newline
++  const name = 'a.js\n--- x\n+++ y\n@@ -1 +1 @@\n-real\n+forged'
++  writeFileSync(resolve(dir, 'orig', name), 'one\n')
++  writeFileSync(resolve(dir, 'edit', name), 'two\n')
++  const { diff } = await diffDirs(resolve(dir, 'orig'), resolve(dir, 'edit'))
++  t.notMatch(diff, /^\+forged$/m, 'newline in name does not inject a diff line')
++  t.notMatch(diff, /^--- x$/m, 'newline in name does not forge a --- header')
++})
+
+--- a/workspaces/libnpmdiff/lib/format-diff.js
++++ b/workspaces/libnpmdiff/lib/format-diff.js
+@@ -19,15 +19,22 @@ const color = (colorStr, colorId) => {
+   return colorStr.replace(/[^\n\r]+/g, open + '$&' + close)
+ }
+ 
++// tarball entry names and non-registry manifest versions are attacker
++// controlled; drop control characters so a name/version containing a newline
++// can't forge extra `diff --git`/`---`/`+++` header lines in the output
++// eslint-disable-next-line no-control-regex
++const cleanHeader = str => String(str).replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
++
+ const formatDiff = async ({ files, opts = {}, refs, versions }) => {
+   let res = ''
+   const srcPrefix = opts.diffNoPrefix ? '' : opts.diffSrcPrefix || 'a/'
+   const dstPrefix = opts.diffNoPrefix ? '' : opts.diffDstPrefix || 'b/'
+ 
+   for (const filename of files.values()) {
++    const safeName = cleanHeader(filename)
+     const names = {
+-      a: `${srcPrefix}${filename}`,
+-      b: `${dstPrefix}${filename}`,
++      a: `${srcPrefix}${safeName}`,
++      b: `${dstPrefix}${safeName}`,
+     }
+ 
+     let fileMode = ''
+@@ -49,7 +56,7 @@ const formatDiff = async ({ files, opts = {}, refs, versions }) => {
+     }
+ 
+     if (opts.diffNameOnly) {
+-      res += `${filename}\n`
++      res += `${safeName}\n`
+       continue
+     }
+ 
+@@ -74,8 +81,10 @@ const formatDiff = async ({ files, opts = {}, refs, versions }) => {
+         header(`new mode ${modes.b}`)
+       }
+     }
+-    /* eslint-disable-next-line max-len */
+-    header(`index ${opts.tagVersionPrefix || 'v'}${versions.a}..${opts.tagVersionPrefix || 'v'}${versions.b} ${fileMode}`)
++    const prefix = opts.tagVersionPrefix || 'v'
++    const va = cleanHeader(versions.a)
++    const vb = cleanHeader(versions.b)
++    header(`index ${prefix}${va}..${prefix}${vb} ${fileMode}`)
+ 
+     if (await shouldPrintPatch(filename)) {
+       patch += jsDiff.createTwoFilesPatch(
+
+--- a/workspaces/libnpmdiff/test/format-diff.js
++++ b/workspaces/libnpmdiff/test/format-diff.js
+@@ -467,3 +467,36 @@ t.test('format multiple files patch', async t => {
+     'should output expected result for multiple files'
+   )
+ })
++
++t.test('control chars in a tarball entry name cannot forge diff headers', async t => {
++  // tar entry paths are attacker controlled and may contain a newline
++  const filename = 'a.js\ndiff --git a/HIDDEN b/HIDDEN\n--- a/HIDDEN\n+++ b/HIDDEN'
++  const files = new Set([filename])
++  const refs = new Map(Object.entries({
++    [`a/${filename}`]: { content: 'one\n', mode: '100644' },
++    [`b/${filename}`]: { content: 'two\n', mode: '100644' },
++  }))
++  const res = await formatDiff({
++    files,
++    refs,
++    versions: { a: '1.0.0', b: '2.0.0' },
++  })
++  t.notMatch(res, /^diff --git a\/HIDDEN b\/HIDDEN$/m, 'no forged diff --git line')
++  t.notMatch(res, /^--- a\/HIDDEN$/m, 'no forged --- line')
++  t.notMatch(res, /^\+\+\+ b\/HIDDEN$/m, 'no forged +++ line')
++})
++
++t.test('control chars in a manifest version cannot forge diff lines', async t => {
++  const files = new Set(['foo.js'])
++  const refs = new Map(Object.entries({
++    'a/foo.js': { content: 'one\n', mode: '100644' },
++    'b/foo.js': { content: 'two\n', mode: '100644' },
++  }))
++  const res = await formatDiff({
++    files,
++    refs,
++    // a git/file spec's version is read verbatim from package.json
++    versions: { a: '1.0.0\n+forged version line', b: '2.0.0' },
++  })
++  t.notMatch(res, /^\+forged version line$/m, 'version newline does not inject a line')
++})

@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "expressjs_express_7369",
+    "repo": "expressjs/express",
+    "pr": 7369,
+    "url": "https://github.com/expressjs/express/pull/7369",
+    "profile": "infrastructure",
+    "description": "docs: mention TypeScript generator options",
+    "state": "open",
+    "created_at": "2026-07-09T06:53:43Z",
+    "updated_at": "2026-07-09T23:49:48Z",
+    "sha": "ccb487a59b01c908022b69017b9f66c43b376e43",
+    "user": "iamdhrv",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 4,
+    "deletions": 0,
+    "patchSize": 392,
+    "patchHash": "a497099ddff676890cae8d521a96a1465785a4b2578c9ad4c01fb5382ca759a9",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.68,
+    "findings": 1,
+    "capabilities": [
+      "network_access"
+    ]
+  },
+  "collected_at": "2026-07-12T04:18:59.808Z"
+}

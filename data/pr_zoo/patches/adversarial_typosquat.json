@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_typosquat",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "typosquat",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 107,
+    "patchHash": "2df9546d4715fa505ef5feca247f25692a63d86c742c466d42eb8a152b5d4813"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "SIG-005",
+        "techniqueId": "SIG-005",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "ModuleImport"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.950Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:33.017Z"
+}

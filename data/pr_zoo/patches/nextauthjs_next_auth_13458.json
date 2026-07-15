@@ -1,0 +1,32 @@
+{
+  "source": {
+    "id": "nextauthjs_next_auth_13458",
+    "repo": "nextauthjs/next-auth",
+    "pr": 13458,
+    "url": "https://github.com/nextauthjs/next-auth/pull/13458",
+    "profile": "infrastructure",
+    "description": "Update prisma client setup for prisma v7+",
+    "state": "open",
+    "created_at": "2026-06-24T07:42:30Z",
+    "updated_at": "2026-07-04T19:47:05Z",
+    "sha": "eb276c6e438ff67c4afb27ed9c469d63ce4f18d7",
+    "user": "Thewhite33",
+    "labels": [],
+    "files_changed": 1,
+    "additions": 16,
+    "deletions": 6,
+    "patchSize": 1580,
+    "patchHash": "af5d7b5007ac2efd090e18e00635ba68d5ceb740a8f96404711e08cbe3b3198f",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "BLOCK",
+    "riskScore": 0.76,
+    "findings": 2,
+    "capabilities": [
+      "credential_access",
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:15.656Z"
+}

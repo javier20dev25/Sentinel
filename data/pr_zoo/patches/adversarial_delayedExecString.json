@@ -1,0 +1,47 @@
+{
+  "source": {
+    "id": "adversarial_delayedExecString",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "delayedExecString",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 58,
+    "patchHash": "6cd9d1385cde7b15708cfe974cca211954fdb1f0851e36b4025255f8af92bd99"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-011b",
+        "techniqueId": "EVASION-011b",
+        "severity": "MEDIUM"
+      },
+      {
+        "type": "EVASION-031",
+        "techniqueId": "EVASION-031",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "DelayedExecution",
+      "DynamicCodeExecution"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.906Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.972Z"
+}

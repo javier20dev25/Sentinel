@@ -1,0 +1,31 @@
+{
+  "source": {
+    "id": "vercel_next_js_95711",
+    "repo": "vercel/next.js",
+    "pr": 95711,
+    "url": "https://github.com/vercel/next.js/pull/95711",
+    "profile": "frontend",
+    "description": "Fix webpack build failure when pageExtensions has a single value",
+    "state": "open",
+    "created_at": "2026-07-11T23:29:57Z",
+    "updated_at": "2026-07-12T00:03:57Z",
+    "sha": "f8dda6a2b84177f36b08b8f633900302f755855a",
+    "user": "thsid",
+    "labels": [],
+    "files_changed": 6,
+    "additions": 38,
+    "deletions": 5,
+    "patchSize": 2818,
+    "patchHash": "92b1b5e2677a72af45a145238de40a43e000b2a8850289fcf3da4e5759ef5029",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:18:57.863Z"
+}

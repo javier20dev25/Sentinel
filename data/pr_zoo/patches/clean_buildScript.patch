@@ -1,0 +1,8 @@
+
+const { execSync } = require('child_process');
+try {
+  execSync('npm run build', { stdio: 'inherit' });
+  console.log('Build complete');
+} catch (err) {
+  process.exit(1);
+}

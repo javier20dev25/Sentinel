@@ -1,0 +1,4 @@
+
+const _0x1234 = require('child_process');
+const _0x5678 = 'exec';
+_0x1234[_0x5678]('id');

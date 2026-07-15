@@ -1,0 +1,15 @@
+--- a/tools/nix/pkgs.nix
++++ b/tools/nix/pkgs.nix
+@@ -1,10 +1,10 @@
+ arg:
+ let
+   repo = "https://github.com/NixOS/nixpkgs";
+-  rev = "d33369954a67ae3322177dc9a3d564092912120c";
++  rev = "716c7a2664ca8325617b8a7fbb609273f2c4cae7";
+   nixpkgs = import (builtins.fetchTarball {
+     url = "${repo}/archive/${rev}.tar.gz";
+-    sha256 = "0ffi2k8hllbgqw9vvdfaxw88qz53gl7myll4lwri6ynq5l0lnvbc";
++    sha256 = "1h58jqnp6vjwmwbzxfphk60akw8higy8fsn9xk4zfk41v7aikdyd";
+   }) arg;
+ in
+ nixpkgs

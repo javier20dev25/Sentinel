@@ -1,0 +1,41 @@
+{
+  "source": {
+    "id": "adversarial_homoglyph",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "homoglyph",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 38,
+    "patchHash": "977e48519a28b8d9499a897d0aad4c5c1fd5ba40d7ee84ec9f8818aa43f08426"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-019",
+        "techniqueId": "EVASION-019",
+        "severity": "MEDIUM"
+      }
+    ],
+    "capabilities": [
+      "ModuleImport"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.879Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.939Z"
+}

@@ -1,0 +1,46 @@
+{
+  "source": {
+    "id": "adversarial_vmEscape",
+    "repo": "sentinel/adversarial",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "vmEscape",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 106,
+    "patchHash": "94cfa92cb787bf1bd810a5c8288dcee855f5c15b55bd9dce33953d9b832e4baf"
+  },
+  "expected": {
+    "verdict": "SUSPICIOUS",
+    "riskScore": 0.6,
+    "findings": [
+      {
+        "type": "EVASION-015",
+        "techniqueId": "EVASION-015",
+        "severity": "CRITICAL"
+      },
+      {
+        "type": "EVASION-007",
+        "techniqueId": "EVASION-007",
+        "severity": "HIGH"
+      }
+    ],
+    "capabilities": [
+      "SandboxEscape"
+    ],
+    "source": "mutation_lab",
+    "labelDate": "2026-07-12T00:56:02.825Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.11,
+    "findings": 1,
+    "capabilities": [
+      "generic"
+    ]
+  },
+  "collected_at": "2026-07-10T23:22:32.881Z"
+}

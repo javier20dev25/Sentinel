@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "vercel_next_js_95712",
+    "repo": "vercel/next.js",
+    "pr": 95712,
+    "url": "https://github.com/vercel/next.js/pull/95712",
+    "profile": "frontend",
+    "description": "Update font data",
+    "state": "open",
+    "created_at": "2026-07-12T00:30:26Z",
+    "updated_at": "2026-07-12T01:05:28Z",
+    "sha": "a20b3b3dd3baaa7818aeea87ef9983e7d942c18c",
+    "user": "vercel-release-bot",
+    "labels": [
+      "run-react-18-tests"
+    ],
+    "files_changed": 2,
+    "additions": 51,
+    "deletions": 0,
+    "patchSize": 2405,
+    "patchHash": "0f22288bd440550d5889ed6ff2d372db14e46d2aef640d5e97f8fd4030d4dba2",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "code_execution"
+    ]
+  },
+  "collected_at": "2026-07-12T04:18:57.544Z"
+}

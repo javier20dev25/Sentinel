@@ -1,0 +1,54 @@
+{
+  "taxonomy": {
+    "family": "supply_chain",
+    "technique": "lifecycle_script"
+  },
+  "variant": 1,
+  "source": {
+    "id": "mutationlab_lifecycleExec_1",
+    "repo": "sentinel/mutationlab",
+    "pr": 0,
+    "url": "",
+    "profile": "benchmark",
+    "description": "lifecycleExec",
+    "state": "closed",
+    "sha": "",
+    "user": "sentinel-benchmark",
+    "files_changed": 1,
+    "patchSize": 155,
+    "patchHash": "ff9b6d85e9837814736dc4a3dcfb04f4c023921e459756ecef14e351ec031e36"
+  },
+  "expected": {
+    "verdict": "CRITICAL",
+    "riskScore": 0.9,
+    "findings": [
+      {
+        "type": "LIFECYCLE",
+        "techniqueId": "LIFECYCLE",
+        "severity": "HIGH"
+      },
+      {
+        "type": "EXECUTION",
+        "techniqueId": "EXECUTION",
+        "severity": "CRITICAL"
+      }
+    ],
+    "capabilities": [
+      "execution",
+      "supply_chain"
+    ],
+    "source": "mutation_lab",
+    "taxonomy": {
+      "family": "supply_chain",
+      "technique": "lifecycle_script"
+    },
+    "labelDate": "2026-07-12T04:33:01.486Z"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0,
+    "findings": 0,
+    "capabilities": []
+  },
+  "collected_at": "2026-07-12T04:33:01.486Z"
+}

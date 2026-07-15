@@ -99,8 +99,24 @@ test_output.txt
 merx-simulation/
 sentinel-report.md
 
+# PR zoo generated cache (AST + property graph)
+data/pr_zoo/cache/
+
 # Sentinel Adversarial Lab (SAL) - Local Moat
 src/ui/backend/lab/attacker_pro.js
 src/ui/backend/lab/attacker.js.bak
 src/ui/backend/lab/adversarial_results.json
 tests/run_adversarial_session.js
+
+# Evolution Research Lab (archived locally)
+src/evolution/
+
+# IDE / agent config
+.opencode/
+
+# Temporary probe / scratch files
+.temp_*.js
+_probe.js
+
+# Dual comparison scratch output
+data/dual_comparisons.jsonl

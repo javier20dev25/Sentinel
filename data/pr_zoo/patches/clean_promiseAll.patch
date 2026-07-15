@@ -1,0 +1,8 @@
+
+async function processAll(items) {
+  const results = await Promise.all(items.map(async (item) => {
+    const data = await fetchItem(item);
+    return transform(data);
+  }));
+  return results;
+}

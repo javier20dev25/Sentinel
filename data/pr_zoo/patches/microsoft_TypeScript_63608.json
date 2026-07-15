@@ -1,0 +1,33 @@
+{
+  "source": {
+    "id": "microsoft_TypeScript_63608",
+    "repo": "microsoft/TypeScript",
+    "pr": 63608,
+    "url": "https://github.com/microsoft/TypeScript/pull/63608",
+    "profile": "language",
+    "description": "fix(lib): remove callable signature without new from Intl.PluralRules…",
+    "state": "open",
+    "created_at": "2026-07-04T10:59:08Z",
+    "updated_at": "2026-07-06T20:15:51Z",
+    "sha": "827fbb05872103618bb449f9aa48f7d41841be8b",
+    "user": "SiddGud",
+    "labels": [
+      "For Backlog Bug"
+    ],
+    "files_changed": 2,
+    "additions": 0,
+    "deletions": 2,
+    "patchSize": 932,
+    "patchHash": "221a120cb9f6a12eec105b0f59ec56f6793561937275790fd1082f940243b789",
+    "language": "unknown"
+  },
+  "baseline": {
+    "verdict": "PASS",
+    "riskScore": 0.58,
+    "findings": 1,
+    "capabilities": [
+      "build_pipeline"
+    ]
+  },
+  "collected_at": "2026-07-12T04:19:03.403Z"
+}

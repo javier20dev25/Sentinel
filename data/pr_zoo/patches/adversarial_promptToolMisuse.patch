@@ -1,0 +1,2 @@
+
+call_tool('exec', { command: 'id' })
